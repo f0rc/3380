@@ -7,7 +7,7 @@
     "dev:server": "tsx watch src/server/trpc",
     "dev:client": "wait-port 8080 && vite",
     "envTest": "tsx src/env/env.mjs",
-    "server": "run-s envTest && run-p dev:*",
+    "start": "run-s envTest && run-p dev:*",
     "build": "tsc && vite build",
     "preview": "vite preview"
   },
