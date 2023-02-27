@@ -7,6 +7,7 @@ import SuperJSON from "superjson";
 import Home from "./pages/Home";
 import Error from "./pages/Error";
 import Layout from "./pages/Layout";
+import About from "./pages/About";
 function App() {
   const [queryClient] = useState(() => new QueryClient());
   const [trpcClient] = useState(() =>
@@ -37,6 +38,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Layout />}>
             <Route index element={<Home />} />
+            <Route path="about" element={<About />} />
             <Route path="*" element={<Error />} />
           </Route>
         </Routes>
