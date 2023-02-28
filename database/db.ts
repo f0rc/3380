@@ -47,3 +47,5 @@ export default {
     return res;
   },
 };
+
+//postgresQuery(`Select * from Employee`);
