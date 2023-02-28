@@ -1,45 +1,22 @@
-import { inferAsyncReturnType, initTRPC } from "@trpc/server";
-import {
-  CreateHTTPContextOptions,
-  createHTTPServer,
-} from "@trpc/server/adapters/standalone";
+import { initTRPC } from "@trpc/server";
 import superjson from "superjson";
-import { z } from "zod";
 import { createHTTPHandler } from "@trpc/server/adapters/standalone";
 import http from "http";
+import { Context, createContext } from "./context";
+import { appRouter } from "./router/_app";
 
-// // This is how you initialize a context for the server
-export function createContext(opts: CreateHTTPContextOptions) {
-  return {};
-}
-type Context = inferAsyncReturnType<typeof createContext>;
+// This is how you initialize a context for the server
 
 const t = initTRPC.context<Context>().create({
   transformer: superjson,
+  errorFormatter({ shape }) {
+    return shape;
+  },
 });
 
-export const publicProcedure = t.procedure;
 export const router = t.router;
+export const publicProcedure = t.procedure;
 
-const greetingRouter = router({
-  hello: publicProcedure
-    .input(
-      z.object({
-        name: z.string(),
-      })
-    )
-    .query(({ input }) => {
-      return {
-        greeting: `hello ${input?.name ?? "world"}`,
-      };
-    }),
-});
-
-const appRouter = router({
-  greeting: greetingRouter,
-});
-
-export type AppRouter = typeof appRouter;
 // create handler
 const handler = createHTTPHandler({
   router: appRouter,
