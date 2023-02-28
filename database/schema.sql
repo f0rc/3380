@@ -7,15 +7,13 @@ CREATE TABLE "Example" (
     CONSTRAINT "Example_pkey" PRIMARY KEY ("id")
 );
 
-CREATE TYPE position AS ENUM ('N/A','Manager', 'Clerk');
-
 CREATE TABLE "Employee" (
     "ID" TEXT NOT NULL,
     "firstName" TEXT NOT NULL,
     "lastName" TEXT NOT NULL,
     "birthDate" DATE NOT NULL,
     "revenue" INTEGER NOT NULL,
-    "role" position DEFAULT 'N/A',
+    "role" TEXT CHECK (role == 'Manager' || role == 'Clerk'),
     "salary" INT NOT NULL,
     "numberOfPackages" INT NOT NULL
     "address" ADDRESS NOT NULL,
@@ -24,6 +22,8 @@ CREATE TABLE "Employee" (
     "createdBy" TEXT NOT NULL,
     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedBy" TEXT NOT NULL,
+
+    CHECK (role == 'Manager' || role == 'Clerk')
 
     PRIMARY KEY (ID)
 );
