@@ -6,6 +6,9 @@ CREATE TABLE "Example" (
 
     CONSTRAINT "Example_pkey" PRIMARY KEY ("id")
 );
+CREATE TABLE "Company"{
+"id"
+}
 
 CREATE TABLE "Employee" (
     "id" TEXT NOT NULL,  
