@@ -7,7 +7,15 @@ CREATE TABLE "Example" (
     CONSTRAINT "Example_pkey" PRIMARY KEY ("id")
 );
 CREATE TABLE "Company"{
-"id"
+"address" address;
+"totalPostOfficeLocations" INTEGER NOT NULL;
+"totalEmployees:" INTEGER NOT NULL;
+"totalCustomer:" INTEGER NOT NULL;
+"totalRevenue:" INTEGER NOT NULL;
+"totalPaidSalary:" INTEGER NOT NULL;
+"profit:" INTEGER NOT NULL;
+"createdAt" DATE NOT NULL; 
+"updatedAt" DATE NOT NULL;
 }
 
 CREATE TABLE "Employee" (
