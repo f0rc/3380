@@ -8,7 +8,7 @@ CREATE TABLE "Example" (
 );
 
 CREATE TABLE "Employee" (
-    "id" TEXT NOT NULL,
+    "id" TEXT UNIQUE NOT NULL,  
     "firstName" VARCHAR(30) NOT NULL,
     "lastName" VARCHAR(30) NOT NULL,
     "birthDate" DATE NOT NULL,
@@ -17,7 +17,7 @@ CREATE TABLE "Employee" (
     "salary" INT NOT NULL CHECK (salary >= 0),
     "numberOfPackages" INT NOT NULL CHECK ('numberOfPackages' >= 0),
     "address" TEXT NOT NULL,
-    "startDate" DATE NOT NULL,
+    "startDate" DATE FOREIGN KEY NOT NULL,
     "createAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "createdBy" VARCHAR(30) NOT NULL,
     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -25,6 +25,3 @@ CREATE TABLE "Employee" (
 
     CONSTRAINT "Employee_pkey" PRIMARY KEY ("id")
 );
-
-INSERT INTO Employee (id, firstName, lastName, birthDate, revenue, role, salary, 
-                        numberOfPackages, address, startDate, createAt, )
