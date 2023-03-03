@@ -8,24 +8,23 @@ CREATE TABLE "Example" (
 );
 
 CREATE TABLE "Employee" (
-    "ID" TEXT NOT NULL,
-    "firstName" TEXT NOT NULL,
-    "lastName" TEXT NOT NULL,
+    "id" TEXT NOT NULL,
+    "firstName" VARCHAR(30) NOT NULL,
+    "lastName" VARCHAR(30) NOT NULL,
     "birthDate" DATE NOT NULL,
-    "revenue" INTEGER NOT NULL,
+    "revenue" INTEGER NOT NULL CHECK (revenue >= 0),
     "role" TEXT CHECK (role == 'Manager' || role == 'Clerk'),
-    "salary" INT NOT NULL,
-    "numberOfPackages" INT NOT NULL
-    "address" ADDRESS NOT NULL,
+    "salary" INT NOT NULL CHECK (salary >= 0),
+    "numberOfPackages" INT NOT NULL CHECK ('numberOfPackages' >= 0),
+    "address" TEXT NOT NULL,
     "startDate" DATE NOT NULL,
     "createAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "createdBy" TEXT NOT NULL,
+    "createdBy" VARCHAR(30) NOT NULL,
     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedBy" TEXT NOT NULL,
+    "updatedBy" VARCHAR(30) NOT NULL,
 
-    CHECK (role == 'Manager' || role == 'Clerk')
-
-    PRIMARY KEY (ID)
+    CONSTRAINT "Employee_pkey" PRIMARY KEY ("id")
 );
 
-CREATE 
+INSERT INTO Employee (id, firstName, lastName, birthDate, revenue, role, salary, 
+                        numberOfPackages, address, startDate, createAt, )
