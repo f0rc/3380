@@ -8,7 +8,7 @@ CREATE TABLE "Example" (
 );
 
 CREATE TABLE "Employee" (
-    "id" TEXT UNIQUE NOT NULL,  
+    "id" TEXT NOT NULL,  
     "firstName" VARCHAR(30) NOT NULL,
     "lastName" VARCHAR(30) NOT NULL,
     "birthDate" DATE NOT NULL,
