@@ -1,7 +1,7 @@
-import { z } from "zod";
-import { router, publicProcedure } from "../trpc";
+import { router } from "../utils/trpc";
 import { greetingRouter } from "./greeting";
 
+// Add your routers here
 export const appRouter = router({
   greeting: greetingRouter,
 });

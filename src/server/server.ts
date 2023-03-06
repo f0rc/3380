@@ -1,21 +1,7 @@
-import { initTRPC } from "@trpc/server";
-import superjson from "superjson";
 import { createHTTPHandler } from "@trpc/server/adapters/standalone";
+import { createContext } from "./utils/context";
 import http from "http";
-import { Context, createContext } from "./context";
 import { appRouter } from "./router/_app";
-
-// This is how you initialize a context for the server
-
-const t = initTRPC.context<Context>().create({
-  transformer: superjson,
-  errorFormatter({ shape }) {
-    return shape;
-  },
-});
-
-export const router = t.router;
-export const publicProcedure = t.procedure;
 
 // create handler
 const handler = createHTTPHandler({

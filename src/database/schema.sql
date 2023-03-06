@@ -18,7 +18,6 @@ CREATE TABLE "Sessions" (
 
 CREATE TABLE "Users" (
     "id" TEXT NOT NULL,
-    "name" TEXT,
     "email" VARCHAR(255) NOT NULL,
     "password" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
