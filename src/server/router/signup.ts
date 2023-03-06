@@ -1,10 +1,8 @@
-import { z } from "zod";
-
 import { hash } from "argon2";
-import { signUpSchema } from "../auth/authSchema";
 import { randomUUID } from "crypto";
 import { TRPCError } from "@trpc/server";
 import { publicProcedure, router } from "../utils/trpc";
+import { signUpSchema } from "../auth/authSchema";
 
 export const credRouter = router({
   signUp: publicProcedure
