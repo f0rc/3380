@@ -12,3 +12,7 @@
 # start
 - run `npm install` to install the packages in `package.json`
 - run `npm run start` to start the app from scripts in `package.json`
+
+
+# todo:
+- register page
