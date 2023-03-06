@@ -9,7 +9,11 @@ const Home = () => {
     <div>
       <h2 className="">Home</h2>
       <p>{hello?.greeting}</p>
-      <p>User: {user?.user?.id}</p>
+      {user?.user && (
+        <div>
+          <p>Logged in as {user.user.email}</p>
+        </div>
+      )}
     </div>
   );
 };

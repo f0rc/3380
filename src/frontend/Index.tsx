@@ -6,6 +6,7 @@ import About from "./pages/About";
 import Error from "./pages/Error";
 import Home from "./pages/Home";
 import Layout from "./pages/Layout";
+import Signup from "./pages/Signup";
 
 const Index = () => {
   const { isLoading, data, isError } = api.session.getSession.useQuery();
@@ -20,6 +21,7 @@ const Index = () => {
         <Routes>
           <Route path="/" element={<Layout />}>
             <Route index element={<Home />} />
+            <Route path="signup" element={<Signup />} />
             <Route path="about" element={<About />} />
             <Route path="*" element={<Error />} />
           </Route>
