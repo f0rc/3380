@@ -23,7 +23,7 @@
     //   "y/*": ["./src/*"]
     // }
   },
-  "include": ["src", "**/*.ts", "**/*.tsx", "**/*.cjs", "**/*.mjs"],
-  "exclude": ["node_modules"],
-  "references": [{ "path": "./tsconfig.node.json" }]
+  "include": ["src", "**/*.ts", "**/*.tsx", "**/*.cjs", "**/*.mjs"]
+  // "exclude": ["node_modules"],
+  // "references": [{ "path": "./tsconfig.node.json" }]
 }

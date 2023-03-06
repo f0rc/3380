@@ -1,13 +1,15 @@
 import { useState } from "react";
-import { api } from "src/server/api";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Route, Routes } from "react-router-dom";
+import { BrowserRouter, Outlet, Route, Routes } from "react-router-dom";
 import { httpBatchLink, loggerLink } from "@trpc/client";
 import SuperJSON from "superjson";
 import Home from "./pages/Home";
 import Error from "./pages/Error";
 import Layout from "./pages/Layout";
 import About from "./pages/About";
+import { api } from "src/server/utils/api";
+import { SessionContext, useSession } from "./auth/SessionProvider";
+import { getServerAuthSession } from "src/server/auth/main";
 function App() {
   const [queryClient] = useState(() => new QueryClient());
   const [trpcClient] = useState(() =>
@@ -31,17 +33,19 @@ function App() {
       ],
     })
   );
-
+  const user = "lol";
   return (
     <api.Provider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>
-        <Routes>
-          <Route path="/" element={<Layout />}>
-            <Route index element={<Home />} />
-            <Route path="about" element={<About />} />
-            <Route path="*" element={<Error />} />
-          </Route>
-        </Routes>
+        <SessionContext.Provider value={user}>
+          <Routes>
+            <Route path="/" element={<Layout />}>
+              <Route index element={<Home />} />
+              <Route path="about" element={<About />} />
+              <Route path="*" element={<Error />} />
+            </Route>
+          </Routes>
+        </SessionContext.Provider>
       </QueryClientProvider>
     </api.Provider>
   );
