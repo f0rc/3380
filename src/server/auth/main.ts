@@ -19,8 +19,8 @@ export const getServerAuthSession = async (ctx: {
   if (sessionId) {
     const session = await getDatabaseSession(sessionId);
     if (session) {
-      console.log("sending session ");
-      console.table(session);
+      // console.log("sending session ");
+      // console.table(session);
       return session;
     }
   }
@@ -33,14 +33,14 @@ export const getDatabaseSession = async (sessionToken: string) => {
     [sessionToken]
   );
   if (data.rowCount === 0) {
-    return undefined;
+    return;
   }
 
   // get the user now and return the session
   const session = mapDBSessionToSession(data.rows[0]);
 
   if (session.expires < new Date()) {
-    return undefined;
+    return;
   }
 
   return session;
