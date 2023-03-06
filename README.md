@@ -15,4 +15,6 @@
 
 
 # todo:
-- register page
+- ~~register page~~
+- ~~login page~~
+- make sure login has user name? email? etc???
