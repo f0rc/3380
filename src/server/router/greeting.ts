@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { router, publicProcedure } from "../trpc";
+import { publicProcedure, router } from "../utils/trpc";
 
 export const greetingRouter = router({
   hello: publicProcedure
@@ -8,7 +8,7 @@ export const greetingRouter = router({
         name: z.string(),
       })
     )
-    .query(({ input }) => {
+    .query(({ input, ctx }) => {
       return {
         greeting: `hello ${input?.name ?? "world"}`,
       };

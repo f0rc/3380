@@ -1,19 +1,22 @@
 import { IncomingMessage, IncomingMessage } from "http";
 
 declare module "http" {
-  interface Session {
-    user?: {
-      id: string;
-      username: string;
-    } & DefaultSession["user"];
+  interface IncomingMessage {
+    session: Session;
   }
+}
+
+export interface Session {
+  user?: {
+    id: string;
+    username?: string;
+  } & DefaultSession["user"];
+  expires: Date;
 }
 
 export interface DefaultSession {
   user?: {
-    name?: string | null;
     email?: string | null;
-    image?: string | null;
+    // add more properties here
   };
-  expires: Date;
 }

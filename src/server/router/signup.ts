@@ -1,20 +1,19 @@
 import { z } from "zod";
 
-import { router, publicProcedure } from "../trpc";
-
 import { hash } from "argon2";
 import { signUpSchema } from "../auth/authSchema";
 import { randomUUID } from "crypto";
 import { TRPCError } from "@trpc/server";
+import { publicProcedure, router } from "../utils/trpc";
 
 export const credRouter = router({
   signUp: publicProcedure
     .input(signUpSchema)
     .mutation(async ({ ctx, input }) => {
-      const { postgres } = ctx;
+      const { postgresQuery } = ctx;
       const { email, password, username } = input;
 
-      const existingUser = await postgres(
+      const existingUser = await postgresQuery(
         `select * from "Users" where "email"= $1 LIMIT 1`,
         [email]
       );
@@ -30,7 +29,7 @@ export const credRouter = router({
       const hashedPassword = await hash(password);
       const id = randomUUID();
       console.log(id);
-      const result = await postgres(
+      const result = await postgresQuery(
         `insert into "Users" (id, name, email, password) values ($1, $2, $3, $4) returning *`,
         [id, username, email, hashedPassword]
       );

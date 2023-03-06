@@ -1,7 +1,6 @@
-import { Pool } from "pg";
-// import { AdapterSession, AdapterUser, ExtendedAdapterUser } from "../utils";
+import Postgres from "pg";
 
-export const pool = new Pool({
+const pool = new Postgres.Pool({
   host: "localhost",
   port: 5433,
   user: "test",
@@ -38,12 +37,12 @@ export const postgresQuery = async (text: string, params: any[]) => {
   return { rows: res.rows, rowCount: res.rowCount };
 };
 
-export default {
-  async query(text: string, params: any[]) {
-    const start = Date.now();
-    const res = await pool.query(text, params);
-    const duration = Date.now() - start;
-    console.log("executed query", { text, duration, rows: res.rowCount });
-    return res;
-  },
-};
+// export default {
+//   async query(text: string, params: any[]) {
+//     const start = Date.now();
+//     const res = await pool.query(text, params);
+//     const duration = Date.now() - start;
+//     console.log("executed query", { text, duration, rows: res.rowCount });
+//     return res;
+//   },
+// };
