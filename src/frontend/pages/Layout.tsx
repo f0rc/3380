@@ -4,7 +4,7 @@ import { Link, Outlet } from "react-router-dom";
 const Layout = () => {
   return (
     <div>
-      <nav className="">
+      <nav className="bg-slate-500">
         <ul className="flex gap-4">
           <li>
             <Link to="/">Home</Link>
