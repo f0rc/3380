@@ -6,12 +6,17 @@ import { getServerAuthSession } from "../auth/main";
 
 type CreateContextOptions = {
   session: Session | null;
+  req: CreateHTTPContextOptions["req"];
+  res: CreateHTTPContextOptions["res"];
 };
 
 const createContextInner = async (opts: CreateContextOptions) => {
+  const { req, res } = opts;
   return {
     session: opts.session,
-    postgresQuery,
+    postgresQuery, // this is the response object
+    req,
+    res,
   };
 };
 
@@ -21,6 +26,8 @@ export async function createContext(opts: CreateHTTPContextOptions) {
   const session = await getServerAuthSession({ req, res });
   return createContextInner({
     session: session,
+    req,
+    res,
   });
 }
 export type Context = inferAsyncReturnType<typeof createContext>;

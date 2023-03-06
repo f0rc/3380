@@ -20,3 +20,9 @@ export interface DefaultSession {
     // add more properties here
   };
 }
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  password: string;
+}
