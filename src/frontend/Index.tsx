@@ -6,6 +6,7 @@ import About from "./pages/About";
 import Error from "./pages/Error";
 import Home from "./pages/Home";
 import Layout from "./pages/Layout";
+import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 
 const Index = () => {
@@ -22,6 +23,7 @@ const Index = () => {
           <Route path="/" element={<Layout />}>
             <Route index element={<Home />} />
             <Route path="signup" element={<Signup />} />
+            <Route path="login" element={<Login />} />
             <Route path="about" element={<About />} />
             <Route path="*" element={<Error />} />
           </Route>
