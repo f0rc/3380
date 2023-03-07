@@ -1,12 +1,7 @@
 import { useForm } from "react-hook-form";
-import {
-  LoginInput,
-  loginSchema,
-  SignUpInput,
-  signUpSchema,
-} from "src/server/auth/authSchema";
+import { LoginInput, loginSchema } from "src/server/auth/authSchema";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { api } from "src/server/utils/api";
 import { useNavigate } from "react-router-dom";
 
@@ -22,7 +17,7 @@ const Login = () => {
   });
   const [err, setErr] = useState("");
 
-  const { mutateAsync } = api.signup.signin.useMutation({
+  const { mutateAsync } = api.auth.signin.useMutation({
     onSuccess: (data) => {
       console.log(data);
     },

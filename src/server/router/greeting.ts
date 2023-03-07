@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { publicProcedure, router } from "../utils/trpc";
+import { protectedProcedure, publicProcedure, router } from "../utils/trpc";
 
 export const greetingRouter = router({
   hello: publicProcedure
@@ -13,4 +13,8 @@ export const greetingRouter = router({
         greeting: `hello ${input?.name ?? "world"}`,
       };
     }),
+
+  secretMessage: protectedProcedure.query(() => {
+    return "This is a secret message";
+  }),
 });

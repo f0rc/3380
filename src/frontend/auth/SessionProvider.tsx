@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useContext } from "react";
 import { Session } from "src/utils/auth";
 
 export const SessionContext = React.createContext<Session | null | undefined>(
@@ -11,9 +11,9 @@ export const useSession = () => {
   if (session === undefined) {
     throw new Error("useSession must be used within a SessionProvider");
   }
-
-  // if (!session) {
-  //   throw new Error("useSession must be used within a SessionProvider");
-  // }
   return session;
 };
+
+// if (!session) {
+//   throw new Error("useSession must be used within a SessionProvider");
+// }
