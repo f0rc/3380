@@ -9,6 +9,7 @@ declare module "http" {
 export interface Session {
   user?: {
     id: string;
+    email: string;
     username?: string;
   } & DefaultSession["user"];
   expires: Date;

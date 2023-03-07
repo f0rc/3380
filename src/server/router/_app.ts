@@ -1,12 +1,12 @@
 import { router } from "../utils/trpc";
-import { authRouter } from "./auth";
+import { authRouter } from "./session";
 import { greetingRouter } from "./greeting";
-import { credRouter } from "./signup";
+import { credRouter } from "./auth";
 
 // Add your routers here
 export const appRouter = router({
   session: authRouter,
-  signup: credRouter,
+  auth: credRouter,
   greeting: greetingRouter,
 });
 
