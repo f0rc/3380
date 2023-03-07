@@ -1,6 +1,7 @@
-import React, { Children } from "react";
+import { useEffect, useState } from "react";
 import { Route, Routes } from "react-router-dom";
 import { api } from "src/server/utils/api";
+import { Session } from "src/utils/auth";
 import { SessionContext } from "./auth/SessionProvider";
 import About from "./pages/About";
 import Error from "./pages/Error";
@@ -10,12 +11,21 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 
 const Index = () => {
-  const { isLoading, data, isError } = api.session.getSession.useQuery();
-  console.log("USER", data?.user);
+  const { isLoading, data, isError } = api.session.getSession.useQuery(
+    undefined,
+    {
+      refetchOnWindowFocus: false,
+    }
+  );
 
   if (isLoading) {
     return <div>Loading...</div>;
   }
+
+  if (isError) {
+    return <div>Error</div>;
+  }
+
   return (
     <>
       <SessionContext.Provider value={data}>

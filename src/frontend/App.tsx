@@ -1,15 +1,9 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Outlet, Route, Routes } from "react-router-dom";
 import { httpBatchLink, loggerLink } from "@trpc/client";
 import SuperJSON from "superjson";
-import Home from "./pages/Home";
 import Error from "./pages/Error";
-import Layout from "./pages/Layout";
-import About from "./pages/About";
 import { api } from "src/server/utils/api";
-import { SessionContext, useSession } from "./auth/SessionProvider";
-import { getServerAuthSession } from "src/server/auth/main";
 import Index from "./Index";
 function App() {
   const [queryClient] = useState(() => new QueryClient());
