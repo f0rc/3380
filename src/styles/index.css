@@ -6,3 +6,11 @@
 .inputFieldRegister {
     @apply border-b border-zinc-700 bg-transparent p-2 text-xl transition-all duration-300 ease-in-out focus:border-[hsl(280,100%,70%)] focus:outline-none
 }
+
+.navItem {
+    @apply block py-2 pl-3 pr-4 rounded bg-transparent text-white p-0
+}
+
+.navItemActive {
+    @apply block py-2 pl-3 pr-4 rounded bg-transparent text-yellow-500 p-0
+}
