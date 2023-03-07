@@ -8,15 +8,15 @@ CREATE TABLE "Example" (
 );
 
 CREATE TABLE "Company"{
-"Name" TEXT NOT NULL,
-"totalPostOfficeLocations" INTEGER NOT NULL,
-"totalEmployees" INTEGER NOT NULL,
-"totalCustomer" INTEGER NOT NULL,
-"totalRevenue" INTEGER NOT NULL,
-"totalPaidSalary" INTEGER NOT NULL,
-"profit" INTEGER NOT NULL,
-"createdAt" DATE NOT NULL, 
-"updatedAt" DATE NOT NULL
+"Name" VARCHAR(255) NOT NULL,
+"totalPostOfficeLocations" INTEGER NOT NULL CHECK (totalPostOfficeLocations>=0),
+"totalEmployees" INTEGER NOT NULL CHECK (totalEmployees>=0),
+"totalCustomer" INTEGER NOT NULL CHECK (totalCustomer>=0),
+"totalRevenue" INTEGER NOT NULL CHECK (totalRevenue>=0),
+"totalPaidSalary" INTEGER NOT NULL CHECK (totalPaidSalary>=0),
+"profit" INTEGER NOT NULL CHECK (profit>=0),
+"createdAt" TIMESTAMP(3) NOT NULL, 
+"updatedAt" TIMESTAMP(3) NOT NULL
 };
 
 
