@@ -44,22 +44,78 @@ CREATE TABLE "Employee" (
     "firstName" VARCHAR(30) NOT NULL,
     "lastName" VARCHAR(30) NOT NULL,
     "birthDate" DATE NOT NULL,
-    "revenue" INTEGER NOT NULL CHECK (revenue >= 0),
-    "role" TEXT CHECK (role == 'Manager' || role == 'Clerk'),
-    "salary" INT NOT NULL CHECK (salary >= 0),
-    "numberOfPackages" INT NOT NULL CHECK ('numberOfPackages' >= 0),
-    "address" TEXT NOT NULL,
+    "revenue" INTEGER NOT NULL CHECK ("revenue" >= 0),
+    "role" TEXT NOT NULL CHECK ("role" == 'Manager' || "role" == 'Clerk' || "role" == 'Driver'),
+    "salary" INTEGER NOT NULL CHECK ("salary" >= 0),
+    "numberOfPackages" INTEGER NOT NULL CHECK ('numberOfPackages' >= 0),
+    "add_St" TEXT NOT NULL,
+    "add_St2" TEXT,
+    "add_City" TEXT NOT NULL,
+    "add_State" TEXT NOT NULL,
+    "add_ZipCode" INTEGER NOT NULL,
     "startDate" DATE NOT NULL,
     "createAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "createdBy" VARCHAR(30) NOT NULL,
+    "createdBy" TEXT NOT NULL,
     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedBy" VARCHAR(30) NOT NULL,
+    "updatedBy" TEXT NOT NULL,
 
     CONSTRAINT "Employee_pkey" PRIMARY KEY ("id")
 );
 
 CREATE TABLE "Work_For" (
-    "hours" int NOT NULL
+    "hours" INTEGER NOT NULL
+);
+
+CREATE TABLE "Post_Office_Loactions" (
+    "locationID" TEXT NOT NULL, --Pkey
+    "add_St" TEXT NOT NULL,
+    "add_St2" TEXT,
+    "add_City" TEXT NOT NULL,
+    "add_State" TEXT NOT NULL,
+    "add_ZipCode" INTEGER NOT NULL,
+    "manager" TEXT NOT NULL,    --uses Fkey
+
+    CONSTRAINT "location_pkey" PRIMARY KEY ("locationID"),
+    CONSTRAINT "FK_EmployeeManager" FOREIGN KEY ("manager") REFERENCES "Employee"("id")
+);
+
+CREATE TABLE "Reveiver_Info" (  --the package that is getting sent to
+    "receiver_ID" TEXT NOT NULL, --Pkey
+    "firstName" TEXT NOT NULL,
+    "lastName" TEXT NOT NULL,
+    "add_St" TEXT NOT NULL,
+    "add_St2" TEXT,
+    "add_State" TEXT NOT NULL,
+    "add_ZipCode" INTEGER NOT NULL,
+
+    CONSTRAINT "receiver_pkey" PRIMARY KEY ("receiver_ID")
+
+);
+
+CREATE TABLE "Package" (
+    "package_ID" TEXT NOT NULL,
+    "cost" INTEGER NOT NULL,
+    "sender" TEXT NOT NULL, --refer to Customer account
+    "receiver" TEXT NOT NULL, --refer to Reveiver_Info... the id is not made yet
+    "status" TEXT, --check constraint need to be added (Accepted, In Transit, Out for Delivery, Unsuccessful Attempts)
+    "currentLocation" TEXT NOT NULL, --refer to history
+    "createdAt" DATE NOT NULL,
+    "createdBy" TEXT NOT NULL, --Employee ID
+    "updatedAt" DATE NOT NULL,
+    "updatedBy" TEXT NOT NULL, --Employee ID
+
+    CONSTRAINT "package_pkey" PRIMARY KEY ("package_ID"),
+
+);
+
+CREATE TABLE "History" (
+    "package_ID" TEXT NOT NULL,
+    "originLocation" TEXT NOT NULL,
+    "inTransitLocation1" TEXT NOT NULL,
+    "inTransitLocation2" TEXT,
+    "finalLocation" TEXT NOT NULL,
+
+    CONSTRAINT "FK_Package_ID" FOREIGN KEY ("package_ID") REFERENCES "Package"("package_ID")
 );
 
 CREATE TABLE "customerAccount" (
