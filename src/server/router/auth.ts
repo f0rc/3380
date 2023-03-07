@@ -1,9 +1,8 @@
 import { hash, verify } from "argon2";
 import { randomUUID } from "crypto";
 import { TRPCError } from "@trpc/server";
-import { publicProcedure, router } from "../utils/trpc";
+import { protectedProcedure, publicProcedure, router } from "../utils/trpc";
 import { loginSchema, signUpSchema } from "../auth/authSchema";
-import { z } from "zod";
 import { AuthUser } from "src/utils/auth";
 import Cookies from "cookies";
 
@@ -86,6 +85,13 @@ export const credRouter = router({
         user,
       };
     }),
+  logout: protectedProcedure.mutation(async ({ ctx }) => {
+    const { postgresQuery, session } = ctx;
+
+    postgresQuery(`DELETE FROM "Sessions" where "userId" = $1`, [
+      session.user.id,
+    ]);
+  }),
 });
 
 export const mapDBUserToUser = (dbUser: any): AuthUser => {
