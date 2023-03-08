@@ -4,7 +4,7 @@ CREATE TABLE "Employee" (
     "lastName" VARCHAR(30) NOT NULL,
     "birthDate" DATE NOT NULL,
 
-    "role" TEXT NOT NULL CHECK ("role" == 'Manager' || "role" == 'Clerk' || "role" == 'Driver'),
+    "role" TEXT NOT NULL CHECK ("role" IN('Manager','Clerk', 'Driver' )),
     "salary" INTEGER NOT NULL CHECK ("salary" >= 0),
 
     "add_Street" TEXT NOT NULL,
@@ -20,25 +20,6 @@ CREATE TABLE "Employee" (
 
     CONSTRAINT "Employee_pkey" PRIMARY KEY ("id")
 );
-
-
-CREATE TABLE "Package" (
-    "package_ID" TEXT NOT NULL,
-    "cost" INTEGER NOT NULL, --pennies 
-    "sender" TEXT NOT NULL, --refer to Customer account
-    "receiver" TEXT NOT NULL, --refer to Reveiver_Info... the id is not made yet
-    "packageLocationHistory_ID" TEXT NOT NULL, --refer to history
-    "createdAt" DATE NOT NULL,
-    "createdBy" TEXT NOT NULL, --Employee ID
-    "updatedAt" DATE NOT NULL,
-    "updatedBy" TEXT NOT NULL, --Employee ID
-
-    CONSTRAINT "package_pkey" PRIMARY KEY ("package_ID"),
-    CONSTRAINT "package_sender_fkey" FOREIGN KEY ("sender") REFERENCES "Customers"("id") ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT "package_receiver_fkey" FOREIGN KEY ("receiver") REFERENCES "Customers"("id") ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT "package_locationHistory_fkey" FOREIGN KEY ("packageLocationHistory_ID") REFERENCES "Package_Location_History"("locationHistoryID") ON DELETE CASCADE ON UPDATE CASCADE,
-);
-
 
 CREATE TABLE "Customers" (
     "customerID" TEXT NOT NULL,
@@ -58,17 +39,15 @@ CREATE TABLE "Customers" (
     CONSTRAINT "customerAccount_pkey" PRIMARY KEY ("customerID")
 );
 
-
 CREATE TABLE "Package_Location_History" (
     "locationHistoryID" TEXT NOT NULL,
     "package_ID" TEXT NOT NULL,
     "loction_ID" TEXT NOT NULL,
     -- make a status
-    "status" TEXT NOT NULL CHECK ("status" == 'Accepted' || "status" == 'In Transit' || "status" == 'Out for Delivery' || "status" == 'Unsuccessful Attempts')
+    "status" TEXT NOT NULL CHECK ("status" IN('Accepted', 'In Transit', 'Out for Delivery', 'Unsuccessful Attempts')),
     "createdAt" DATE NOT NULL,
 
-    CONSTRAINT "locationHistory_pkey" PRIMARY KEY ("locationHistoryID"),
-    CONSTRAINT "FK_Package_ID" FOREIGN KEY ("package_ID") REFERENCES "Package"("package_ID")
+    CONSTRAINT "locationHistory_pkey" PRIMARY KEY ("locationHistoryID")
 
     -- "originLocation" TEXT NOT NULL,
     -- "inTransitLocation1" TEXT NOT NULL,
@@ -76,6 +55,24 @@ CREATE TABLE "Package_Location_History" (
     -- "finalLocation" TEXT NOT NULL,
 );
 
+CREATE TABLE "Package" (
+    "package_ID" TEXT NOT NULL,
+    "cost" INTEGER NOT NULL, --pennies 
+    "sender" TEXT NOT NULL, --refer to Customer account
+    "receiver" TEXT NOT NULL, --refer to Reveiver_Info... the id is not made yet
+    "packageLocationHistory_ID" TEXT NOT NULL, --refer to history
+    "createdAt" DATE NOT NULL,
+    "createdBy" TEXT NOT NULL, --Employee ID
+    "updatedAt" DATE NOT NULL,
+    "updatedBy" TEXT NOT NULL, --Employee ID
+
+    CONSTRAINT "package_pkey" PRIMARY KEY ("package_ID"),
+    CONSTRAINT "package_sender_fkey" FOREIGN KEY ("sender") REFERENCES "Customers"("customerID") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "package_receiver_fkey" FOREIGN KEY ("receiver") REFERENCES "Customers"("customerID") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "package_locationHistory_fkey" FOREIGN KEY ("packageLocationHistory_ID") REFERENCES "Package_Location_History"("locationHistoryID") ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+ALTER TABLE "Package_Location_History" ADD CONSTRAINT "FK_Package_ID" FOREIGN KEY ("package_ID") REFERENCES "Package"("package_ID") ON UPDATE CASCADE ON DELETE CASCADE;
 
 CREATE TABLE "Post_Office_Loactions" (
     "location_ID" TEXT NOT NULL, --Pkey
@@ -96,7 +93,7 @@ CREATE TABLE "Post_Office_Loactions" (
     "updatedBy" TEXT NOT NULL, --Employee ID
     
 
-    CONSTRAINT "location_pkey" PRIMARY KEY ("locationID"),
+    CONSTRAINT "location_pkey" PRIMARY KEY ("location_ID"),
     CONSTRAINT "FK_PostOffice_Loaction_Manager" FOREIGN KEY ("manager") REFERENCES "Employee"("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
@@ -111,7 +108,7 @@ CREATE TABLE "Work_For" (
     CONSTRAINT "check_hours" CHECK (hours > 0 AND hours < 168)
 );
 
-CREATE TABLE "Company"{
+CREATE TABLE "Company"(
     "id" TEXT NOT NULL,
     "ceo_fistName" VARCHAR(30) NOT NULL,
     "ceo_lastName" VARCHAR(30) NOT NULL,
@@ -126,32 +123,14 @@ CREATE TABLE "Company"{
     "revenue" INTEGER NOT NULL,
     "profit" INTEGER NOT NULL,
     "createdAt" DATE NOT NULL,
-    "updatedAt" DATE NOT NULL
+    "updatedAt" DATE NOT NULL,
 
     CONSTRAINT "company_pkey" PRIMARY KEY ("id")
-};
-
-CREATE TABLE "Driver" (
-    "DriverID" TEXT NOT NULL PRIMARY KEY,
-    "EmployeeID" TEXT NOT NULL,
-    "TruckID" TEXT NOT NULL,
-    "LicenseNumber" VARCHAR(20) NOT NULL,
-    FOREIGN KEY ("TruckID") REFERENCES "Trucks"("TruckID"),
-    FOREIGN KEY ("EmployeeID") REFERENCES "Employee"("EmployeeID")
 );
-
-CREATE TABLE "Clerk" (
-    "ClerkID" TEXT NOT NULL PRIMARY KEY,
-    "EmployeeID" TEXT NOT NULL,
-    "numberOfPackages" INTEGER NOT NULL CHECK ('numberOfPackages' >= 0),
-    "revenue" INTEGER NOT NULL CHECK ("revenue" >= 0),
-    FOREIGN KEY ("EmployeeID") REFERENCES "Employee"("EmployeeID")
-);
-
-CREATE TABLE Truck (
+CREATE TABLE "Truck" (
     "truckID" TEXT NOT NULL PRIMARY KEY,
-    "truckType" VARCHAR(20) NOT NULL CHECK ("truckType" == 'llv' || "truckType" == 'van' || "truckType" == 'semitruck'),
-    "truckStatus" VARCHAR(20) NOT NULL CHECK ("truckStatus" == 'available' || "truckStatus" == 'out' || "truckStatus" == 'inactive'),
+    "truckType" VARCHAR(20) NOT NULL CHECK ("truckType" IN('llv','van', 'semitruck')),
+    "truckStatus" VARCHAR(20) NOT NULL CHECK ("truckStatus" IN('available', 'out', 'inactive')),
     "truckLocation" TEXT NOT NULL,
     "nextMaintenance" DATE NOT NULL,
     "createdAt" DATE NOT NULL,
@@ -159,6 +138,23 @@ CREATE TABLE Truck (
 
 
     FOREIGN KEY ("truckLocation") REFERENCES "Post_Office_Loactions"("location_ID")
+);
+
+CREATE TABLE "Driver" (
+    "DriverID" TEXT NOT NULL PRIMARY KEY,
+    "EmployeeID" TEXT NOT NULL,
+    "TruckID" TEXT NOT NULL,
+    "LicenseNumber" VARCHAR(20) NOT NULL,
+    FOREIGN KEY ("TruckID") REFERENCES "Truck"("truckID"),
+    FOREIGN KEY ("EmployeeID") REFERENCES "Employee"("id")
+);
+
+CREATE TABLE "Clerk" (
+    "ClerkID" TEXT NOT NULL PRIMARY KEY,
+    "EmployeeID" TEXT NOT NULL,
+    "numberOfPackages" INTEGER NOT NULL CHECK ("numberOfPackages" >= 0),
+    "revenue" INTEGER NOT NULL CHECK ("revenue" >= 0),
+    FOREIGN KEY ("EmployeeID") REFERENCES "Employee"("id")
 );
 
 CREATE TABLE "Dependents" (
@@ -170,8 +166,28 @@ CREATE TABLE "Dependents" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT "Dependent_pkey" PRIMARY KEY ("id")
-    FOREIGN KEY ("EmployeeID") REFERENCES "Employee"("EmployeeID")
+    CONSTRAINT "Dependent_pkey" PRIMARY KEY ("id"),
+    FOREIGN KEY ("EmployeeID") REFERENCES "Employee"("id")
+);
+
+CREATE TABLE "Product" (
+    "ProductID" TEXT NOT NULL,
+    "ItemName" TEXT NOT NULL,
+    "Cost" INT NOT NULL, --cost to buy
+    "MSRP" INT NOT NULL, --cost to sell MSRP = Manufacturer Suggested Retail Price
+
+    CONSTRAINT "ProductID" PRIMARY KEY ("ProductID")
+);
+
+CREATE TABLE "Order" (
+    "OrderID" TEXT NOT NULL,
+    "ProductID" TEXT NOT NULL,
+    "Qty" SMALLINT NOT NULL,
+    "DateOfPurchase" DATE NOT NULL DEFAULT CURRENT_DATE, 
+    "updatedBy" TEXT NOT NULL, 
+
+    PRIMARY KEY ("OrderID"),
+    FOREIGN KEY ("ProductID") REFERENCES "Product"("ProductID")
 );
 
 CREATE TABLE "Users" (
@@ -183,14 +199,6 @@ CREATE TABLE "Users" (
     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
-);
-
-CREATE TABLE "Example" (
-    "id" TEXT NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT "Example_pkey" PRIMARY KEY ("id")
 );
 
 CREATE TABLE "Sessions" (
@@ -209,18 +217,3 @@ CREATE UNIQUE INDEX "Session_sessionToken_key" ON "Sessions"("sessionToken");
 CREATE UNIQUE INDEX "User_email_key" ON "Users"("email");
 
 ALTER TABLE "Sessions" ADD CONSTRAINT "Session_userId_fkey" FOREIGN KEY ("userId") REFERENCES "Users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- trigger function to update the updatedAt column on update
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW."updatedAt" = now();
-    RETURN NEW;
-END;
-$$ language 'plpgsql';
-
--- trigger for the Example table
-CREATE TRIGGER update_example_updated_at BEFORE UPDATE ON "Example" FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
-
--- create trigger for the User table
-CREATE TRIGGER update_user_updated_at BEFORE UPDATE ON "Users" FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
