@@ -91,6 +91,18 @@ export const credRouter = router({
     postgresQuery(`DELETE FROM "Sessions" where "userId" = $1`, [
       session.user.id,
     ]);
+
+    const cookies = new Cookies(ctx.req, ctx.res);
+    cookies.set("auth-session-id", "", {
+      expires: new Date(0),
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+    });
+
+    return {
+      status: "success",
+    };
   }),
 });
 
