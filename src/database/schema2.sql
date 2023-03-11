@@ -195,6 +195,7 @@ CREATE TABLE "Users" (
     "name" VARCHAR(255) NOT NULL,
     "email" VARCHAR(255) NOT NULL,
     "password" TEXT NOT NULL,
+    "role" TEXT DEFAULT 'Customer' NOT NULL CHECK ("role" IN('Manager','Clerk', 'Driver', 'Customer' )),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     
