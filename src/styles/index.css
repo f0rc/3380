@@ -3,6 +3,10 @@
 @tailwind utilities;
 
 
+.body{
+    @apply bg-zinc-900 text-zinc-100
+}
+
 .inputFieldRegister {
     @apply border-b border-zinc-700 bg-transparent p-2 text-xl transition-all duration-300 ease-in-out focus:border-[hsl(280,100%,70%)] focus:outline-none
 }

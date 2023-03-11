@@ -3,7 +3,7 @@ import { useSession } from "../auth/SessionProvider";
 
 const About = () => {
   return (
-    <div>
+    <div className="flex">
       <h1>About</h1>
       <p>go to / anything to see error page</p>
     </div>

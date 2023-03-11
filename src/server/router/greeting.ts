@@ -15,6 +15,6 @@ export const greetingRouter = router({
     }),
 
   secretMessage: protectedProcedure.query(() => {
-    return "This is a secret message";
+    return "This is the pacer test";
   }),
 });
