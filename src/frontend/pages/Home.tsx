@@ -18,7 +18,7 @@ const Home = () => {
     }
   }, [user]);
   return (
-    <div>
+    <div className="bg-gray-500 min-h-screen w-full">
       <h2 className="">Home</h2>
       <p>{hello?.greeting}</p>
       {user?.user && (
@@ -30,6 +30,7 @@ const Home = () => {
       {protectMessage && (
         <div>
           <p>Secret message: {protectMessage}</p>
+          <p>THIS USER's ROLE {user?.user?.role}</p>
         </div>
       )}
     </div>
