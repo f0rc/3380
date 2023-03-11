@@ -30,17 +30,17 @@ const Login = () => {
     },
   });
 
-  const onSubmit = useCallback(
-    async (data: LoginInput) => {
-      try {
-        const result = await mutateAsync(data);
-        console.log(result);
-      } catch (err) {
-        console.log(err);
+  const onSubmit = async (data: LoginInput) => {
+    try {
+      const result = await mutateAsync(data);
+      console.log(result);
+      if (result.status === "success") {
+        navigate("/");
       }
-    },
-    [mutateAsync, navigate]
-  );
+    } catch (err) {
+      console.log(err);
+    }
+  };
 
   const handleInputChange = () => {
     setErr("");
@@ -48,7 +48,7 @@ const Login = () => {
   };
   return (
     <div>
-      <main className="flex min-h-screen flex-col items-center justify-center bg-gray-800 text-black">
+      <main className="flex min-h-screen flex-col items-center justify-center bg-violet-900 text-black">
         <form
           className="form-floating text-white"
           onSubmit={handleSubmit(onSubmit)}
@@ -56,7 +56,7 @@ const Login = () => {
           <div className="">
             <div className="container flex w-full flex-col items-center justify-center gap-12 px-4 py-16">
               <h2 className="text-5xl font-extrabold tracking-tight text-white sm:text-[5rem]">
-                Create an account!
+                Login
               </h2>
               {err && <p className="text-red-500">{err}</p>}
               <input

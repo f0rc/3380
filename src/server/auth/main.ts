@@ -47,11 +47,14 @@ export const getDatabaseSession = async (sessionToken: string) => {
 };
 
 export const mapDBSessionToSession = (dbSession: any): Session => {
+  console.log(dbSession);
   const expires = new Date(dbSession.expires);
   return {
     expires,
     user: {
       id: dbSession.userId,
+      email: dbSession.email,
+      role: dbSession.role,
     },
   };
 };

@@ -18,6 +18,7 @@ export interface Session {
 export interface DefaultSession {
   user?: {
     email?: string | null;
+    role: string;
     // add more properties here
   };
 }
