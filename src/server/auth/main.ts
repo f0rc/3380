@@ -6,10 +6,6 @@ export const getServerAuthSession = async (ctx: {
   req: IncomingMessage;
   res: ServerResponse;
 }) => {
-  // ctx.req.headers.cookie?.split(";").forEach((cookie) => {
-  //   console.log("printing cookies " + cookie);
-  // });
-
   const sessionId = ctx.req.headers.cookie
     ?.split(";")
     .map((cookie) => cookie.trim())
@@ -27,7 +23,7 @@ export const getServerAuthSession = async (ctx: {
 
 export const getDatabaseSession = async (sessionToken: string) => {
   const data = await postgresQuery(
-    `SELECT "Sessions"."sessionToken","Sessions"."expires", "Users"."email", "Users"."role" FROM "Sessions", "Users" WHERE "sessionToken" = $1 LIMIT 1`,
+    `SELECT "Sessions"."sessionToken","Sessions"."expires", "Users"."id", "Users"."email", "Users"."role" FROM "Sessions", "Users" WHERE "sessionToken" = $1 AND "Users"."id" = "Sessions"."userId" LIMIT 1`,
     [sessionToken]
   );
   if (data.rowCount === 0) {
@@ -46,10 +42,13 @@ export const getDatabaseSession = async (sessionToken: string) => {
 
 export const mapDBSessionToSession = (dbSession: any): Session => {
   const expires = new Date(dbSession.expires);
+
+  console.log("HEHEHEH", dbSession.id);
+
   return {
     expires,
     user: {
-      id: dbSession.userId,
+      id: dbSession.id,
       email: dbSession.email,
       role: dbSession.role,
     },

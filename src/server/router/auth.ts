@@ -17,7 +17,7 @@ export const credRouter = router({
         `select * from "Users" where "email"= $1 LIMIT 1`,
         [email]
       );
-      console.log(existingUser);
+
       if (existingUser.rowCount > 0) {
         //todo: throw error
         throw new TRPCError({
@@ -36,7 +36,7 @@ export const credRouter = router({
 
       return {
         status: "success",
-        user: result.rows,
+        // user: result.rows,
       };
     }),
 
@@ -46,8 +46,9 @@ export const credRouter = router({
       const { postgresQuery } = ctx;
       const { email, password } = input;
 
+      // console.log("email", email);
       const data = await postgresQuery(
-        `SELECT * FROM "Users" WHERE email = $1`,
+        `SELECT * FROM "Users" WHERE email = $1;`,
         [email]
       );
 
@@ -60,7 +61,10 @@ export const credRouter = router({
         });
       }
 
+      // console.log("data", data);
+
       const user = mapDBUserToUser(data.rows[0]);
+      // console.log("user", user);
 
       const sessionToken = randomUUID();
       const sessionMaxAge = 60 * 60 * 24 * 7; // 7 days
@@ -68,10 +72,9 @@ export const credRouter = router({
 
       //creating a session
       await postgresQuery(
-        `INSERT INTO "Sessions" ("id", "userId", "sessionToken", "expires") VALUES ($1, $2, $3, $4)`,
+        `INSERT INTO "Sessions" ("id", "userId", "sessionToken", "expires") VALUES ($1, $2, $3, $4);`,
         [sessionToken, user.id, sessionToken, sessionexpires]
       );
-
       const cookies = new Cookies(ctx.req, ctx.res);
       cookies.set("auth-session-id", sessionToken, {
         expires: sessionexpires,
@@ -88,6 +91,7 @@ export const credRouter = router({
   logout: protectedProcedure.mutation(async ({ ctx }) => {
     const { postgresQuery, session } = ctx;
 
+    console.log(session.user.id);
     postgresQuery(`DELETE FROM "Sessions" where "userId" = $1`, [
       session.user.id,
     ]);
@@ -107,6 +111,7 @@ export const credRouter = router({
 });
 
 export const mapDBUserToUser = (dbUser: any): AuthUser => {
+  console.log("dbUser", dbUser);
   return {
     id: dbUser.id,
     email: dbUser.email,
