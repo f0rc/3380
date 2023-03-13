@@ -3,12 +3,12 @@
 @tailwind utilities;
 
 
-.body{
-    @apply bg-zinc-900 text-zinc-100
+body{
+    @apply darkColor-2 text-zinc-100
 }
 
 .inputFieldRegister {
-    @apply border-b border-zinc-700 bg-transparent p-2 text-xl transition-all duration-300 ease-in-out focus:border-[hsl(280,100%,70%)] focus:outline-none
+    @apply border-b border-zinc-700 bg-transparent p-2 text-xl transition-colors  ease-in-out focus:border-[hsl(280,100%,70%)] focus:outline-none
 }
 
 .navItem {
@@ -16,5 +16,39 @@
 }
 
 .navItemActive {
-    @apply block py-2 pl-3 pr-4 rounded bg-transparent text-yellow-500 p-0
+    @apply block py-2 pl-3 pr-4 rounded bg-transparent text-[hsl(280,100%,70%)] p-0
+}
+
+.navInactive{
+    @apply block py-2 pl-3 pr-4 rounded bg-transparent text-white p-0
+}
+
+.pushDown {
+    @apply p-14
+}
+
+.whiteColor {
+    @apply bg-[#f2e9e4]
+}
+.darkColor {
+    @apply bg-[#242423]
+}
+.darkColor-2 {
+    @apply bg-[#1a1a19]
+}
+.darkColor-3 {
+    @apply bg-[#3a3a39]
+}
+.highLight {
+    @apply bg-[hsl(280,100%,70%)]
+}
+.highlightText {
+    @apply text-[hsl(280,100%,70%)]
+}
+.buttonHover {
+    @apply hover:bg-[hsl(280,100%,70%)]
+}
+
+.formButton {
+    @apply rounded-t-xl border-b border-[hsl(280,100%,70%)] py-2 px-4 text-center text-lg hover:bg-zinc-800
 }

@@ -22,30 +22,34 @@ CREATE TABLE "Employee" (
 );
 
 CREATE TABLE "Customers" (
+    "userID" TEXT, --nullable because the cutomer is created when the employee makes a pkg
     "customerID" TEXT NOT NULL,
-    "firstName" VARCHAR(30) NOT NULL,
-    "lastName" VARCHAR(30) NOT NULL,
+    "firstName" TEXT NOT NULL,
+    "lastName" TEXT NOT NULL,
+    "email" TEXT NOT NULL UNIQUE,
+    "phoneNumber" TEXT NOT NULL,
+    
     "street" TEXT NOT NULL,
     "street_2" TEXT,
     "city" TEXT NOT NULL,
     "state" TEXT NOT NULL,
-    "zipCode" INTEGER NOT NULL,
-    "phoneNumber" INTEGER NOT NULL,
-    "email" TEXT NOT NULL,
-    "updatedAt" Date NOT NULL,
-    "updatedBy" VARCHAR(30) NOT NULL,
-    "createdAt" DATE NOT NULL,
+    "zipCode" TEXT NOT NULL,
+    
+    "updatedAt" Date NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedBy" TEXT NOT NULL,
+    "createdAt" DATE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdBy" TEXT NOT NULL,
 
     CONSTRAINT "customerAccount_pkey" PRIMARY KEY ("customerID")
 );
 
 CREATE TABLE "Package_Location_History" (
     "locationHistoryID" TEXT NOT NULL,
-    "package_ID" TEXT NOT NULL,
-    "loction_ID" TEXT NOT NULL,
+    "packageID" TEXT NOT NULL,
+    "loctionID" TEXT NOT NULL,
     -- make a status
     "status" TEXT NOT NULL CHECK ("status" IN('Accepted', 'In Transit', 'Out for Delivery', 'Unsuccessful Attempts')),
-    "createdAt" DATE NOT NULL,
+    "createdAt" DATE NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "locationHistory_pkey" PRIMARY KEY ("locationHistoryID")
 
@@ -56,26 +60,27 @@ CREATE TABLE "Package_Location_History" (
 );
 
 CREATE TABLE "Package" (
-    "package_ID" TEXT NOT NULL,
-    "cost" INTEGER NOT NULL, --pennies 
-    "sender" TEXT NOT NULL, --refer to Customer account
-    "receiver" TEXT NOT NULL, --refer to Reveiver_Info... the id is not made yet
-    "packageLocationHistory_ID" TEXT NOT NULL, --refer to history
-    "createdAt" DATE NOT NULL,
+    "packageID" TEXT NOT NULL,
+    "cost" TEXT NOT NULL, --pennies 
+    "weight" TEXT NOT NULL, --pounds
+    "type" TEXT NOT NULL CHECK ("type" IN('Envelope', 'Box', 'Other')),
+    "size" TEXT NOT NULL CHECK ("size" IN('Small', 'Medium', 'Large', 'Extra Large')),
+    "senderID" TEXT NOT NULL, --refer to Sender_Info
+    "receiverID" TEXT NOT NULL, --refer to Reveiver_Info... the id is not made yet
+    "createdAt" DATE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "createdBy" TEXT NOT NULL, --Employee ID
-    "updatedAt" DATE NOT NULL,
+    "updatedAt" DATE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedBy" TEXT NOT NULL, --Employee ID
 
-    CONSTRAINT "package_pkey" PRIMARY KEY ("package_ID"),
-    CONSTRAINT "package_sender_fkey" FOREIGN KEY ("sender") REFERENCES "Customers"("customerID") ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT "package_receiver_fkey" FOREIGN KEY ("receiver") REFERENCES "Customers"("customerID") ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT "package_locationHistory_fkey" FOREIGN KEY ("packageLocationHistory_ID") REFERENCES "Package_Location_History"("locationHistoryID") ON DELETE CASCADE ON UPDATE CASCADE
+    CONSTRAINT "package_pkey" PRIMARY KEY ("packageID"),
+    CONSTRAINT "package_sender_fkey" FOREIGN KEY ("senderID") REFERENCES "Customers"("customerID") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "package_receiver_fkey" FOREIGN KEY ("receiverID") REFERENCES "Customers"("customerID") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-ALTER TABLE "Package_Location_History" ADD CONSTRAINT "FK_Package_ID" FOREIGN KEY ("package_ID") REFERENCES "Package"("package_ID") ON UPDATE CASCADE ON DELETE CASCADE;
+ALTER TABLE "Package_Location_History" ADD CONSTRAINT "FK_PackageID" FOREIGN KEY ("packageID") REFERENCES "Package"("packageID") ON UPDATE CASCADE ON DELETE CASCADE;
 
 CREATE TABLE "Post_Office_Loactions" (
-    "location_ID" TEXT NOT NULL, --Pkey
+    "locationID" TEXT NOT NULL, --Pkey
     "locationName" TEXT NOT NULL,
     "street" TEXT NOT NULL,
     "street_2" TEXT,
@@ -87,24 +92,24 @@ CREATE TABLE "Post_Office_Loactions" (
     "manager" TEXT NOT NULL,    --uses Fkey
 
 
-    "createdAt" DATE NOT NULL,
+    "createdAt" DATE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "createdBy" TEXT NOT NULL, --Employee ID
-    "updatedAt" DATE NOT NULL,
+    "updatedAt" DATE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedBy" TEXT NOT NULL, --Employee ID
     
 
-    CONSTRAINT "location_pkey" PRIMARY KEY ("location_ID"),
+    CONSTRAINT "location_pkey" PRIMARY KEY ("locationID"),
     CONSTRAINT "FK_PostOffice_Loaction_Manager" FOREIGN KEY ("manager") REFERENCES "Employee"("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE "Work_For" (
-    "employee_ID" TEXT NOT NULL, --Pkey 
-    "location_ID" TEXT NOT NULL, --Pkey
+    "employeeID" TEXT NOT NULL, --Pkey 
+    "locationID" TEXT NOT NULL, --Pkey
     "hours" INTEGER NOT NULL,
 
-    CONSTRAINT "workFor_pkey" PRIMARY KEY ("employee_ID", "location_ID"),
-    CONSTRAINT "FK_WorkFor_Employee" FOREIGN KEY ("employee_ID") REFERENCES "Employee"("id") ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT "FK_WorkFor_Location" FOREIGN KEY ("location_ID") REFERENCES "Post_Office_Loactions"("location_ID") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "workFor_pkey" PRIMARY KEY ("employeeID", "locationID"),
+    CONSTRAINT "FK_WorkFor_Employee" FOREIGN KEY ("employeeID") REFERENCES "Employee"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "FK_WorkFor_Location" FOREIGN KEY ("locationID") REFERENCES "Post_Office_Loactions"("locationID") ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT "check_hours" CHECK (hours > 0 AND hours < 168)
 );
 
@@ -122,8 +127,8 @@ CREATE TABLE "Company"(
     "zipCode" INTEGER NOT NULL,
     "revenue" INTEGER NOT NULL,
     "profit" INTEGER NOT NULL,
-    "createdAt" DATE NOT NULL,
-    "updatedAt" DATE NOT NULL,
+    "createdAt" DATE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATE NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "company_pkey" PRIMARY KEY ("id")
 );
@@ -133,11 +138,11 @@ CREATE TABLE "Truck" (
     "truckStatus" VARCHAR(20) NOT NULL CHECK ("truckStatus" IN('available', 'out', 'inactive')),
     "truckLocation" TEXT NOT NULL,
     "nextMaintenance" DATE NOT NULL,
-    "createdAt" DATE NOT NULL,
-    "updatedAt" DATE NOT NULL,
+    "createdAt" DATE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATE NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
 
-    FOREIGN KEY ("truckLocation") REFERENCES "Post_Office_Loactions"("location_ID")
+    FOREIGN KEY ("truckLocation") REFERENCES "Post_Office_Loactions"("locationID")
 );
 
 CREATE TABLE "Driver" (
@@ -218,3 +223,4 @@ CREATE UNIQUE INDEX "Session_sessionToken_key" ON "Sessions"("sessionToken");
 CREATE UNIQUE INDEX "User_email_key" ON "Users"("email");
 
 ALTER TABLE "Sessions" ADD CONSTRAINT "Session_userId_fkey" FOREIGN KEY ("userId") REFERENCES "Users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+

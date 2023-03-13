@@ -10,7 +10,7 @@ const Login = () => {
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, touchedFields },
     clearErrors,
   } = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
@@ -33,7 +33,7 @@ const Login = () => {
   const onSubmit = async (data: LoginInput) => {
     try {
       const result = await mutateAsync(data);
-      console.log(result);
+
       if (result.status === "success") {
         navigate("/");
       }
@@ -48,7 +48,7 @@ const Login = () => {
   };
   return (
     <div>
-      <main className="flex min-h-screen flex-col items-center justify-center bg-violet-900 text-black">
+      <main className="flex min-h-screen flex-col items-center justify-center bg-gray-800 text-black">
         <form
           className="form-floating text-white"
           onSubmit={handleSubmit(onSubmit)}
@@ -87,9 +87,15 @@ const Login = () => {
               {errors.password && (
                 <span className="text-red-500">{errors.password.message}</span>
               )}
+              <p>
+                Don't have an account?{" "}
+                <a href="/signup" className="text-[hsl(280,100%,70%)]">
+                  Signup
+                </a>
+              </p>
               <div className="card-actions flex flex-col items-center justify-between gap-4">
                 <button
-                  className="rounded-t-xl border-b border-[hsl(280,100%,70%)] py-2 px-4 text-center text-lg hover:bg-zinc-800"
+                  className="rounded-t-xl border-b border-[hsl(280,100%,70%)] py-2 px-4 text-center text-lg hover:bg-zinc-800 disabled:"
                   type="submit"
                 >
                   Login

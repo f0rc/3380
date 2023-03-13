@@ -14,6 +14,7 @@
     "dropSchema": "export PGPASSWORD='test'; psql -f ./src/database/drop.sql -h localhost -U test -p 5433 -d test"
   },
   "dependencies": {
+    "@headlessui/react": "0.0.0-insiders.0c0601f",
     "@hookform/resolvers": "^2.9.11",
     "@tanstack/react-query": "^4.24.10",
     "@trpc/client": "^10.12.0",
@@ -24,6 +25,8 @@
     "argon2": "^0.30.3",
     "cookies": "^0.8.0",
     "dotenv": "^16.0.3",
+    "immer": "^9.0.19",
+    "jotai": "^2.0.3",
     "pg": "^8.9.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

@@ -105,6 +105,12 @@ const Signup = () => {
                 <span className="text-red-500">{errors.password.message}</span>
               )}
               <div className="card-actions flex flex-col items-center justify-between gap-4">
+                <p>
+                  Have an account?{" "}
+                  <span className="text-[hsl(280,100%,70%)]">
+                    <a href="/login">Login</a>
+                  </span>
+                </p>
                 <button
                   className="rounded-t-xl border-b border-[hsl(280,100%,70%)] py-2 px-4 text-center text-lg hover:bg-zinc-800"
                   type="submit"
