@@ -17,22 +17,25 @@ const Home = () => {
       refetch();
     }
   }, [user]);
-  return (
-    <div className="bg-gray-500 min-h-screen w-full">
-      <h2 className="">Home</h2>
-      <p>{hello?.greeting}</p>
-      {user?.user && (
-        <div>
-          <p>Logged in as {user.user.email}</p>
-        </div>
-      )}
 
-      {protectMessage && (
-        <div>
-          <p>Secret message: {protectMessage}</p>
-          <p>THIS USER's ROLE {user?.user?.role}</p>
-        </div>
-      )}
+  return (
+    <div className="bg-gray-800 min-h-screen w-full text-white">
+      <div className="container items-center text-3xl">
+        <p>{hello?.greeting}</p>
+        {user?.user && (
+          <div>
+            <p>Logged in as {user.user.email}</p>
+          </div>
+        )}
+
+        {protectMessage && (
+          <div>
+            <p>Secret message: {protectMessage}</p>
+            <p>THIS USER's ROLE {user?.user?.role}</p>
+            <p>userid {user?.user?.id}</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
