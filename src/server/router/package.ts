@@ -1,6 +1,6 @@
 import { randomUUID } from "crypto";
 import { createPackageFormSchema } from "src/frontend/pages/create_package/formSchema";
-import { z } from "zod";
+
 import { protectedProcedure, router } from "../utils/trpc";
 
 export const packageRouter = router({
@@ -22,7 +22,7 @@ export const packageRouter = router({
           console.log("SESSION", ctx.session.expires);
           if (getSenderID.rowCount === 0 || !getSenderID) {
             const senderID = await postgresQuery(
-              `INSERT INTO "Customers" ("customerID", "firstName", "lastName", "email", "phoneNumber", "street", "city", "state", "zipCode", "createdBy", "updatedBy") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING "customerID" as senderID`,
+              `INSERT INTO "Customers" ("customerID", "firstName", "lastName", "email", "phoneNumber", "address_street", "address_city", "address_state", "address_zipcode", "createdBy", "updatedBy") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING "customerID" as senderID`,
               [
                 randomUUID(), //##TODO: make this a uuid in the db automatically /1
                 steps.senderInfo.value.firstName, //2
@@ -48,14 +48,14 @@ export const packageRouter = router({
       };
 
       const getReciver = async () => {
-        const getReciverID = await postgresQuery(
-          `select "Customers"."customerID" AS reciverid FROM "Customers" where "email" = $1`,
+        const getReceiverID = await postgresQuery(
+          `select "Customers"."customerID" AS receiverid FROM "Customers" where "email" = $1`,
           [steps.receiverInfo.value.email]
         );
 
-        if (getReciverID.rowCount === 0 || !getReciverID) {
-          const reciverID = await postgresQuery(
-            `INSERT INTO "Customers" ("customerID", "firstName", "lastName", "email", "phoneNumber", "street", "city", "state", "zipCode", "createdBy", "updatedBy") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING "customerID" as reciverid`,
+        if (getReceiverID.rowCount === 0 || !getReceiverID) {
+          const receiverID = await postgresQuery(
+            `INSERT INTO "Customers" ("customerID", "firstName", "lastName", "email", "phoneNumber", "address_street", "address_city", "address_state", "address_zipcode", "createdBy", "updatedBy") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING "customerID" as receiver ID`,
             [
               randomUUID(), //##TODO: make this a uuid in the db automatically
               steps.receiverInfo.value.firstName,
@@ -70,9 +70,9 @@ export const packageRouter = router({
               ctx.session.user.id, // employeeID
             ]
           );
-          return reciverID.rows[0].reciverid as string;
+          return receiverID.rows[0].receiverid as string;
         } else {
-          return getReciverID.rows[0].reciverid as string;
+          return getReceiverID.rows[0].receiverid as string;
         }
       };
 
@@ -101,13 +101,27 @@ export const packageRouter = router({
         package: makePackage.rows[0] as PackageSchema,
       };
     }),
+
+  packageList: protectedProcedure.query(async ({ ctx }) => {
+    const { postgresQuery } = ctx;
+
+    const packageList = await postgresQuery(
+      `SELECT "Package"."packageID", "Package"."cost", "Package"."senderID", "Package"."receiverID", "Package"."weight", "Package"."type", "Package"."size" FROM "Package" LIMIT 10`,
+      []
+    );
+
+    return {
+      status: "success",
+      packageList: packageList.rows as PackageSchema[],
+    };
+  }),
 });
 
 export interface PackageSchema {
   packageID: string;
   cost: number;
   senderID: string;
-  reciverID: string;
+  receiverID: string;
   packageLocationHistoryID: string;
   weight: number;
   type: string;
