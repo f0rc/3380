@@ -29,7 +29,7 @@ const Layout = () => {
     }
   };
 
-  if (session?.user?.role === "Clerk") {
+  if (session?.user?.role === 1) {
     console.log("clerk");
   }
 
@@ -78,19 +78,44 @@ const Layout = () => {
                   Home
                 </NavLink>
               </li>
+              <li>
+                <NavLink
+                  to="/package-list"
+                  reloadDocument={true}
+                  className={({ isActive }) =>
+                    isActive ? "navItemActive" : "navInactive"
+                  }
+                >
+                  Packages
+                </NavLink>
+              </li>
               {/* Clerk nav items */}
-              {session?.user?.role === "Clerk" && (
-                <li>
-                  <NavLink
-                    to="/create-package"
-                    reloadDocument={true}
-                    className={({ isActive }) =>
-                      isActive ? "navItemActive" : "navInactive"
-                    }
-                  >
-                    Create Package
-                  </NavLink>
-                </li>
+
+              {session?.user?.role && session?.user?.role >= 1 && (
+                <>
+                  <li>
+                    <NavLink
+                      to="/create-package"
+                      reloadDocument={true}
+                      className={({ isActive }) =>
+                        isActive ? "navItemActive" : "navInactive"
+                      }
+                    >
+                      Create Package
+                    </NavLink>
+                  </li>
+                  <li>
+                    <NavLink
+                      to="/create-employee"
+                      reloadDocument={true}
+                      className={({ isActive }) =>
+                        isActive ? "navItemActive" : "navInactive"
+                      }
+                    >
+                      Create Employee
+                    </NavLink>
+                  </li>
+                </>
               )}
             </ul>
           </div>
