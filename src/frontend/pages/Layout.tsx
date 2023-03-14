@@ -1,4 +1,4 @@
-import React, { Children, useEffect, useState } from "react";
+import React, { Children, useEffect, useMemo, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { api } from "src/server/utils/api";
 import { useSession } from "../auth/SessionProvider";
@@ -7,7 +7,18 @@ const Layout = () => {
   const navigatr = useNavigate();
   const user = useSession();
   const [session, setSession] = useState(user);
+
   console.log("session", session);
+
+  console.time("filter array");
+  const extendedNav = useMemo(() => {
+    if (session?.user) {
+      return true;
+    }
+    return false;
+  }, [session]);
+  console.timeEnd("filter array");
+
   useEffect(() => {
     setSession(user);
   }, [user]);
@@ -28,10 +39,6 @@ const Layout = () => {
       navigatr("/login");
     }
   };
-
-  if (session?.user?.role === 1) {
-    console.log("clerk");
-  }
 
   return (
     <>
@@ -91,7 +98,7 @@ const Layout = () => {
               </li>
               {/* Clerk nav items */}
 
-              {session?.user?.role && session?.user?.role >= 1 && (
+              {extendedNav ? (
                 <>
                   <li>
                     <NavLink
@@ -116,7 +123,7 @@ const Layout = () => {
                     </NavLink>
                   </li>
                 </>
-              )}
+              ) : null}
             </ul>
           </div>
         </div>
