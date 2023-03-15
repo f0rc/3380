@@ -8,9 +8,10 @@ export const employeeRouter = router({
     .input(employeeSchema)
     .mutation(async ({ ctx, input }) => {
       const { postgresQuery } = ctx;
+      console.log("sadfasdf");
 
       const dbCreateEmployee = await postgresQuery(
-        `INSERT INTO "Employees" ("id", "firstName", "lastName", "birthDate", "email", "role", "salary", "locationID", "address_street","address_city", "address_state", "address_zipcode", "createdBy", "updatedBy") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING "employeeID" as employeeID`,
+        `INSERT INTO "Employee" ("id", "firstName", "lastName", "birthDate", "email", "role", "salary", "locationID", "address_street","address_city", "address_state", "address_zipcode", "createdBy", "updatedBy") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING "employeeID" as employeeID`,
         [
           randomUUID(), //##TODO: make this a uuid in the db automatically
           input.firstName,

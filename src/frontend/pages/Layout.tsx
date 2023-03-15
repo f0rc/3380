@@ -1,27 +1,26 @@
-import React, { Children, useEffect, useMemo, useState } from "react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import React, {
+  Children,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import { api } from "src/server/utils/api";
-import { useSession } from "../auth/SessionProvider";
+import { AuthContext } from "../auth/SessionProvider";
 
 const Layout = () => {
   const navigatr = useNavigate();
-  const user = useSession();
-  const [session, setSession] = useState(user);
-
-  console.log("session", session);
+  const { authenticated } = useContext(AuthContext);
 
   console.time("filter array");
   const extendedNav = useMemo(() => {
-    if (session?.user) {
+    if (authenticated) {
       return true;
     }
     return false;
-  }, [session]);
+  }, [authenticated]);
   console.timeEnd("filter array");
-
-  useEffect(() => {
-    setSession(user);
-  }, [user]);
 
   // handle login logout
 
@@ -32,11 +31,11 @@ const Layout = () => {
   });
 
   const handleLogout = async () => {
-    localStorage.removeItem("token");
+    localStorage.removeItem("auth-session-id");
     const result = await mutateAsync();
     if (result.status == "success") {
-      setSession(null);
       navigatr("/login");
+      window.location.reload();
     }
   };
 
@@ -50,7 +49,7 @@ const Layout = () => {
             </span>
           </a>
           <div className="flex order-2">
-            {session ? (
+            {authenticated ? (
               <button
                 onClick={() => {
                   handleLogout();
@@ -60,12 +59,12 @@ const Layout = () => {
                 logout
               </button>
             ) : (
-              <a
-                href="/login"
+              <Link
+                to="/login"
                 className="focus:ring-4 focus:outline-none font-medium rounded-lg text-sm px-5 py-2 text-center mr-0  hover:bg-blue-700 ring-blue-800 text-white border-b border-[hsl(280,100%,70%)]"
               >
                 login
-              </a>
+              </Link>
             )}
           </div>
           <div

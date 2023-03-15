@@ -36,6 +36,7 @@ const Login = () => {
 
       if (result.status === "success") {
         navigate("/");
+        window.location.reload();
       }
     } catch (err) {
       console.log(err);

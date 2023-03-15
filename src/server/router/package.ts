@@ -55,7 +55,7 @@ export const packageRouter = router({
 
         if (getReceiverID.rowCount === 0 || !getReceiverID) {
           const receiverID = await postgresQuery(
-            `INSERT INTO "Customers" ("customerID", "firstName", "lastName", "email", "phoneNumber", "address_street", "address_city", "address_state", "address_zipcode", "createdBy", "updatedBy") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING "customerID" as receiver ID`,
+            `INSERT INTO "Customers" ("customerID", "firstName", "lastName", "email", "phoneNumber", "address_street", "address_city", "address_state", "address_zipcode", "createdBy", "updatedBy") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING "customerID" as receiverid`,
             [
               randomUUID(), //##TODO: make this a uuid in the db automatically
               steps.receiverInfo.value.firstName,

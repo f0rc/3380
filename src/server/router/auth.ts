@@ -111,7 +111,6 @@ export const credRouter = router({
 });
 
 export const mapDBUserToUser = (dbUser: any): AuthUser => {
-  console.log("dbUser", dbUser);
   return {
     id: dbUser.id,
     email: dbUser.email,
