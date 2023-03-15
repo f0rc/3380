@@ -1,38 +1,46 @@
 import "bootstrap/dist/css/bootstrap.min.css"
 import { Container, Button, Col, Row, Card } from "react-bootstrap"
+import { createContext, ReactNode, useContext, useState } from "react"
 
 const items = [
     {
+        id: 1,
         name: "Stamps",
         price: .25,
         imgUrl: "https://cdn.staticswin.com/uploads/39817/cart/resources/20230218/AD143B45-C2D3-E566-33E8-8EAFC5D646DC.jpg"
     },
     {
+        id: 2,
         name: "Scotch Tape",
         price: 2.99,
         imgUrl: "https://multimedia.3m.com/mws/media/1318883P/scotch-shipping-packaging-tape-heavy-duty.jpg"
     },
     {
+        id: 3,
         name: "Letter Envelopes",
         price: .99,
         imgUrl: "https://media.officedepot.com/images/f_auto,q_auto,e_sharpen,h_450/products/219330/219330_o01_081021/219330"
     },
     {
+        id: 4,
         name: "Manilla Envelopes",
         price: 1.99,
         imgUrl: "https://images.squarespace-cdn.com/content/v1/57c4f32d15d5db84098dd95a/1491793761282-33BLO9BF5JNXTGTAPD56/IMG_6386.jpg?format=1000w"
     },
     {
+        id: 5,
         name: "Small Box",
         price: 3.99,
         imgUrl: "https://www.usps.com/c360/images/Small-FRB-0713.png?_gl=1*qjml5s*_ga*MTMxMTkzODA0NS4xNjc4ODUxMjEx*_ga_3NXP3C8S9V*MTY3ODg1MTIxMS4xLjAuMTY3ODg1MTIxMS4wLjAuMA.."
     },
     {
+        id: 6,
         name: "Medium Box",
         price: 5.99,
         imgUrl: "https://www.usps.com/ecp/asset/images/O_FRB1-T0.jpg"
     },
     {
+        id: 7,
         name: "Large Box",
         price: 7.99,
         imgUrl: "https://images.thdstatic.com/productImages/50302b46-831e-47ba-9584-3b8ffc9b266d/svn/pratt-retail-specialties-moving-boxes-lgmvbox10pk-64_300.jpg"
@@ -40,13 +48,19 @@ const items = [
 ]
 
 type StoreItemProps = {
+    id: number
     name: string
     price: number
     imgUrl: string
 }
-
-export function StoreItem({ name, price, imgUrl }: StoreItemProps){
-    const quantity = 0
+//Conponent, creates format for each item we have for sell including buttons to add to cart or remove from cart
+export function StoreItem({ id, name, price, imgUrl }: StoreItemProps){
+    const {
+        getItemQuantity,
+        increaseCartQuantity,
+        decreaseCartQuantity,
+        removeFromCart } = useShoppingCart()
+    const quantity = getItemQuantity(id)
     return (
         <Card className="h-50">
             <Card.Img
@@ -62,7 +76,9 @@ export function StoreItem({ name, price, imgUrl }: StoreItemProps){
                 </Card.Title>
                 <div className="mt-auto">
                     {quantity === 0 ? (
-                        <Button className="w-100">+ Add To Cart</Button>
+                        <Button className="w-100" onClick={() => increaseCartQuantity(id)}>
+                            + Add To Cart
+                        </Button>
                     ) : (
                         <div
                             className="d-flex align-items-center flex-column"
@@ -72,13 +88,13 @@ export function StoreItem({ name, price, imgUrl }: StoreItemProps){
                                 className="d-flex algin-items-center"
                                 style={{ gap: ".5rem" }}
                             >
-                                <Button>-</Button>
+                                <Button onClick={() => decreaseCartQuantity(id)}>-</Button>
                                 <div>
                                     <span className="fs-3">{quantity}</span> in cart
                                 </div>
-                                <Button>+</Button>
+                                <Button onClick={() => increaseCartQuantity(id)}>+</Button>
                             </div>
-                            <Button variant="danger" size="sm">
+                            <Button onClick={() => removeFromCart(id)} variant="danger" size="sm">
                                 Remove
                             </Button>
                         </div>)}
@@ -87,17 +103,93 @@ export function StoreItem({ name, price, imgUrl }: StoreItemProps){
         </Card>
     )
 }
-
+//location of customer, it changes currency to their local area
 const CURRENCY_FORMATTER = new Intl.NumberFormat(undefined, {
     currency: "USD", style: "currency" })
-
+//formats the currency to the correct format
 export function formatCurrency(number: number) {
     return CURRENCY_FORMATTER.format(number)
 }
+
+
+type ShoppingCartProviderProps = {
+    children: ReactNode
+}
+
+type CartItem= {
+    id: number
+    quantity: number
+}
+
+type ShoppingCartContext = {
+    getItemQuantity: (id: number) => number
+    increaseCartQuantity: (id: number) => void
+    decreaseCartQuantity: (id: number) => void
+    removeFromCart: (id: number) => void
+}
+
+const ShoppingCartContext = createContext({} as ShoppingCartContext)
+
+export function useShoppingCart() {
+    return useContext(ShoppingCartContext)
+}
+export function ShoppingCartProvider({ children }: ShoppingCartProviderProps) {
+    const [cartItems, setCartItems] = useState<CartItem[]>([])
+
+    function getItemQuantity(id: number) {
+        return cartItems.find(item => item.id === id)?.quantity || 0
+    }
+
+    function increaseCartQuantity(id: number) {
+        setCartItems(currItems => {
+            if (currItems.find(item => item.id === id) == null) {
+                return [...currItems, { id, quantity: 1}]
+            } else {
+                return currItems.map(item => {
+                    if (item.id === id) {
+                        return { ...item, quantity: item.quantity + 1}
+                    } else {
+                        return item
+                    }
+                })
+            }
+        })
+    }
+
+    function decreaseCartQuantity(id: number) {
+        setCartItems(currItems => {
+            if (currItems.find(item => item.id === id)?.quantity == 1) {
+                return currItems.filter(item => item.id !== id)
+            } else {
+                return currItems.map(item => {
+                    if (item.id === id) {
+                        return { ...item, quantity: item.quantity - 1}
+                    } else {
+                        return item
+                    }
+                })
+            }
+        })
+    }
+
+    function removeFromCart(id: number) {
+        setCartItems(currItems => {
+            return currItems.filter(item => item.id !== id)
+        })
+    }
+
+    return(
+        <ShoppingCartContext.Provider value={{ getItemQuantity, increaseCartQuantity, decreaseCartQuantity, removeFromCart}}>
+            {children}
+        </ShoppingCartContext.Provider>
+    )
+}
+
+//Items we sell on the product page
 const Products = () => {
     return (
         <Container>
-            <Button //Shopping car for products
+            <Button //Shopping cart for products
                 style = {{ width: "3rem", height: "3rem", position: "relative"}} 
                 variant="outline-primary"
                 className="rounded-circle"
