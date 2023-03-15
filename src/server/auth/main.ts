@@ -43,8 +43,6 @@ export const getDatabaseSession = async (sessionToken: string) => {
 export const mapDBSessionToSession = (dbSession: any): Session => {
   const expires = new Date(dbSession.expires);
 
-  console.log("HEHEHEH", dbSession.id);
-
   return {
     expires,
     user: {
