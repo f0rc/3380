@@ -10,6 +10,7 @@ import Layout from "./pages/Layout";
 import Login from "./pages/Login";
 import PackageList from "./pages/PackageList";
 import Signup from "./pages/Signup";
+import Products from "./pages/Products";
 
 const Index = () => {
   return (
@@ -23,6 +24,7 @@ const Index = () => {
             <Route path="create-package" element={<CreatePackage />} />
             <Route path="package-list" element={<PackageList />} />
             <Route path="create-employee" element={<CreateEmployee />} />
+            <Route path="products" element={<Products />} />
             <Route path="*" element={<Error />} />
           </Route>
         </Routes>

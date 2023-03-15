@@ -176,6 +176,7 @@ CREATE TABLE "Dependents" (
 CREATE TABLE "Product" (
     "productID" TEXT NOT NULL,
     "itemName" TEXT NOT NULL,
+    "quantityInStock" INT CHECK ("quantityInStock" >= 0),
     "cost" INT NOT NULL, --cost to buy
     "msrp" INT NOT NULL, --cost to sell MSRP = Manufacturer Suggested Retail Price
 
