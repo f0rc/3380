@@ -2,10 +2,10 @@ import { randomUUID } from "crypto";
 import Postgres from "pg";
 
 const pool = new Postgres.Pool({
-  host: "containers-us-west-156.railway.app", //"localhost",
-  port: 6465, //5433,
+  host: "containers-us-west-198.railway.app", //"localhost",
+  port: 5518, //5433,
   user: "postgres", //test,
-  password: "0EPEQ3oq28IuXejH86Sk", //"test",
+  password: "ACGU7EjKnHXAEMd9D9AF", //"test",
   database: "railway", //"test",
 
   max: 20,

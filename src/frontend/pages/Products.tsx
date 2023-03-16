@@ -62,6 +62,11 @@ export function StoreItem({ id, name, price, imgUrl }: StoreItemProps){
         removeFromCart, 
     } = useShoppingCart()
     const quantity = getItemQuantity(id)
+    console.log("HELLO ",quantity)
+    return(
+        <div>HELLO</div>
+    )
+    /*
     return (
         <Card className="h-100">
             <Card.Img
@@ -103,6 +108,7 @@ export function StoreItem({ id, name, price, imgUrl }: StoreItemProps){
             </Card.Body>
         </Card>
     )
+    */
 }
 //location of customer, it changes currency to their local area
 const CURRENCY_FORMATTER = new Intl.NumberFormat(undefined, {

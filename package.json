@@ -11,8 +11,8 @@
     "client": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "dbMigration": "PGPASSWORD=0EPEQ3oq28IuXejH86Sk; psql -f ./src/database/schema2.sql -h containers-us-west-156.railway.app -U postgres -p 6465 -d railway",
-    "dropSchema": "PGPASSWORD=0EPEQ3oq28IuXejH86Sk; psql -f ./src/database/drop.sql -h containers-us-west-156.railway.app -U postgres -p 6465 -d railway"
+    "dbMigration": "PGPASSWORD=ACGU7EjKnHXAEMd9D9AF; psql -f ./src/database/schema2.sql -h containers-us-west-198.railway.app -U postgres -p 5518 -d railway",
+    "dropSchema": "PGPASSWORD=ACGU7EjKnHXAEMd9D9AF; psql -f ./src/database/drop.sql -h containers-us-west-198.railway.app -U postgres -p 5518 -d railway"
   },
   "dependencies": {
     "@headlessui/react": "0.0.0-insiders.0c0601f",
