@@ -41,7 +41,7 @@ export const CreateEmployee = () => {
 
   return (
     <div className="max-w-screen-md mx-auto p-5">
-      <div className="bg-zinc-800 p-10 rounded-md">
+      <div className="bg-[#333533] p-10 rounded-md">
         <div className="text-center mb-16">
           <h3 className="text-3xl sm:text-4xl leading-normal font-extrabold tracking-tight text-gray-50">
             Create Employee
@@ -67,7 +67,7 @@ export const CreateEmployee = () => {
                   {...register("firstName", {
                     required: true,
                   })}
-                  className={`'appearance-none block w-full bg-transparent text-white border  rounded py-3 px-4 mb-3 leading-tight focus:outline-none focus:bg-white' ${
+                  className={`'appearance-none block w-full bg-transparent border  rounded py-3 px-4 mb-3 leading-tight focus:outline-none foc' ${
                     errors.firstName ? "border-red-500" : ""
                   }`}
                 />
@@ -89,7 +89,7 @@ export const CreateEmployee = () => {
                   {...register("lastName", {
                     required: true,
                   })}
-                  className={`'appearance-none block w-full bg-transparent text-white border  rounded py-3 px-4 mb-3 leading-tight focus:outline-none focus:bg-white' ${
+                  className={`'appearance-none block w-full bg-transparent border  rounded py-3 px-4 mb-3 leading-tight focus:outline-none foc' ${
                     errors.lastName ? "border-red-500" : ""
                   }`}
                 />
@@ -110,7 +110,7 @@ export const CreateEmployee = () => {
                   id="birthDate"
                   placeholder="Birth Date"
                   {...register("birthDate")}
-                  className={`'appearance-none block w-full bg-transparent text-white border  rounded py-3 px-4 mb-3 leading-tight focus:outline-none focus:bg-white' ${
+                  className={`'appearance-none block w-full bg-transparent border  rounded py-3 px-4 mb-3 leading-tight focus:outline-none foc' ${
                     errors.birthDate ? "border-red-500" : ""
                   }`}
                 />
@@ -132,7 +132,7 @@ export const CreateEmployee = () => {
                   {...register("email", {
                     required: true,
                   })}
-                  className={`'appearance-none block w-full bg-transparent text-white border  rounded py-3 px-4 mb-3 leading-tight focus:outline-none focus:bg-white' ${
+                  className={`'appearance-none block w-full bg-transparent border  rounded py-3 px-4 mb-3 leading-tight focus:outline-none foc' ${
                     errors.email ? "border-red-500" : ""
                   }`}
                 />
@@ -153,7 +153,7 @@ export const CreateEmployee = () => {
                   id="address_street"
                   placeholder="123 Jane Street"
                   {...register("address_street")}
-                  className={`'appearance-none block w-full bg-transparent text-white border  rounded py-3 px-4 mb-3 leading-tight focus:outline-none focus:bg-white' ${
+                  className={`'appearance-none block w-full bg-transparent border  rounded py-3 px-4 mb-3 leading-tight focus:outline-none foc' ${
                     errors.address_street ? "border-red-500" : ""
                   }`}
                 />
@@ -174,7 +174,7 @@ export const CreateEmployee = () => {
                   id="city"
                   placeholder="City"
                   {...register("address_city")}
-                  className={`'appearance-none block w-full bg-transparent text-white border  rounded py-3 px-4 mb-3 leading-tight focus:outline-none focus:bg-white' ${
+                  className={`'appearance-none block w-full bg-transparent border  rounded py-3 px-4 mb-3 leading-tight focus:outline-none foc' ${
                     errors.address_city ? "border-red-500" : ""
                   }`}
                 />
@@ -196,7 +196,7 @@ export const CreateEmployee = () => {
                   {...register("address_state", {
                     required: true,
                   })}
-                  className={`'appearance-none block w-full bg-transparent text-white border  rounded py-3 px-4 mb-3 leading-tight focus:outline-none focus:bg-white' ${
+                  className={`'appearance-none block w-full bg-transparent border  rounded py-3 px-4 mb-3 leading-tight focus:outline-none foc' ${
                     errors.address_state ? "border-red-500" : ""
                   }`}
                 />
@@ -217,7 +217,7 @@ export const CreateEmployee = () => {
                   {...register("address_zipcode", {
                     required: true,
                   })}
-                  className={`'appearance-none block w-full bg-transparent text-white border  rounded py-3 px-4 mb-3 leading-tight focus:outline-none focus:bg-white' ${
+                  className={`'appearance-none block w-full bg-transparent border  rounded py-3 px-4 mb-3 leading-tight focus:outline-none foc' ${
                     errors.address_zipcode ? "border-red-500" : ""
                   }`}
                 />
@@ -239,7 +239,7 @@ export const CreateEmployee = () => {
                   id="locationID"
                   placeholder="CHANGE THIS TO SEARCH FOR BRANCH"
                   {...register("locationID")}
-                  className={`'appearance-none block w-full bg-transparent text-white border  rounded py-3 px-4 mb-3 leading-tight focus:outline-none focus:bg-white' ${
+                  className={`'appearance-none block w-full bg-transparent border  rounded py-3 px-4 mb-3 leading-tight focus:outline-none foc' ${
                     errors.locationID ? "border-red-500" : ""
                   }`}
                 />
@@ -258,7 +258,7 @@ export const CreateEmployee = () => {
                   id="role"
                   placeholder="role"
                   {...register("role", { valueAsNumber: true })}
-                  className={`'appearance-none block w-full bg-transparent text-white border  rounded py-3 px-4 mb-3 leading-tight focus:outline-none focus:bg-white' ${
+                  className={`'appearance-none block w-full bg-transparent border  rounded py-3 px-4 mb-3 leading-tight focus:outline-none foc' ${
                     errors.role ? "border-red-500" : ""
                   }`}
                 />
@@ -279,7 +279,7 @@ export const CreateEmployee = () => {
                   type="number"
                   id="salary"
                   {...register("salary", { valueAsNumber: true })}
-                  className={`'appearance-none block w-full bg-transparent text-white border  rounded py-3 px-4 mb-3 leading-tight focus:outline-none focus:bg-white' ${
+                  className={`'appearance-none block w-full bg-transparent border  rounded py-3 px-4 mb-3 leading-tight focus:outline-none foc' ${
                     errors.salary ? "border-red-500" : ""
                   }`}
                 />
@@ -297,7 +297,7 @@ export const CreateEmployee = () => {
                   type="date"
                   id="startDate"
                   {...register("startDate")}
-                  className={`'appearance-none block w-full bg-transparent text-white border  rounded py-3 px-4 mb-3 leading-tight focus:outline-none focus:bg-white' ${
+                  className={`'appearance-none block w-full bg-transparent border  rounded py-3 px-4 mb-3 leading-tight focus:outline-none foc' ${
                     errors.startDate ? "border-red-500" : ""
                   }`}
                 />

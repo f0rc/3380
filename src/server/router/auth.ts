@@ -11,7 +11,7 @@ export const credRouter = router({
     .input(signUpSchema)
     .mutation(async ({ ctx, input }) => {
       const { postgresQuery } = ctx;
-      const { email, password, username } = input;
+      const { email, password } = input;
 
       const existingUser = await postgresQuery(
         `SELECT * from "USER" where "email"= $1 LIMIT 1`,
@@ -46,11 +46,19 @@ export const credRouter = router({
       const { postgresQuery } = ctx;
       const { email, password } = input;
 
-      // console.log("email", email);
+      console.log("email", email);
+      console.log("passwrd", password);
       const data = await postgresQuery(
         `SELECT * FROM "USER" WHERE "email" = $1;`,
         [email]
       );
+
+      if (data.rowCount === 0) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Invalid credentials",
+        });
+      }
 
       const verifiedPassword = await verify(data.rows[0].password, password);
 

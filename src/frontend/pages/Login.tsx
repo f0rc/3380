@@ -3,34 +3,47 @@ import { LoginInput, loginSchema } from "src/server/auth/authSchema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useCallback, useState } from "react";
 import { api } from "src/server/utils/api";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import Spinner from "../icons/spinner";
 
 const Login = () => {
   const navigate = useNavigate();
   const {
     register,
     handleSubmit,
-    formState: { errors, touchedFields },
-    clearErrors,
+    formState: { errors },
+    setError,
+    reset,
+    watch,
   } = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
   });
-  const [err, setErr] = useState("");
 
-  const { mutateAsync } = api.auth.signin.useMutation({
+  const { mutateAsync, isLoading } = api.auth.signin.useMutation({
     onSuccess: (data) => {
       console.log(data);
     },
 
     onError: (error) => {
-      setErr(error.message);
-      console.log(error);
+      reset({
+        email: watch("email"),
+        password: "",
+      });
+      setError("root", {
+        type: "manual",
+        message: "Invalid email or password",
+      });
+
       if (error.data?.httpStatus === 409) {
       }
     },
   });
 
-  const onSubmit = async (data: LoginInput) => {
+  const onSubmit = handleSubmit(async (data) => {
     try {
       const result = await mutateAsync(data);
 
@@ -41,71 +54,92 @@ const Login = () => {
     } catch (err) {
       console.log(err);
     }
-  };
+  });
 
-  const handleInputChange = () => {
-    setErr("");
-    clearErrors();
-  };
   return (
-    <div>
-      <main className="flex min-h-screen flex-col items-center justify-center bg-gray-800 text-black">
-        <form
-          className="form-floating text-white"
-          onSubmit={handleSubmit(onSubmit)}
-        >
-          <div className="">
-            <div className="container flex w-full flex-col items-center justify-center gap-12 px-4 py-16">
-              <h2 className="text-5xl font-extrabold tracking-tight text-white sm:text-[5rem]">
-                Login
-              </h2>
-              {err && <p className="text-red-500">{err}</p>}
-              <input
-                type="email"
-                placeholder="email"
-                className={
-                  (errors.email
-                    ? "outline outline-offset-2 outline-pink-500"
-                    : "") + " inputFieldRegister"
-                }
-                {...register("email")}
-                onChange={handleInputChange}
-              />
-              {errors.email && (
-                <span className="text-red-500">{errors.email.message}</span>
-              )}
-              <input
-                type="password"
-                placeholder="password"
-                className={
-                  (errors.password
-                    ? "outline outline-offset-2 outline-pink-500"
-                    : "") + " inputFieldRegister"
-                }
-                {...register("password")}
-                onChange={handleInputChange}
-              />
-              {errors.password && (
-                <span className="text-red-500">{errors.password.message}</span>
-              )}
-              <p>
-                Don't have an account?{" "}
-                <a href="/signup" className="text-[hsl(280,100%,70%)]">
-                  Signup
-                </a>
-              </p>
-              <div className="card-actions flex flex-col items-center justify-between gap-4">
-                <button
-                  className="rounded-t-xl border-b border-[hsl(280,100%,70%)] py-2 px-4 text-center text-lg hover:bg-zinc-800 disabled:"
-                  type="submit"
-                >
-                  Login
-                </button>
-              </div>
-            </div>
+    <div className="flex min-h-screen items-center justify-center overflow-hidden">
+      <div className="container flex flex-col items-center justify-center">
+        <div className="bg-[#333533] p-10 rounded-md w-3/5 lg:w-[50%]">
+          <div className="text-center mb-16">
+            <h3 className="text-3xl sm:text-4xl leading-normal font-extrabold tracking-tight text-gray-50">
+              Login
+            </h3>
           </div>
-        </form>
-      </main>
+          <div className="flex flex-col items-center justify-center align-middle">
+            {errors.root?.message && (
+              <p className="text-red-500 text-xs italic">
+                {errors.root?.message}
+              </p>
+            )}
+
+            <form onSubmit={onSubmit} className="w-2/3 ">
+              <div className="flex flex-col -mx-3 mb-6 ">
+                <div className="">
+                  <div className="w-full px-3 mb-6 md:mb-0">
+                    <label className="block uppercase tracking-wide text-gray-50 text-xs font-bold mb-2">
+                      EMAIL
+                    </label>
+                    <input
+                      type="email"
+                      placeholder="email"
+                      id="email"
+                      {...register("email", {
+                        required: true,
+                      })}
+                      className={`'appearance-none block w-full bg-transparent border  rounded py-3 px-4 mb-3 leading-tight focus:outline-none ' ${
+                        errors.email ? "border-red-500" : ""
+                      }`}
+                    />
+                    {errors.email && (
+                      <p className="text-red-500 text-xs italic">
+                        Plsease fill out this field
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="w-full px-3 mb-6 md:mb-0">
+                    <label className="block uppercase tracking-wide text-gray-50 text-xs font-bold mb-2">
+                      First Name
+                    </label>
+                    <input
+                      type="password"
+                      placeholder="password"
+                      id="password"
+                      {...register("password", {
+                        required: true,
+                      })}
+                      className={`'appearance-none block w-full bg-transparent border  rounded py-3 px-4 mb-3 leading-tight focus:outline-none foc' ${
+                        errors.password ? "border-red-500" : ""
+                      }`}
+                    />
+                    {errors.password && (
+                      <p className="text-red-500 text-xs italic">
+                        Plsease fill out this field
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div className="flex flex-col items-center justify-center gap-4">
+                <p className="text-sm">
+                  Don't have an account?{" "}
+                  <Link className="text-calm-yellow" to="/signup">
+                    Sign up
+                  </Link>
+                </p>
+                {isLoading ? (
+                  <Spinner />
+                ) : (
+                  <button type="submit" className="formButton">
+                    Log in
+                  </button>
+                )}
+              </div>
+            </form>
+          </div>
+        </div>
+        {/* <pre>{JSON.stringify(watch(), null, 2)}</pre> */}
+      </div>
     </div>
   );
 };
