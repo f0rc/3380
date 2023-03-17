@@ -103,9 +103,10 @@ export const packageRouter = router({
     const { postgresQuery } = ctx;
 
     const packageList = await postgresQuery(
-      `SELECT "PACKAGE"."package_id", "PACKAGE"."cost", "PACKAGE"."sender_id", "PACKAGE"."receiver_id", "PACKAGE"."weight", "PACKAGE"."type", "PACKAGE"."size" FROM "PACKAGE" LIMIT 10`,
+      `SELECT ("status", "location_id", "type", "PACKAGE"."createdAt") FROM "PACKAGE", "PACKAGE_LOCATION_HISTORY" WHERE "PACKAGE"."package_id" = "PACKAGE_LOCATION_HISTORY"."package_id" LIMIT 10 `,
       []
     );
+    console.log(packageList.rows);
 
     return {
       status: "success",
@@ -115,11 +116,10 @@ export const packageRouter = router({
 });
 
 export interface PackageSchema {
-  packageID: string;
+  package_id: string;
   cost: number;
-  senderID: string;
-  receiverID: string;
-  packageLocationHistoryID: string;
+  sender_id: string;
+  receiver_id: string;
   weight: number;
   type: string;
   size: string;
