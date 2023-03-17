@@ -3,6 +3,7 @@ import { authRouter } from "./session";
 import { greetingRouter } from "./greeting";
 import { credRouter } from "./auth";
 import { packageRouter } from "./package";
+import { employeeRouter } from "./employee";
 
 // Add your routers here
 export const appRouter = router({
@@ -10,6 +11,7 @@ export const appRouter = router({
   auth: credRouter,
   greeting: greetingRouter,
   package: packageRouter,
+  employee: employeeRouter,
 });
 
 export type AppRouter = typeof appRouter;

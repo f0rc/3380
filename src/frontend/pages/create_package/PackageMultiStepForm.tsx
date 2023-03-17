@@ -76,9 +76,9 @@ export const PackageInfoForm = (
                 <option value="" disabled>
                   Select Option
                 </option>
-                <option value="Envelope">Envelope</option>
-                <option value="Box">Box</option>
-                <option value="Other">Other</option>
+                <option value="envelope">Envelope</option>
+                <option value="box">Box</option>
+                <option value="other">Other</option>
               </select>
               {errors.packageType && (
                 <span className="text-red-500">
@@ -334,7 +334,7 @@ export const SenderInfoForm = (
             {/* <div className="flex flex-col"> */}
             <input
               type="text"
-              placeholder="firstName"
+              placeholder="Fist Name"
               className="inputFieldRegister"
               {...register("firstName")}
             />

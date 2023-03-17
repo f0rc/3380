@@ -15,14 +15,13 @@ export const packageRouter = router({
       const getSender = async () => {
         try {
           const getSenderID = await postgresQuery(
-            `select "Customers"."customerID" AS senderID FROM "Customers" where "email" = $1`,
+            `select "CUSTOMER"."customer_id" AS senderID FROM "CUSTOMER" where "email" = $1`,
             [steps.senderInfo.value.email]
           );
 
-          console.log("SESSION", ctx.session.expires);
           if (getSenderID.rowCount === 0 || !getSenderID) {
             const senderID = await postgresQuery(
-              `INSERT INTO "Customers" ("customerID", "firstName", "lastName", "email", "phoneNumber", "address_street", "address_city", "address_state", "address_zipcode", "createdBy", "updatedBy") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING "customerID" as senderID`,
+              `INSERT INTO "CUSTOMER" ("customer_id", "firstname", "lastname", "email", "phoneNumber", "address_street", "address_city", "address_state", "address_zipcode", "createdBy", "updatedBy") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING "customer_id" as senderID`,
               [
                 randomUUID(), //##TODO: make this a uuid in the db automatically /1
                 steps.senderInfo.value.firstName, //2
@@ -37,10 +36,8 @@ export const packageRouter = router({
                 ctx.session.user.id, // employeeID /11
               ]
             );
-            console.log("retruning from inside getSenderID");
             return senderID.rows[0].senderid as string;
           }
-          console.log("retruning from out getSenderID");
           return getSenderID.rows[0].senderid as string;
         } catch (e) {
           console.log("error", e);
@@ -49,13 +46,13 @@ export const packageRouter = router({
 
       const getReciver = async () => {
         const getReceiverID = await postgresQuery(
-          `select "Customers"."customerID" AS receiverid FROM "Customers" where "email" = $1`,
+          `select "CUSTOMER"."customer_id" AS receiverid FROM "CUSTOMER" where "email" = $1`,
           [steps.receiverInfo.value.email]
         );
 
         if (getReceiverID.rowCount === 0 || !getReceiverID) {
           const receiverID = await postgresQuery(
-            `INSERT INTO "Customers" ("customerID", "firstName", "lastName", "email", "phoneNumber", "address_street", "address_city", "address_state", "address_zipcode", "createdBy", "updatedBy") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING "customerID" as receiverid`,
+            `INSERT INTO "CUSTOMER" ("customer_id", "firstname", "lastname", "email", "phoneNumber", "address_street", "address_city", "address_state", "address_zipcode", "createdBy", "updatedBy") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING "customer_id" as receiverid`,
             [
               randomUUID(), //##TODO: make this a uuid in the db automatically
               steps.receiverInfo.value.firstName,
@@ -82,7 +79,7 @@ export const packageRouter = router({
       const package_ID = randomUUID();
 
       const makePackage = await postgresQuery(
-        `INSERT INTO "Package" ("packageID", "cost", "senderID", "receiverID", "weight", "type", "size", "createdBy", "updatedBy") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
+        `INSERT INTO "PACKAGE" ("package_id", "cost", "sender_id", "receiver_id", "weight", "type", "size", "createdBy", "updatedBy") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
         [
           package_ID,
           0, //##TODO: make this real cost
@@ -106,7 +103,7 @@ export const packageRouter = router({
     const { postgresQuery } = ctx;
 
     const packageList = await postgresQuery(
-      `SELECT "Package"."packageID", "Package"."cost", "Package"."senderID", "Package"."receiverID", "Package"."weight", "Package"."type", "Package"."size" FROM "Package" LIMIT 10`,
+      `SELECT "PACKAGE"."package_id", "PACKAGE"."cost", "PACKAGE"."sender_id", "PACKAGE"."receiver_id", "PACKAGE"."weight", "PACKAGE"."type", "PACKAGE"."size" FROM "PACKAGE" LIMIT 10`,
       []
     );
 

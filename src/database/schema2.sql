@@ -1,41 +1,39 @@
-CREATE TABLE "Employee" (
-    "id" TEXT NOT NULL,
-    "userID" TEXT,
+CREATE TABLE "EMPLOYEE" (
+    "employee_id" TEXT NOT NULL,
+    "user_id" TEXT,
     "email" TEXT NOT NULL UNIQUE,
 
-    "firstName" VARCHAR(30) NOT NULL,
-    "lastName" VARCHAR(30) NOT NULL,
-    "birthDate" DATE NOT NULL,
+    "firstname" VARCHAR(30) NOT NULL,
+    "lastname" VARCHAR(30) NOT NULL,
+    "birthdate" DATE NOT NULL,
 
     "role" INTEGER DEFAULT 0 NOT NULL CHECK ("role" <= 4 AND "role" >= 0),
     "salary" INTEGER NOT NULL CHECK ("salary" >= 0),
-    "locationID" TEXT NOT NULL, --refer to Post_Office_Loactions
+    "postoffice_location_id" TEXT NOT NULL, --refer to Post_Office_Loactions
 
     "address_street" TEXT NOT NULL,
-    "address_street_2" TEXT,
     "address_city" TEXT NOT NULL,
     "address_state" TEXT NOT NULL,
     "address_zipcode" INTEGER NOT NULL,
-    "startDate" DATE NOT NULL,
+    "startdate" DATE NOT NULL,
 
     "createAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "createdBy" TEXT NOT NULL,
     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedBy" TEXT NOT NULL,
 
-    CONSTRAINT "Employee_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "EMPLOYEE_PK" PRIMARY KEY ("employee_id")
 );
 
-CREATE TABLE "Customers" (
-    "userID" TEXT, --nullable because the cutomer is created when the employee makes a pkg
-    "customerID" TEXT NOT NULL,
-    "firstName" TEXT NOT NULL,
-    "lastName" TEXT NOT NULL,
+CREATE TABLE "CUSTOMER" (
+    "user_id" TEXT, --nullable because the cutomer is created when the employee makes a pkg
+    "customer_id" TEXT NOT NULL,
+    "firstname" TEXT NOT NULL,
+    "lastname" TEXT NOT NULL,
     "email" TEXT NOT NULL UNIQUE,
     "phoneNumber" TEXT NOT NULL,
     
     "address_street" TEXT NOT NULL,
-    "address_street_2" TEXT,
     "address_city" TEXT NOT NULL,
     "address_state" TEXT NOT NULL,
     "address_zipcode" TEXT NOT NULL,
@@ -45,51 +43,50 @@ CREATE TABLE "Customers" (
     "createdAt" DATE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "createdBy" TEXT NOT NULL,
 
-    CONSTRAINT "customerAccount_pkey" PRIMARY KEY ("customerID")
+    CONSTRAINT "CUSTOMER_PK" PRIMARY KEY ("customer_id")
 );
 
-CREATE TABLE "Package_Location_History" (
-    "locationHistoryID" TEXT NOT NULL,
-    "packageID" TEXT NOT NULL, --refer to Package
-    "loctionID" TEXT NOT NULL,
+CREATE TABLE "PACKAGE_LOCATION_HISTORY" (
+    "package_location_id" SERIAL NOT NULL,
+    "package_id" TEXT NOT NULL, --refer to Package
+    "location_id" TEXT NOT NULL,
     -- make a status
-    "status" TEXT NOT NULL CHECK ("status" IN('Accepted', 'In Transit', 'Deliverd', 'Unsuccessful Attempts')),
+    "status" TEXT NOT NULL CHECK ("status" IN('accepted', 'transit', 'delivered','out-for-delivery', 'fail')),
     "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT "locationHistory_pkey" PRIMARY KEY ("locationHistoryID")
+    CONSTRAINT "package_location_id" PRIMARY KEY ("package_location_id")
 );
 
-CREATE TABLE "Package" (
-    "packageID" TEXT NOT NULL,
+CREATE TABLE "PACKAGE" (
+    "package_id" TEXT NOT NULL,
+    "sender_id" TEXT NOT NULL, --refer to Sender_Info
+    "receiver_id" TEXT NOT NULL, --refer to Reveiver_Info... the id is not made yet
     "cost" TEXT NOT NULL, --pennies 
     "weight" TEXT NOT NULL, --pounds
-    "type" TEXT NOT NULL CHECK ("type" IN('Envelope', 'Box', 'Other')),
-    "size" TEXT NOT NULL CHECK ("size" IN('Small', 'Medium', 'Large', 'Extra Large')),
-    "senderID" TEXT NOT NULL, --refer to Sender_Info
-    "receiverID" TEXT NOT NULL, --refer to Reveiver_Info... the id is not made yet
+    "type" TEXT NOT NULL CHECK ("type" IN('envelope', 'box', 'other')),
+    "size" TEXT NOT NULL CHECK ("size" IN('small', 'medium', 'large', 'extra large')),
     "createdAt" DATE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "createdBy" TEXT NOT NULL, --employee ID
     "updatedAt" DATE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedBy" TEXT NOT NULL, --employee ID
 
-    CONSTRAINT "package_pkey" PRIMARY KEY ("packageID"),
-    CONSTRAINT "package_sender_fkey" FOREIGN KEY ("senderID") REFERENCES "Customers"("customerID") ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT "package_receiver_fkey" FOREIGN KEY ("receiverID") REFERENCES "Customers"("customerID") ON DELETE CASCADE ON UPDATE CASCADE
+    CONSTRAINT "PACKAGE_PK" PRIMARY KEY ("package_id"),
+    CONSTRAINT "PACKAGE_SENDER_FK" FOREIGN KEY ("sender_id") REFERENCES "CUSTOMER"("customer_id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "PACKAGE_RECEIVER_FK" FOREIGN KEY ("receiver_id") REFERENCES "CUSTOMER"("customer_id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-ALTER TABLE "Package_Location_History" ADD CONSTRAINT "FK_PackageID" FOREIGN KEY ("packageID") REFERENCES "Package"("packageID") ON UPDATE CASCADE ON DELETE CASCADE;
+ALTER TABLE "PACKAGE_LOCATION_HISTORY" ADD CONSTRAINT "PACKAGE_FK" FOREIGN KEY ("package_id") REFERENCES "PACKAGE"("package_id") ON UPDATE CASCADE ON DELETE CASCADE;
 
-CREATE TABLE "Post_Office_Loactions" (
-    "locationID" TEXT NOT NULL, --Pkey
-    "locationName" TEXT NOT NULL,
+CREATE TABLE "POSTOFFICE_LOCATION" (
+    "postoffice_location_id" TEXT NOT NULL, --Pkey
+    "locationname" TEXT NOT NULL,
     "address_street" TEXT NOT NULL,
-    "address_street_2" TEXT,
     "address_city" TEXT NOT NULL,
     "address_state" TEXT NOT NULL,
     "address_zipcode" INTEGER NOT NULL,
-    "phoneNumber" INTEGER NOT NULL,
+    "phonenumber" INTEGER NOT NULL,
     "email" TEXT NOT NULL,
-    "manager" TEXT NOT NULL,    --uses Fkey
+    "postoffice_location_manager" TEXT NOT NULL,    --uses Fkey
 
 
     "createdAt" DATE NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -98,26 +95,24 @@ CREATE TABLE "Post_Office_Loactions" (
     "updatedBy" TEXT NOT NULL, --employee ID
     
 
-    CONSTRAINT "location_pkey" PRIMARY KEY ("locationID"),
-    CONSTRAINT "FK_PostOffice_Loaction_Manager" FOREIGN KEY ("manager") REFERENCES "Employee"("id") ON DELETE CASCADE ON UPDATE CASCADE
+    CONSTRAINT "POSTOFFICE_LOCATION_PK" PRIMARY KEY ("postoffice_location_id"),
+    CONSTRAINT "POSTOFFICE_LOCATION_MANAGER_FK" FOREIGN KEY ("postoffice_location_manager") REFERENCES "EMPLOYEE"("employee_id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE TABLE "Work_For" (
-    "employeeID" TEXT NOT NULL, --Pkey 
-    "locationID" TEXT NOT NULL, --Pkey
+CREATE TABLE "WORKS_FOR" (
+    "works_for_id" SERIAL NOT NULL,
+    "employee_id" TEXT NOT NULL, --Pkey 
     "hours" INTEGER NOT NULL,
 
-    CONSTRAINT "workFor_pkey" PRIMARY KEY ("employeeID", "locationID"),
-    CONSTRAINT "FK_WorkFor_Employee" FOREIGN KEY ("employeeID") REFERENCES "Employee"("id") ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT "FK_WorkFor_Location" FOREIGN KEY ("locationID") REFERENCES "Post_Office_Loactions"("locationID") ON DELETE CASCADE ON UPDATE CASCADE
-    -- CONSTRAINT "check_hours" CHECK (hours > 0 AND hours < 168)
+    CONSTRAINT "WORKS_FOR_PK" PRIMARY KEY ("works_for_id"),
+    CONSTRAINT "WORKS_FOR_EMPLOYEE_FK" FOREIGN KEY ("employee_id") REFERENCES "EMPLOYEE"("employee_id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE "Company"(
     "companyID" TEXT NOT NULL,
     "ceo_fistName" VARCHAR(30) NOT NULL,
-    "ceo_lastName" VARCHAR(30) NOT NULL,
-    "ceo_email" TEXT NOT NULL,
+    "ceo_lastname" VARCHAR(30) NOT NULL,
+    "email" TEXT NOT NULL,
     "ceo_phoneNumber" INTEGER NOT NULL,
     "companyName" TEXT NOT NULL,
     "address_street" TEXT NOT NULL,
@@ -132,45 +127,44 @@ CREATE TABLE "Company"(
 
     CONSTRAINT "company_pkey" PRIMARY KEY ("companyID")
 );
-CREATE TABLE "Truck" (
-    "truckID" TEXT NOT NULL PRIMARY KEY,
-    "truckType" VARCHAR(20) NOT NULL CHECK ("truckType" IN('llv','van', 'semitruck')),
-    "truckStatus" VARCHAR(20) NOT NULL CHECK ("truckStatus" IN('available', 'out', 'inactive')),
-    "locationID" TEXT NOT NULL,
-    "nextMaintenance" DATE NOT NULL,
+CREATE TABLE "TRUCK" (
+    "truck_id" TEXT NOT NULL PRIMARY KEY,
+    "truck_type" VARCHAR(20) NOT NULL CHECK ("truck_type" IN('llv','van', 'semitruck')),
+    "truck_status" VARCHAR(20) NOT NULL CHECK ("truck_status" IN('available', 'out', 'inactive')),
+    "postoffice_location_id" TEXT NOT NULL,
+    "nextmaintenance" DATE NOT NULL,
     "createdAt" DATE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" DATE NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
 
-    FOREIGN KEY ("locationID") REFERENCES "Post_Office_Loactions"("locationID")
+    FOREIGN KEY ("postoffice_location_id") REFERENCES "POSTOFFICE_LOCATION"("postoffice_location_id")
 );
 
-CREATE TABLE "Driver" (
-    "employeeID" TEXT NOT NULL PRIMARY KEY,
-    "truckID" TEXT NOT NULL DEFAULT 'none',
-    "licenseNumber" VARCHAR(20) NOT NULL DEFAULT 'none',
-    -- FOREIGN KEY ("truckID") REFERENCES "Truck"("truckID"),
-    FOREIGN KEY ("employeeID") REFERENCES "Employee"("id")
+CREATE TABLE "DRIVER" (
+    "employee_id" TEXT NOT NULL PRIMARY KEY,
+    "truck_id" TEXT NOT NULL DEFAULT 'none',
+    "licensenumber" VARCHAR(20) NOT NULL DEFAULT 'none',
+    -- FOREIGN KEY ("truck_id") REFERENCES "Truck"("truck_id"), -- TODO: add this back in
+    FOREIGN KEY ("employee_id") REFERENCES "EMPLOYEE"("employee_id")
 );
 
-CREATE TABLE "Clerk" (
-    "employeeID" TEXT NOT NULL PRIMARY KEY,
-    "numberOfPackages" INTEGER NOT NULL CHECK ("numberOfPackages" >= 0) DEFAULT 0,
-    "revenue" INTEGER NOT NULL CHECK ("revenue" >= 0) DEFAULT 0,
-    FOREIGN KEY ("employeeID") REFERENCES "Employee"("id")
+CREATE TABLE "CLERK" (
+    "employee_id" TEXT NOT NULL PRIMARY KEY,
+    "packages_made" INTEGER NOT NULL CHECK ("packages_made" >= 0) DEFAULT 0,
+    FOREIGN KEY ("employee_id") REFERENCES "EMPLOYEE"("employee_id")
 );
 
-CREATE TABLE "Dependents" (
-    "id" TEXT NOT NULL,
-    "name" VARCHAR(255) NOT NULL,
-    "birthdate" DATE NOT NULL,
-    "employeeID" TEXT NOT NULL,
+CREATE TABLE "DEPENDANT" (
+    "dependant_id" TEXT NOT NULL,
+    "dependant_name" VARCHAR(255) NOT NULL,
+    "dependant_birthdate" DATE NOT NULL,
+    "employee_id" TEXT NOT NULL,
     "relationship" VARCHAR(255) NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT "Dependent_pkey" PRIMARY KEY ("id"),
-    FOREIGN KEY ("employeeID") REFERENCES "Employee"("id")
+    CONSTRAINT "DEPENDANT_PK" PRIMARY KEY ("dependant_id"),
+    FOREIGN KEY ("employee_id") REFERENCES "EMPLOYEE"("employee_id")
 );
 
 CREATE TABLE "Product" (
@@ -200,34 +194,33 @@ CREATE TABLE "Order" (
 -- role 3 = Manager
 -- role 4 = CEO
 
-CREATE TABLE "Users" (
-    "id" TEXT NOT NULL,
-    "name" VARCHAR(255) NOT NULL,
+CREATE TABLE "USER" (
+    "user_id" TEXT NOT NULL,
     "email" VARCHAR(255) NOT NULL,
     "password" TEXT NOT NULL,
     "role" INTEGER DEFAULT 0 NOT NULL CHECK ("role" <= 4 AND "role" >= 0),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     
-    CONSTRAINT "Users_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "USER_PK" PRIMARY KEY ("user_id")
 );
 
-CREATE TABLE "Sessions" (
-    "id" TEXT NOT NULL,
-    "userId" TEXT NOT NULL,
-    "sessionToken" TEXT NOT NULL,
+CREATE TABLE "SESSION" (
+    "session_id" TEXT NOT NULL,
+    "user_id" TEXT NOT NULL,
+    "token" TEXT NOT NULL,
     "expires" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "Session_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "SESSION_PK" PRIMARY KEY ("session_id")
 );
 
 
 
-CREATE UNIQUE INDEX "Session_sessionToken_key" ON "Sessions"("sessionToken");
+CREATE UNIQUE INDEX "SESSION_INDEX_KEY" ON "SESSION"("token");
 
-CREATE UNIQUE INDEX "User_email_key" ON "Users"("email");
+CREATE UNIQUE INDEX "USER_EMAIL_INDEX" ON "USER"("email");
 
-ALTER TABLE "Sessions" ADD CONSTRAINT "Session_userId_fkey" FOREIGN KEY ("userId") REFERENCES "Users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "SESSION" ADD CONSTRAINT "SESSION_USER_ID_FK" FOREIGN KEY ("user_id") REFERENCES "USER"("user_id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- this trigger is to make new entries in the Clerk and Driver table when new employee's are added or update a current employee's role
 CREATE OR REPLACE FUNCTION create_employee_role_data()
@@ -235,29 +228,29 @@ RETURNS TRIGGER AS $$
 BEGIN
     IF TG_OP = 'INSERT' THEN
         IF NEW.role = 1 THEN
-            IF NOT EXISTS (SELECT 1 FROM "Clerk" WHERE "employeeID" = NEW.id) THEN
-                INSERT INTO "Clerk" ("employeeID")
-                VALUES (NEW.id);
+            IF NOT EXISTS (SELECT 1 FROM "CLERK" WHERE "employee_id" = NEW.employee_id) THEN
+                INSERT INTO "CLERK" ("employee_id")
+                VALUES (NEW.employee_id);
             END IF;
             RETURN NEW;
         ELSIF NEW.role = 2 THEN
-            IF NOT EXISTS (SELECT 1 FROM "Driver" WHERE "employeeID" = NEW.id) THEN
-                INSERT INTO "Driver" ("employeeID")
-                VALUES (NEW.id);
+            IF NOT EXISTS (SELECT 1 FROM "DRIVER" WHERE "employee_id" = NEW.employee_id) THEN
+                INSERT INTO "DRIVER" ("employee_id")
+                VALUES (NEW.employee_id);
             END IF;
             RETURN NEW;
         END IF;
     ELSIF TG_OP = 'UPDATE' THEN
         IF NEW.role = 1 THEN
-            IF NOT EXISTS (SELECT 1 FROM "Clerk" WHERE "employeeID" = NEW.id) THEN
-                INSERT INTO "Clerk" ("employeeID")
-                VALUES (NEW.id);
+            IF NOT EXISTS (SELECT 1 FROM "CLERK" WHERE "employee_id" = NEW.employee_id) THEN
+                INSERT INTO "CLERK" ("employee_id")
+                VALUES (NEW.employee_id);
             END IF;
             RETURN NEW;
         ELSIF NEW.role = 2 THEN
-            IF NOT EXISTS (SELECT 1 FROM "Driver" WHERE "employeeID" = NEW.id) THEN
-                INSERT INTO "Driver" ("employeeID")
-                VALUES (NEW.id);
+            IF NOT EXISTS (SELECT 1 FROM "DRIVER" WHERE "employee_id" = NEW.employee_id) THEN
+                INSERT INTO "DRIVER" ("employee_id")
+                VALUES (NEW.employee_id);
                 RETURN NEW;
             END IF;
         END IF;
@@ -267,7 +260,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER create_employee_role_data_trigger
-AFTER INSERT OR UPDATE ON "Employee"
+AFTER INSERT OR UPDATE ON "EMPLOYEE"
 FOR EACH ROW
 EXECUTE FUNCTION create_employee_role_data();
 
@@ -275,13 +268,16 @@ EXECUTE FUNCTION create_employee_role_data();
 CREATE OR REPLACE FUNCTION insert_user() RETURNS TRIGGER AS $$
 BEGIN
     -- Check if there is a matching Employee and insert user ID into Employee table
-    IF EXISTS (SELECT 1 FROM "Employee" WHERE "email" = NEW."email") THEN
-        UPDATE "Employee" SET "userID" = NEW."id" WHERE "email" = NEW."email";
+    IF EXISTS (SELECT 1 FROM "EMPLOYEE" WHERE "email" = NEW."email") THEN
+        UPDATE "EMPLOYEE" SET "user_id" = NEW."user_id" WHERE "email" = NEW."email";
+        -- update the role of the NEW user in the user table
+        UPDATE "USER" SET "role" = (SELECT "role" FROM "EMPLOYEE" WHERE "email" = NEW."email") WHERE "email" = NEW."email";
+        RETURN NEW;
     END IF;
     
     -- Check if there is a matching Customer and insert user ID into Customer table
-    IF EXISTS (SELECT 1 FROM "Customers" WHERE "email" = NEW."email") THEN
-        UPDATE "Customers" SET "userID" = NEW."id" WHERE "email" = NEW."email";
+    IF EXISTS (SELECT 1 FROM "CUSTOMER" WHERE "email" = NEW."email") THEN
+        UPDATE "CUSTOMER" SET "user_id" = NEW."user_id" WHERE "email" = NEW."email";
     END IF;
     
     RETURN NEW;
@@ -289,7 +285,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER insert_user_trigger
-BEFORE INSERT ON "Users"
+BEFORE INSERT ON "USER"
 FOR EACH ROW
 EXECUTE FUNCTION insert_user();
 
@@ -297,29 +293,44 @@ EXECUTE FUNCTION insert_user();
 -- after the inser of employee, check a users table with email of the employee if it exists then update the employee table
 CREATE OR REPLACE FUNCTION insert_employee() RETURNS TRIGGER AS $$
 BEGIN
-    IF EXISTS (SELECT 1 FROM "Users" WHERE "email" = NEW."email") THEN
-        UPDATE "Employee" SET "userID" = NEW."id" WHERE "email" = NEW."email";
+    IF EXISTS (SELECT 1 FROM "USER" WHERE "email" = NEW."email") THEN
+        UPDATE "EMPLOYEE" SET "user_id" = NEW."employee_id" WHERE "email" = NEW."email";
     END IF;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER insert_employee_trigger
-AFTER INSERT ON "Employee"
+AFTER INSERT ON "EMPLOYEE"
 FOR EACH ROW
 EXECUTE FUNCTION insert_employee();
 
 
 CREATE OR REPLACE FUNCTION insert_Customer() RETURNS TRIGGER AS $$
 BEGIN
-    IF EXISTS (SELECT 1 FROM "Users" WHERE "email" = NEW."email") THEN
-        UPDATE "Customers" SET "userID" = NEW."customerID" WHERE "email" = NEW."email";
+    IF EXISTS (SELECT 1 FROM "USER" WHERE "email" = NEW."email") THEN
+        UPDATE "CUSTOMER" SET "user_id" = NEW."customer_id" WHERE "email" = NEW."email";
     END IF;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER insert_employee_trigger
-AFTER INSERT ON "Customers"
+AFTER INSERT ON "CUSTOMER"
 FOR EACH ROW
 EXECUTE FUNCTION insert_Customer();
+
+
+CREATE OR REPLACE FUNCTION insert_LOCATION_HISTORY() RETURNS TRIGGER AS $$
+BEGIN
+    -- insert into package location history after insert on package
+    INSERT INTO "PACKAGE_LOCATION_HISTORY" ("package_id","location_id", "status")
+    VALUES (NEW."package_id", '1234', 'accepted');
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER insert_LOCTION_HISTORY_trigger
+AFTER INSERT ON "PACKAGE"
+FOR EACH ROW
+EXECUTE FUNCTION insert_LOCATION_HISTORY();
