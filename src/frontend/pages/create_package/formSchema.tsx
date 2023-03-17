@@ -4,20 +4,20 @@ export const packageInfoSchema = z.object({
   packageType: z
     .string()
     .refine((value) => {
-      return value === "Envelope" || value === "Box" || value === "Other";
+      return value === "envelope" || value === "box" || value === "other";
     }, "Must be either Envelope or Box")
-    .default("Envelope"),
+    .default("envelope"),
   packageSize: z
     .string()
     .refine((value) => {
       return (
-        value === "Small" ||
-        value === "Medium" ||
-        value === "Large" ||
-        value === "Extra Large"
+        value === "small" ||
+        value === "medium" ||
+        value === "large" ||
+        value === "extra large"
       );
     })
-    .default("Small"),
+    .default("small"),
   packageWeight: z.number().min(0).max(1000).default(0),
 });
 

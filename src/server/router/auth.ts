@@ -14,7 +14,7 @@ export const credRouter = router({
       const { email, password, username } = input;
 
       const existingUser = await postgresQuery(
-        `select * from "Users" where "email"= $1 LIMIT 1`,
+        `SELECT * from "USER" where "email"= $1 LIMIT 1`,
         [email]
       );
 
@@ -30,8 +30,8 @@ export const credRouter = router({
       const id = randomUUID();
       console.log(id);
       const result = await postgresQuery(
-        `insert into "Users" (id, name, email, password) values ($1, $2, $3, $4) returning *`,
-        [id, username, email, hashedPassword]
+        `INSERT INTO "USER" (user_id, email, password) values ($1, $2, $3) returning *`,
+        [id, email, hashedPassword]
       );
 
       return {
@@ -48,7 +48,7 @@ export const credRouter = router({
 
       // console.log("email", email);
       const data = await postgresQuery(
-        `SELECT * FROM "Users" WHERE email = $1;`,
+        `SELECT * FROM "USER" WHERE "email" = $1;`,
         [email]
       );
 
@@ -72,7 +72,7 @@ export const credRouter = router({
 
       //creating a session
       await postgresQuery(
-        `INSERT INTO "Sessions" ("id", "userId", "sessionToken", "expires") VALUES ($1, $2, $3, $4);`,
+        `INSERT INTO "SESSION" ("session_id", "user_id", "token", "expires") VALUES ($1, $2, $3, $4);`,
         [sessionToken, user.id, sessionToken, sessionexpires]
       );
       const cookies = new Cookies(ctx.req, ctx.res);
@@ -92,7 +92,7 @@ export const credRouter = router({
     const { postgresQuery, session } = ctx;
 
     console.log(session.user.id);
-    postgresQuery(`DELETE FROM "Sessions" where "userId" = $1`, [
+    postgresQuery(`DELETE FROM "SESSION" where "user_id" = $1`, [
       session.user.id,
     ]);
 
@@ -112,7 +112,7 @@ export const credRouter = router({
 
 export const mapDBUserToUser = (dbUser: any): AuthUser => {
   return {
-    id: dbUser.id,
+    id: dbUser.user_id,
     email: dbUser.email,
     password: dbUser.password,
   };

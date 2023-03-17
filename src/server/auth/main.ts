@@ -23,7 +23,7 @@ export const getServerAuthSession = async (ctx: {
 
 export const getDatabaseSession = async (sessionToken: string) => {
   const data = await postgresQuery(
-    `SELECT "Sessions"."sessionToken","Sessions"."expires", "Users"."id", "Users"."email", "Users"."role" FROM "Sessions", "Users" WHERE "sessionToken" = $1 AND "Users"."id" = "Sessions"."userId" LIMIT 1`,
+    `SELECT "SESSION"."token","SESSION"."expires", "USER"."user_id", "USER"."email", "USER"."role" FROM "SESSION", "USER" WHERE "token" = $1 AND "USER"."user_id" = "SESSION"."user_id" LIMIT 1`,
     [sessionToken]
   );
   if (data.rowCount === 0) {
@@ -46,7 +46,7 @@ export const mapDBSessionToSession = (dbSession: any): Session => {
   return {
     expires,
     user: {
-      id: dbSession.id,
+      id: dbSession.user_id,
       email: dbSession.email,
       role: dbSession.role,
     },
