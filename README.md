@@ -18,8 +18,11 @@
 - work log page
 - stats page
 - driver page
-- list packages page (clerk, manager, ceo)
-- user list packages page (customer, clerk, manager, ceo)
+- list packages page (clerk, manager, ceo) (majid)
+- user list packages page (customer, clerk, manager, ceo) (majid)
+- package details page (majid)
+- tracking page (majid)
+- employee dependents page
 
 
 # fixes: 
