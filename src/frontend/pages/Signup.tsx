@@ -3,7 +3,8 @@ import { SignUpInput, signUpSchema } from "src/server/auth/authSchema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useCallback, useState } from "react";
 import { api } from "src/server/utils/api";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import Spinner from "../icons/spinner";
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -12,116 +13,157 @@ const Signup = () => {
     handleSubmit,
     formState: { errors },
     clearErrors,
+    reset,
+    watch,
+    setError,
   } = useForm<SignUpInput>({
+    defaultValues: {
+      email: "",
+      password: "",
+      password2: "",
+    },
     resolver: zodResolver(signUpSchema),
   });
-  const [err, setErr] = useState("");
 
-  const { mutateAsync } = api.auth.signUp.useMutation({
+  const { mutateAsync, isLoading } = api.auth.signUp.useMutation({
     onSuccess: (data) => {
       console.log(data);
     },
 
     onError: (error) => {
-      setErr(error.message);
-      console.log(error);
+      reset({
+        email: watch("email"),
+        password: "",
+      });
+      setError("root", {
+        type: "manual",
+        message: "EMAIL ALREADY EXISTS LOGIN",
+      });
+
       if (error.data?.httpStatus === 409) {
       }
     },
   });
 
-  const onSubmit = useCallback(
-    async (data: SignUpInput) => {
-      try {
-        const result = await mutateAsync(data);
-        if (result.status === "success") {
-          navigate("/");
-        }
-      } catch (err) {
-        console.log(err);
-      }
-    },
-    [mutateAsync, navigate]
-  );
+  const onSubmit = handleSubmit(async (data) => {
+    try {
+      const result = await mutateAsync(data);
 
-  const handleInputChange = () => {
-    setErr("");
-    clearErrors();
-  };
+      if (result.status === "success") {
+        navigate("/login");
+        window.location.reload();
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  });
+
   return (
-    <div>
-      <main className="flex min-h-screen flex-col items-center justify-center bg-gray-800 text-black">
-        <form
-          className="form-floating text-white"
-          onSubmit={handleSubmit(onSubmit)}
-        >
-          <div className="">
-            <div className="container flex w-full flex-col items-center justify-center gap-12 px-4 py-16">
-              <h2 className="text-5xl font-extrabold tracking-tight text-white sm:text-[5rem]">
-                Create an account!
-              </h2>
-              {err && <p className="text-red-500">{err}</p>}
-              <input
-                type="text"
-                placeholder="username"
-                autoComplete="off"
-                className={
-                  (errors.username
-                    ? "outline outline-offset-2 outline-pink-500"
-                    : "") + " inputFieldRegister"
-                }
-                {...register("username", { required: true })}
-                onChange={handleInputChange}
-              />
-              {errors.username && (
-                <span className="text-red-500">{errors.username.message}</span>
-              )}
-              <input
-                type="email"
-                placeholder="email"
-                className={
-                  (errors.email
-                    ? "outline outline-offset-2 outline-pink-500"
-                    : "") + " inputFieldRegister"
-                }
-                {...register("email")}
-                onChange={handleInputChange}
-              />
-              {errors.email && (
-                <span className="text-red-500">{errors.email.message}</span>
-              )}
-              <input
-                type="password"
-                placeholder="password"
-                className={
-                  (errors.password
-                    ? "outline outline-offset-2 outline-pink-500"
-                    : "") + " inputFieldRegister"
-                }
-                {...register("password")}
-                onChange={handleInputChange}
-              />
-              {errors.password && (
-                <span className="text-red-500">{errors.password.message}</span>
-              )}
-              <div className="card-actions flex flex-col items-center justify-between gap-4">
-                <p>
-                  Have an account?{" "}
-                  <span className="text-[hsl(280,100%,70%)]">
-                    <a href="/login">Login</a>
-                  </span>
-                </p>
-                <button
-                  className="rounded-t-xl border-b border-[hsl(280,100%,70%)] py-2 px-4 text-center text-lg hover:bg-zinc-800"
-                  type="submit"
-                >
-                  Sign Up
-                </button>
-              </div>
-            </div>
+    <div className="flex min-h-screen items-center justify-center overflow-hidden">
+      <div className="container flex flex-col items-center justify-center">
+        <div className="bg-[#333533] p-10 rounded-md w-3/5 lg:w-[50%]">
+          <div className="text-center mb-16">
+            <h3 className="text-3xl sm:text-4xl leading-normal font-extrabold tracking-tight text-gray-50">
+              Sign up
+            </h3>
           </div>
-        </form>
-      </main>
+          <div className="flex flex-col items-center justify-center align-middle">
+            {errors.root?.message && (
+              <p className="text-red-500 text-xs italic pb-4">
+                {errors.root?.message}
+              </p>
+            )}
+
+            <form onSubmit={onSubmit} className="w-2/3 ">
+              <div className="flex flex-col -mx-3 mb-6 ">
+                <div className="">
+                  <div className="w-full px-3 mb-6 md:mb-0">
+                    <label className="block uppercase tracking-wide text-gray-50 text-xs font-bold mb-2">
+                      EMAIL
+                    </label>
+                    <input
+                      type="email"
+                      placeholder="email"
+                      id="email"
+                      {...register("email", {
+                        required: true,
+                      })}
+                      className={`'appearance-none block w-full bg-transparent border  rounded py-3 px-4 mb-3 leading-tight focus:outline-none ' ${
+                        errors.email ? "border-red-500" : ""
+                      }`}
+                    />
+                    {errors.email && (
+                      <p className="text-red-500 text-xs italic">
+                        Plsease fill out this field
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="w-full px-3 mb-6 md:mb-0">
+                    <label className="block uppercase tracking-wide text-gray-50 text-xs font-bold mb-2">
+                      password
+                    </label>
+                    <input
+                      type="password"
+                      placeholder="password"
+                      id="password"
+                      {...register("password", {
+                        required: true,
+                      })}
+                      className={`'appearance-none block w-full bg-transparent border  rounded py-3 px-4 mb-3 leading-tight focus:outline-none foc' ${
+                        errors.password ? "border-red-500" : ""
+                      }`}
+                    />
+                    {errors.password && (
+                      <p className="text-red-500 text-xs italic">
+                        Plsease fill out this field
+                      </p>
+                    )}
+                  </div>
+                  <div className="w-full px-3 mb-6 md:mb-0">
+                    <label className="block uppercase tracking-wide text-gray-50 text-xs font-bold mb-2">
+                      password confirmation
+                    </label>
+                    <input
+                      type="password"
+                      placeholder="password confirmation"
+                      id="password"
+                      {...register("password2", {
+                        required: true,
+                      })}
+                      className={`'appearance-none block w-full bg-transparent border  rounded py-3 px-4 mb-3 leading-tight focus:outline-none foc' ${
+                        errors.password ? "border-red-500" : ""
+                      }`}
+                    />
+                    {errors.password && (
+                      <p className="text-red-500 text-xs italic">
+                        Plsease fill out this field
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col items-center justify-center gap-4">
+                <p className="text-sm">
+                  Already have an account?{" "}
+                  <Link className="text-calm-yellow" to="/login">
+                    Log in
+                  </Link>
+                </p>
+                {isLoading ? (
+                  <Spinner />
+                ) : (
+                  <button type="submit" className="formButton">
+                    Sign up
+                  </button>
+                )}
+              </div>
+            </form>
+          </div>
+        </div>
+        {/* <pre>{JSON.stringify(watch(), null, 2)}</pre> */}
+      </div>
     </div>
   );
 };

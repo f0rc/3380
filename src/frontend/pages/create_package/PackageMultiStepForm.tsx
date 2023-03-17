@@ -60,13 +60,10 @@ export const PackageInfoForm = (
   return (
     <>
       <div className="container justify-center">
-        <h1 className="text-5xl font-extrabold tracking-tight text-white text-center pt-10 ">
+        <h1 className="text-5xl font-extrabold tracking-tight  text-center pt-10 ">
           Package Details
         </h1>
-        <form
-          onSubmit={handleSubmit(submitForm)}
-          className="text-white form-floating"
-        >
+        <form onSubmit={handleSubmit(submitForm)} className=" form-floating">
           <div className="flex flex-col  items-center justify-center gap-12 px-4 py-16">
             <div className="gap-4 flex flex-row space-x-3">
               <select
@@ -173,13 +170,10 @@ export const ReciverInfoForm = (
   };
   return (
     <div className="container justify-center p-10">
-      <h1 className="text-5xl font-extrabold tracking-tight text-white text-center ">
+      <h1 className="text-5xl font-extrabold tracking-tight  text-center ">
         Reciver Details
       </h1>
-      <form
-        onSubmit={handleSubmit(submitForm)}
-        className="text-white form-floating"
-      >
+      <form onSubmit={handleSubmit(submitForm)} className=" form-floating">
         <div className="grid grid-cols-2 w-full flex-col items-center justify-center gap-12 px-4 py-16">
           {/* <div className="flex flex-col"> */}
           <input
@@ -323,13 +317,10 @@ export const SenderInfoForm = (
   return (
     <>
       <div className="container justify-center p-10">
-        <h1 className="text-5xl font-extrabold tracking-tight text-white text-center ">
+        <h1 className="text-5xl font-extrabold tracking-tight  text-center ">
           Sender Details
         </h1>
-        <form
-          onSubmit={handleSubmit(submitForm)}
-          className="text-white form-floating"
-        >
+        <form onSubmit={handleSubmit(submitForm)} className=" form-floating">
           <div className="grid grid-cols-2  gap-12 px-4 py-16">
             {/* <div className="flex flex-col"> */}
             <input
@@ -433,10 +424,10 @@ export const SummaryForm = (
   const { form } = useContext(FormStateContext);
   return (
     <div className="container justify-center p-10">
-      <h1 className="text-5xl font-extrabold tracking-tight text-white text-center ">
+      <h1 className="text-5xl font-extrabold tracking-tight  text-center ">
         Summary
       </h1>
-      <div className="text-white form-floating">
+      <div className=" form-floating">
         <div className="grid grid-cols-2  gap-12 px-4 py-16">
           <div className="flex flex-col">
             <label className="text-2xl">Sender Details</label>

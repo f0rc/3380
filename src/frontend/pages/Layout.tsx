@@ -1,10 +1,4 @@
-import React, {
-  Children,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { useContext, useMemo } from "react";
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import { api } from "src/server/utils/api";
 import { AuthContext } from "../auth/SessionProvider";
@@ -13,14 +7,12 @@ const Layout = () => {
   const navigatr = useNavigate();
   const { authenticated } = useContext(AuthContext);
 
-  console.time("filter array");
   const extendedNav = useMemo(() => {
     if (authenticated) {
       return true;
     }
     return false;
   }, [authenticated]);
-  console.timeEnd("filter array");
 
   // handle login logout
 
@@ -41,10 +33,10 @@ const Layout = () => {
 
   return (
     <>
-      <nav className="px-2 py-2.5 darkColor-2 w-full border-b border-gray-600 sticky top-0 z-50 max-h-20">
+      <nav className="px-2 py-2.5 w-full border-b border-gray-600 sticky top-0 z-50 max-h-20 backdrop-blur-md">
         <div className="container flex flex-wrap items-center justify-between mx-auto">
           <a href="/" className="flex items-center">
-            <span className="self-center text-xl font-semibold whitespace-nowrap text-white">
+            <span className="self-center text-xl font-semibold whitespace-nowrap ">
               [MAIL]
             </span>
           </a>
@@ -54,14 +46,14 @@ const Layout = () => {
                 onClick={() => {
                   handleLogout();
                 }}
-                className="focus:ring-4 focus:outline-none font-medium rounded-lg text-sm px-5 py-2.5 text-center mr-0 hover:bg-blue-700 ring-blue-800"
+                className="focus:ring-4 focus:outline-none font-lg rounded-lg text-sm px-5 py-2.5 text-center mr-0 hover:bg-[#cfdbd5] hover:text-black  border-b border-[#dfe22c] ring-[#dfe22c]"
               >
                 logout
               </button>
             ) : (
               <Link
                 to="/login"
-                className="focus:ring-4 focus:outline-none font-medium rounded-lg text-sm px-5 py-2 text-center mr-0  hover:bg-blue-700 ring-blue-800 text-white border-b border-[hsl(280,100%,70%)]"
+                className="focus:ring-4 focus:outline-none font-lg rounded-lg text-sm px-5 py-2 text-center mr-0  hover:bg-[#cfdbd5] hover:text-black border-b border-[#dfe22c] ring-[#dfe22c]"
               >
                 login
               </Link>

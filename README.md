@@ -15,5 +15,13 @@
 
 
 # todo:
-- fix login/signup form control
-- fix `create package` form control
+- work log page
+- stats page
+- driver page
+- list packages page (clerk, manager, ceo)
+- user list packages page (customer, clerk, manager, ceo)
+
+
+# fixes: 
+- `create package` and `create employee` form control
+- designs overall

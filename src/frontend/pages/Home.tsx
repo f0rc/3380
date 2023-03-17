@@ -6,7 +6,7 @@ const Home = () => {
   const { data: hello } = api.greeting.hello.useQuery({ name: "world" });
   const { authenticated } = useContext(AuthContext);
   return (
-    <div className="bg-gray-800 min-h-screen w-full text-white">
+    <div className="">
       <div className="container items-center text-3xl">
         <p>{hello?.greeting}</p>
         <p>{authenticated ? "authenticated" : "not authenticated"}</p>
