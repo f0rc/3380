@@ -95,7 +95,7 @@ const CreateMultiStepForm = () => {
       <div className="w-full px-2 py-10 items-center">
         <Tab.Group selectedIndex={selectedIndex}>
           <div className="flex flex-col items-center align-middle justify-center">
-            <div className="w-3/4">
+            <div className="w-2/4">
               <div className="">
                 <Tab.List className="flex space-x-1 rounded-xl darkColor p-1">
                   {FORM_STEPS.map((step, index) => (
@@ -113,7 +113,7 @@ const CreateMultiStepForm = () => {
                   ))}
                 </Tab.List>
               </div>
-              <div className="darkColor">
+              <div className="darkColor rounded-md">
                 <Tab.Panels className="mt-2">
                   <Tab.Panel>
                     <div className="flex flex-col">

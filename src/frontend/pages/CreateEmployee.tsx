@@ -1,6 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import React from "react";
 import { useForm } from "react-hook-form";
+import { api } from "src/server/utils/api";
 import { z } from "zod";
 
 export const CreateEmployee = () => {
@@ -27,8 +28,15 @@ export const CreateEmployee = () => {
     resolver: zodResolver(employeeSchema),
   });
 
-  const onSubmit = handleSubmit((data) => {
+  const { mutateAsync } = api.employee.createEmployee.useMutation({
+    onSuccess: () => {
+      console.log("emplopyee made success");
+    },
+  });
+
+  const onSubmit = handleSubmit(async (data) => {
     console.log("data", data);
+    await mutateAsync(data);
   });
 
   return (
