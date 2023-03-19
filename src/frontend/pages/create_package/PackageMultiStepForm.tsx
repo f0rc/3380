@@ -90,10 +90,10 @@ export const PackageInfoForm = (
                 <option value="" disabled>
                   Select Option
                 </option>
-                <option value="Small">Small</option>
-                <option value="Medium">Medium</option>
-                <option value="Large">Large</option>
-                <option value="Extra Large">Extra Large</option>
+                <option value="small">Small</option>
+                <option value="medium">Medium</option>
+                <option value="large">Large</option>
+                <option value="extra large">Extra Large</option>
               </select>
             </div>
 

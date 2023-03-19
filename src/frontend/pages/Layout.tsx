@@ -33,7 +33,7 @@ const Layout = () => {
 
   return (
     <>
-      <nav className="px-2 py-2.5 w-full border-b border-gray-600 sticky top-0 z-50 max-h-20 backdrop-blur-md">
+      <nav className="px-2 py-2.5 w-full border-b border-gray-600 sticky top-0 z-20 max-h-20 backdrop-blur-md">
         <div className="container flex flex-wrap items-center justify-between mx-auto">
           <a href="/" className="flex items-center">
             <span className="self-center text-xl font-semibold whitespace-nowrap ">

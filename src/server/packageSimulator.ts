@@ -2,159 +2,227 @@ import { postgresQuery } from "src/database/db";
 
 export interface PackageType {
   locationHistoryID: number;
-  packageID: number;
+  package_location_id: number;
+  package_id: string;
   status: string;
-  locationID: number;
-  intransitCounter: number;
+  location_id: number;
+  intransitcounter: number;
+}
+export interface PackageListType {
+  package_id: string;
+  id: number;
+  status: string[];
+  zipcodeHistory: string[];
+  inTransitCounter: number;
 }
 
 const getPackages = async () => {
-  const packages = await postgresQuery(
-    `SELECT * FROM "PACKAGE_LOCATION_HISTORY" WHERE "status" = 'accepted' OR "status" = 'transit' OR "status" = 'out-for-delivery' ORDER BY "createdAt" ASC LIMIT 10`,
-    []
-  );
-  return packages.rows;
+  try {
+    const packages = await postgresQuery(
+      `SELECT *
+      FROM "PACKAGE_LOCATION_HISTORY"
+      WHERE "package_id" = (
+        SELECT "package_id"
+        FROM "PACKAGE_LOCATION_HISTORY"
+        WHERE "status" IN ('accepted', 'transit', 'out-for-delivery')
+        AND "package_id" NOT IN (
+          SELECT "package_id"
+          FROM "PACKAGE_LOCATION_HISTORY"
+          WHERE "status" IN ('fail', 'delivered')
+        )
+        ORDER BY "createdAt" ASC
+        LIMIT 1
+      )
+      ORDER BY "createdAt" ASC
+      LIMIT 10;`,
+      []
+    );
+
+    return packages.rows as PackageType[];
+  } catch (e) {
+    console.log(e);
+  }
 };
 
-const dbpkg = await getPackages();
-console.log(dbpkg);
+const updatePackage = async ({
+  package_id,
+  location_id,
+  status,
+  intransitcounter,
+}: {
+  package_id: string;
+  location_id: string;
+  status: string;
+  intransitcounter: number;
+}) => {
+  try {
+    const packages = await postgresQuery(
+      `INSERT INTO "PACKAGE_LOCATION_HISTORY" ("package_id", "status", "location_id", "intransitcounter") VALUES ($1, $2, $3, $4);`,
+      [package_id, status, location_id, intransitcounter]
+    );
 
-// const onePackage: PackageType[] = [
-//   {
-//     locationHistoryID: 2,
-//     packageID: 1,
-//     status: "accepted",
-//     locationID: 100,
-//     intransitCounter: 0,
-//   },
-// ];
+    return packages.rows as PackageType[];
+  } catch (e) {
+    console.log(e);
+  }
+};
 
-// const statusList = onePackage.map((pkg) => pkg.status);
-// const zipcodelist = onePackage.map((pkg) => pkg.locationID.toString());
+const canTransit = (inTransitCounter: number) => {
+  if (inTransitCounter === 1) {
+    const change = Math.random() < 0.8;
+    console.log("CHANCE is 80%");
+    return change;
+  } else if (inTransitCounter === 2) {
+    const change = Math.random() < 0.6;
+    console.log("CHANCE is 60%");
+    return change;
+  } else if (inTransitCounter === 3) {
+    const change = Math.random() < 0.4;
+    console.log("CHANCE is 40%");
+    return change;
+  } else if (inTransitCounter === 4) {
+    const change = Math.random() < 0.2;
+    console.log("CHANCE is 20%");
+    return change;
+  }
+};
 
-// const packageList = [
-//   {
-//     id: onePackage[0]?.packageID,
-//     status: statusList,
-//     zipcodeHistory: zipcodelist,
-//     inTransitCounter: onePackage[onePackage.length - 1]?.intransitCounter || 0,
-//   },
-// ];
+const getRandomOfficeLocation = (zipcodeHistory: string[]): string => {
+  // ##TODO: GET ACTUAL OFFICE LOCATIONS
+  const postofficelocations = [
+    "10001",
+    "60601",
+    "80202",
+    "94102",
+    "90001",
+    "120312",
+    "23423",
+    "901723",
+    "788456",
+    "5695745",
+  ];
+  const randomLocation =
+    postofficelocations[Math.floor(Math.random() * postofficelocations.length)];
+  if (zipcodeHistory.includes(randomLocation!)) {
+    return getRandomOfficeLocation(zipcodeHistory);
+  }
 
-// console.log(packageList);
+  return randomLocation as string;
+};
 
-// const canTransit = (inTransitCounter: number) => {
-//   if (inTransitCounter === 1) {
-//     const change = Math.random() < 0.8;
-//     console.log("CHANCE is 80%");
-//     return change;
-//   } else if (inTransitCounter === 2) {
-//     const change = Math.random() < 0.6;
-//     console.log("CHANCE is 60%");
-//     return change;
-//   } else if (inTransitCounter === 3) {
-//     const change = Math.random() < 0.4;
-//     console.log("CHANCE is 40%");
-//     return change;
-//   } else if (inTransitCounter === 4) {
-//     const change = Math.random() < 0.2;
-//     console.log("CHANCE is 20%");
-//     return change;
-//   }
-// };
+async function simulatePackageDelivery(pkg: PackageListType) {
+  const postofficelocations = ["10001", "60601", "80202", "94102", "90001"];
 
-// const getRandomOfficeLocation = (zipcodeHistory: string[]): string => {
-//   const postofficelocations = [
-//     "10001",
-//     "60601",
-//     "80202",
-//     "94102",
-//     "90001",
-//     "120312",
-//     "23423",
-//     "901723",
-//     "788456",
-//     "5695745",
-//   ];
-//   const randomLocation =
-//     postofficelocations[Math.floor(Math.random() * postofficelocations.length)];
-//   if (zipcodeHistory.includes(randomLocation!)) {
-//     return getRandomOfficeLocation(zipcodeHistory);
-//   }
+  const randomLocation =
+    postofficelocations[Math.floor(Math.random() * postofficelocations.length)];
 
-//   return randomLocation as string;
-// };
+  if (pkg.status[pkg.status.length - 1] === "delivered") {
+    return;
+  }
+  const isDeliveryFailed = Math.random() < 0.01;
 
-// function simulatePackageDelivery(packages: PackageType[]) {
-//   const postofficelocations = ["10001", "60601", "80202", "94102", "90001"];
-//   packageList.forEach((pkg) => {
-//     const randomLocation =
-//       postofficelocations[
-//         Math.floor(Math.random() * postofficelocations.length)
-//       ];
+  if (
+    pkg.status[pkg.status.length - 1] === "transit" &&
+    pkg.zipcodeHistory.length >= 2 &&
+    pkg.inTransitCounter >= 4
+  ) {
+    await updatePackage({
+      package_id: pkg.package_id,
+      location_id: randomLocation!,
+      status: "out-for-delivery",
+      intransitcounter: pkg.inTransitCounter,
+    });
+    // pkg.zipcodeHistory.push(randomLocation!);
+    // pkg.status.push("out-for-delivery");
+  } else if (
+    pkg.status[pkg.status.length - 1] === "transit" &&
+    pkg.zipcodeHistory.length >= 2 &&
+    pkg.inTransitCounter <= 4
+  ) {
+    if (canTransit(pkg.inTransitCounter)) {
+      await updatePackage({
+        package_id: pkg.package_id,
+        location_id: randomLocation!,
+        status: "transit",
+        intransitcounter: pkg.inTransitCounter + 1,
+      });
+      // pkg.zipcodeHistory.push(randomLocation!);
+      // pkg.status.push("transit");
+      // pkg.inTransitCounter++;
+    } else {
+      await updatePackage({
+        package_id: pkg.package_id,
+        location_id: randomLocation!,
+        status: "out-for-delivery",
+        intransitcounter: pkg.inTransitCounter,
+      });
+      // pkg.zipcodeHistory.push(randomLocation!);
+      // pkg.status.push("out-for-delivery");
+    }
+  } else if (pkg.status[pkg.status.length - 1] === "out-for-delivery") {
+    if (isDeliveryFailed) {
+      await updatePackage({
+        package_id: pkg.package_id,
+        location_id: pkg.zipcodeHistory[pkg.zipcodeHistory.length - 1]!,
+        status: "fail",
+        intransitcounter: pkg.inTransitCounter,
+      });
+      // pkg.status.push("failed-delivery");
+    } else {
+      await updatePackage({
+        package_id: pkg.package_id,
+        location_id: pkg.zipcodeHistory[pkg.zipcodeHistory.length - 1]!,
+        status: "delivered",
+        intransitcounter: pkg.inTransitCounter,
+      });
+      // pkg.zipcodeHistory.push(randomLocation!);
+      // pkg.status.push("delivered");
+    }
+  } else if (
+    pkg.status[pkg.status.length - 1] === "accepted" &&
+    pkg.zipcodeHistory.length === 1
+  ) {
+    await updatePackage({
+      package_id: pkg.package_id,
+      location_id: randomLocation!,
+      status: "transit",
+      intransitcounter: pkg.inTransitCounter + 1,
+    });
+    // pkg.zipcodeHistory.push(randomLocation!);
+    // pkg.status.push("transit");
+    // pkg.inTransitCounter = 1;
+  } else if (pkg.status[pkg.status.length - 1] === "accepted") {
+    await updatePackage({
+      package_id: pkg.package_id,
+      location_id: randomLocation!,
+      status: "transit",
+      intransitcounter: pkg.inTransitCounter + 1,
+    });
+    // pkg.zipcodeHistory.push(randomLocation!);
+    // pkg.status.push("transit");
+    // pkg.inTransitCounter = 1;
+  }
+}
 
-//     if (pkg.status[pkg.status.length - 1] === "delivered") {
-//       return;
-//     }
-//     const isDeliveryFailed = Math.random() < 0.05;
+const simulate = async () => {
+  const dbpkg = await getPackages();
 
-//     if (
-//       pkg.status[pkg.status.length - 1] === "intransit" &&
-//       pkg.zipcodeHistory.length >= 2 &&
-//       pkg.inTransitCounter >= 4
-//     ) {
-//       pkg.zipcodeHistory.push(randomLocation!);
-//       pkg.status.push("out-for-delivery");
-//       pkg.inTransitCounter = 0;
-//     } else if (
-//       pkg.status[pkg.status.length - 1] === "intransit" &&
-//       pkg.zipcodeHistory.length >= 2 &&
-//       pkg.inTransitCounter <= 4
-//     ) {
-//       if (canTransit(pkg.inTransitCounter)) {
-//         pkg.zipcodeHistory.push(randomLocation!);
-//         pkg.status.push("intransit");
-//         pkg.inTransitCounter++;
-//       } else {
-//         pkg.zipcodeHistory.push(randomLocation!);
-//         pkg.status.push("out-for-delivery");
-//       }
-//     } else if (pkg.status[pkg.status.length - 1] === "out-for-delivery") {
-//       if (isDeliveryFailed) {
-//         pkg.status.push("failed-delivery");
-//         console.log(`Delivery failed for package ${pkg.id}`);
-//       } else {
-//         pkg.zipcodeHistory.push(randomLocation!);
-//         pkg.status.push("delivered");
-//         console.log(`Package ${pkg.id} delivered to`);
-//       }
-//     } else if (
-//       pkg.status[pkg.status.length - 1] === "accepted" &&
-//       pkg.zipcodeHistory.length === 1
-//     ) {
-//       pkg.zipcodeHistory.push(randomLocation!);
-//       pkg.status.push("intransit");
-//       pkg.inTransitCounter = 1;
-//     } else if (pkg.status[pkg.status.length - 1] === "accepted") {
-//       pkg.zipcodeHistory.push(randomLocation!);
-//       pkg.status.push("intransit");
-//       pkg.inTransitCounter = 1;
-//     }
-//   });
-// }
+  if (!dbpkg) {
+    return;
+  }
 
-// simulatePackageDelivery(onePackage);
-// simulatePackageDelivery(onePackage);
-// simulatePackageDelivery(onePackage);
-// simulatePackageDelivery(onePackage);
-// simulatePackageDelivery(onePackage);
-// simulatePackageDelivery(onePackage);
-// packageList.forEach((pkg) => {
-//   console.log("++++++++++++++++++++++++++++++");
-//   console.log("package id: ", pkg.id);
-//   console.log("status: ", pkg.status);
-//   console.log("zipcode history: ", pkg.zipcodeHistory);
-//   console.log("transits: ", pkg.inTransitCounter);
-//   console.log("++++++++++++++++++++++++++++++");
-// });
-// // }
+  const statusList = dbpkg.map((pkg) => pkg.status);
+  const zipcodelist = dbpkg.map((pkg) => pkg.location_id.toString());
+
+  const packageList = {
+    package_id: dbpkg[0]!.package_id,
+    id: dbpkg[0]!.package_location_id,
+    status: statusList,
+    zipcodeHistory: zipcodelist,
+    inTransitCounter: dbpkg[dbpkg.length - 1]!.intransitcounter,
+  };
+
+  await simulatePackageDelivery(packageList);
+};
+
+simulate();
