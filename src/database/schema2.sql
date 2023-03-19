@@ -50,6 +50,7 @@ CREATE TABLE "PACKAGE_LOCATION_HISTORY" (
     "package_location_id" SERIAL NOT NULL,
     "package_id" TEXT NOT NULL, --refer to Package
     "location_id" TEXT NOT NULL,
+    "intransitcounter" INTEGER NOT NULL DEFAULT 0,
     -- make a status
     "status" TEXT NOT NULL CHECK ("status" IN('accepted', 'transit', 'delivered','out-for-delivery', 'fail')),
     "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -292,9 +293,12 @@ EXECUTE FUNCTION insert_user();
 
 -- after the inser of employee, check a users table with email of the employee if it exists then update the employee table
 CREATE OR REPLACE FUNCTION insert_employee() RETURNS TRIGGER AS $$
+DECLARE
+    emp_user_id TEXT;
 BEGIN
     IF EXISTS (SELECT 1 FROM "USER" WHERE "email" = NEW."email") THEN
-        UPDATE "EMPLOYEE" SET "user_id" = NEW."employee_id" WHERE "email" = NEW."email";
+        SELECT "user_id" INTO emp_user_id FROM "USER" WHERE "email" = NEW."email";
+        UPDATE "EMPLOYEE" SET "user_id" = emp_user_id WHERE "email" = NEW."email";
     END IF;
     RETURN NEW;
 END;
@@ -322,10 +326,13 @@ EXECUTE FUNCTION insert_Customer();
 
 
 CREATE OR REPLACE FUNCTION insert_LOCATION_HISTORY() RETURNS TRIGGER AS $$
+DECLARE
+    emp_location_id TEXT;
 BEGIN
+    SELECT "postoffice_location_id" FROM "EMPLOYEE" WHERE "EMPLOYEE"."user_id" = NEW."createdBy" INTO emp_location_id;
     -- insert into package location history after insert on package
     INSERT INTO "PACKAGE_LOCATION_HISTORY" ("package_id","location_id", "status")
-    VALUES (NEW."package_id", '1234', 'accepted');
+    VALUES (NEW."package_id", emp_location_id, 'accepted');
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;

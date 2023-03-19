@@ -1,7 +1,9 @@
+import { TRPCError } from "@trpc/server";
 import { randomUUID } from "crypto";
 import { createPackageFormSchema } from "src/frontend/pages/create_package/formSchema";
+import { z } from "zod";
 
-import { protectedProcedure, router } from "../utils/trpc";
+import { protectedProcedure, publicProcedure, router } from "../utils/trpc";
 
 export const packageRouter = router({
   createPackage: protectedProcedure
@@ -113,6 +115,32 @@ export const packageRouter = router({
       packageList: packageList.rows as PackageSchema[],
     };
   }),
+
+  packageDetailsPublic: publicProcedure
+    .input(z.object({ package_id: z.string() }))
+    .query(async ({ ctx, input }) => {
+      console.log("PACKAGE ID", input.package_id);
+      const { postgresQuery } = ctx;
+      const { package_id } = input;
+
+      const packageDetails = await postgresQuery(
+        `SELECT "PACKAGE"."package_id", "type", "size", "weight", "status", "location_id" FROM "PACKAGE", "PACKAGE_LOCATION_HISTORY" WHERE "PACKAGE"."package_id" = $1 AND "PACKAGE"."package_id" = "PACKAGE_LOCATION_HISTORY"."package_id" LIMIT 1`,
+        [package_id]
+      );
+
+      if (packageDetails.rowCount === 0) {
+        return {
+          status: "error",
+          code: 404,
+          message: "Package not found",
+        };
+      }
+      return {
+        status: "success",
+        code: 200,
+        packageDetails: packageDetails.rows[0] as PackageSchema,
+      };
+    }),
 });
 
 export interface PackageSchema {
@@ -123,6 +151,8 @@ export interface PackageSchema {
   weight: number;
   type: string;
   size: string;
+  status: string;
+  location_id: string;
   createdBy: string;
   updatedBy: string;
   createdAt: Date;

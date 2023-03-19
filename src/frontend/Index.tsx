@@ -8,6 +8,7 @@ import Error from "./pages/Error";
 import Home from "./pages/Home";
 import Layout from "./pages/Layout";
 import Login from "./pages/Login";
+import PackageDetail from "./pages/PackageDetail";
 import PackageList from "./pages/PackageList";
 import Signup from "./pages/Signup";
 
@@ -22,7 +23,9 @@ const Index = () => {
             <Route path="login" element={<Login />} />
             <Route path="create-package" element={<CreatePackage />} />
             <Route path="package-list" element={<PackageList />} />
+            <Route path="/package/:id" element={<PackageDetail />} />
             <Route path="create-employee" element={<CreateEmployee />} />
+
             <Route path="*" element={<Error />} />
           </Route>
         </Routes>
