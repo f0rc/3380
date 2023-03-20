@@ -114,9 +114,9 @@ const CreateMultiStepForm = () => {
                 </Tab.List>
               </div>
               <div className="darkColor rounded-md">
-                <Tab.Panels className="mt-2">
+                <Tab.Panels className="mt-2 bg-[#333533] rounded-md">
                   <Tab.Panel>
-                    <div className="flex flex-col">
+                    <div className="">
                       <PackageInfoForm onNext={nextStep} />
                     </div>
                   </Tab.Panel>

@@ -1,9 +1,12 @@
-import React, { useState } from "react";
-import { PackageSchema } from "src/server/router/package";
+import React, { useEffect, useState } from "react";
+import {
+  PackageSchema,
+  PackageSchemaWithStatus,
+} from "src/server/router/package";
 import { api } from "src/server/utils/api";
 
 const PackageList = () => {
-  const [packages, setPackages] = React.useState([] as PackageSchema[]);
+  const [packages, setPackages] = useState([] as PackageSchemaWithStatus[]);
 
   const { data, isLoading, isError } = api.package.packageList.useQuery(
     undefined,
@@ -13,55 +16,220 @@ const PackageList = () => {
       },
     }
   );
-  // const [sortField, setSortField] = useState<string>("packageID");
-  // const [sortDirection, setSortDirection] = useState<string>("asc");
 
-  // // const sortedPackages = packages.sort((a, b) => {
-  // //   const sortValueA = a[sortField];
-  // //   const sortValueB = b[sortField];
+  const [sort, setSort] = useState({ column: "no", direction: "asc" });
+  const sortedPackages = packages.sort((a, b) => {
+    const { column, direction } = sort;
+    const sortOrder = direction === "asc" ? "asc" : "desc";
+    const sortColumn = column as
+      | "no"
+      | "type"
+      | "weight"
+      | "size"
+      | "processedAt"
+      | "status";
 
-  // //   if (sortValueA < sortValueB) {
-  // //     return sortDirection === "asc" ? -1 : 1;
-  // //   } else if (sortValueA > sortValueB) {
-  // //     return sortDirection === "asc" ? 1 : -1;
-  // //   } else {
-  // //     return 0;
-  // //   }
-  // // });
+    if (sortColumn === "type") {
+      return sortOrder === "asc"
+        ? a.type.localeCompare(b.type)
+        : b.type.localeCompare(a.type);
+    }
+    if (sortColumn === "weight") {
+      return sortOrder === "asc" ? a.weight - b.weight : b.weight - a.weight;
+    }
+    if (sortColumn === "size") {
+      return sortOrder === "asc"
+        ? Number(a.size) - Number(b.size)
+        : Number(b.size) - Number(a.size);
+    }
+    if (sortColumn === "processedAt") {
+      return sortOrder === "asc"
+        ? new Date(a.processedAt).getTime() - new Date(b.processedAt).getTime()
+        : new Date(b.processedAt).getTime() - new Date(a.processedAt).getTime();
+    }
+    if (sortColumn === "status") {
+      return sortOrder === "asc"
+        ? a.status.localeCompare(b.status)
+        : b.status.localeCompare(a.status);
+    }
 
-  // // const handleSortChange = (field: string) => {
-  // //   if (sortField === field) {
-  // //     setSortDirection(sortDirection === "asc" ? "desc" : "asc");
-  // //   } else {
-  // //     setSortField(field);
-  // //     setSortDirection("asc");
-  // //   }
-  // // };
+    if (sortColumn === "no") {
+      return sortOrder === "asc"
+        ? a.status.localeCompare(b.package_id)
+        : b.status.localeCompare(a.package_id);
+    }
+    return 0;
+  });
+
+  const handleSortColumn = (
+    column: "no" | "type" | "weight" | "size" | "processedAt" | "status"
+  ) => {
+    console.log(column, sort.column, sort.direction);
+    if (column === sort.column) {
+      // setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+      setSort((prev) => ({
+        ...prev,
+        direction: prev.direction === "asc" ? "desc" : "asc",
+      }));
+    } else {
+      setSort({ column, direction: "asc" });
+    }
+  };
 
   if (isLoading) {
     return <div>Loading...</div>;
   }
-
   if (isError) {
     return <div>Error</div>;
   }
 
-  console.log(packages);
+  // useEffect(() => {
+  //   console.log(sort?.column, sort?.direction);
+  // }, [sort]);
+
   return (
-    <div className="w-full max-w-full p-5 h-screen ">
-      <div className="relative flex flex-col min-w-0 break-words border-0 shadow-soft-xl text-slate-200 p-4">
-        <h2 className="text-xl mb-2">List of Packages</h2>
-        <div className="">
-          {packages.map((pkg, index) => (
-            <div
-              key={pkg.package_id}
-              className="flex flex-row bg-gray-900 p-4 rounded-md"
-            >
-              <div className="flex flex-col w-1/2">
-                <p>{index + 1}</p>
-              </div>
-            </div>
-          ))}
+    <div className="">
+      <div className="min-h-[80hv] mt-20">
+        <div className="flex justify-center align-middle">
+          <table className="table-auto w-3/4 bg-[#4124] rounded-lg shadow-md overflow-hidden">
+            <thead className="bg-gray-800 text-lg">
+              <tr>
+                <th
+                  className="px-6 py-4 border-r  border-b border-gray-300 font-bold uppercase text-white cursor-pointer"
+                  onClick={() => handleSortColumn("no")}
+                >
+                  No.
+                  {sort.column === "no" && (
+                    <span
+                      className={`ml-2 fas ${
+                        sort.direction === "asc" ? "fa-sort-up" : "fa-sort-down"
+                      }`}
+                    >
+                      {sort.direction === "asc" || null ? "↑" : "↓"}
+                    </span>
+                  )}
+                </th>
+                <th
+                  className="px-6 py-4 border-b border-r border-gray-300 font-bold  uppercase text-white cursor-pointer"
+                  onClick={() => handleSortColumn("type")}
+                >
+                  Type
+                  {sort.column === "type" && (
+                    <span
+                      className={`ml-2 fas ${
+                        sort.direction === "asc" ? "fa-sort-up" : "fa-sort-down"
+                      }`}
+                    >
+                      {sort.direction === "asc" || null ? "↑" : "↓"}
+                    </span>
+                  )}
+                </th>
+                <th
+                  className="px-6 py-4 border-b border-r border-gray-300 font-bold  uppercase text-white  cursor-pointer"
+                  onClick={() => handleSortColumn("weight")}
+                >
+                  Weight
+                  {sort.column === "weight" && (
+                    <span
+                      className={`ml-2 fas ${
+                        sort.direction === "asc" ? "fa-sort-up" : "fa-sort-down"
+                      }`}
+                    >
+                      {sort.direction === "asc" || null ? "↑" : "↓"}
+                    </span>
+                  )}
+                </th>
+                <th
+                  className="px-6 py-4 border-b border-r border-gray-300 font-bold uppercase text-white cursor-pointer"
+                  onClick={() => handleSortColumn("size")}
+                >
+                  Size
+                  {sort.column === "size" && (
+                    <span
+                      className={`ml-2 fas ${
+                        sort.direction === "asc" ? "fa-sort-up" : "fa-sort-down"
+                      }`}
+                    >
+                      {sort.direction === "asc" || null ? "↑" : "↓"}
+                    </span>
+                  )}
+                </th>
+                <th
+                  className="px-6 py-4 border-b border-r border-gray-300 font-bold  uppercase text-white cursor-pointer"
+                  onClick={() => handleSortColumn("processedAt")}
+                >
+                  Last Update
+                  {sort.column === "processedAt" && (
+                    <span
+                      className={`ml-2 fas ${
+                        sort.direction === "asc" ? "fa-sort-up" : "fa-sort-down"
+                      }`}
+                    >
+                      {sort.direction === "asc" || null ? "↑" : "↓"}
+                    </span>
+                  )}
+                </th>
+                <th
+                  className="px-6 py-4 border-b  border-gray-300 font-bold uppercase text-white cursor-pointer"
+                  onClick={() => handleSortColumn("status")}
+                >
+                  status
+                  {sort.column === "status" && (
+                    <span
+                      className={`ml-2 fas ${
+                        sort.direction === "asc" ? "fa-sort-up" : "fa-sort-down"
+                      }`}
+                    >
+                      {sort.direction === "asc" || null ? "↑" : "↓"}
+                    </span>
+                  )}
+                </th>
+              </tr>
+            </thead>
+            <tbody className="text-gray-100 text-center text-[1.2rem]">
+              {packages.map((pkg, index) => {
+                return (
+                  <tr
+                    key={pkg.package_id}
+                    className={`${
+                      index % 2 === 0 ? "bg-gray-800" : "bg-gray-700"
+                    } `}
+                  >
+                    <td className="px-6 py-4 border-r  border-b border-gray-300">
+                      {pkg.package_id}
+                    </td>
+                    <td className="px-6 py-4 border-b border-r border-gray-300">
+                      {pkg.type}
+                    </td>
+                    <td className="px-6 py-4 border-b border-r border-gray-300">
+                      {pkg.weight}
+                    </td>
+                    <td className="px-6 py-4 border-b border-r border-gray-300">
+                      {pkg.size}
+                    </td>
+                    <td className="px-6 py-4 border-b border-r border-gray-300">
+                      {new Date(pkg.processedAt).toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4 border-b  border-gray-300">
+                      <span
+                        className={` px-2 py-1 text-sm font-semibold  rounded-md ${
+                          pkg.status === "accepted"
+                            ? "bg-green-800 text-green-100"
+                            : pkg.status === "transit"
+                            ? "bg-blue-100 text-blue-800"
+                            : pkg.status === "delivered"
+                            ? "bg-indigo-100 text-indigo-800"
+                            : "bg-gray-100 text-gray-800"
+                        }`}
+                      >
+                        {pkg.status}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

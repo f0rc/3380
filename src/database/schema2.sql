@@ -53,7 +53,7 @@ CREATE TABLE "PACKAGE_LOCATION_HISTORY" (
     "intransitcounter" INTEGER NOT NULL DEFAULT 0,
     -- make a status
     "status" TEXT NOT NULL CHECK ("status" IN('accepted', 'transit', 'delivered','out-for-delivery', 'fail')),
-    "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "processedAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "package_location_id" PRIMARY KEY ("package_location_id")
 );

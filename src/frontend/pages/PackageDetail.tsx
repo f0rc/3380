@@ -47,7 +47,7 @@ const PackageDetail = () => {
               <div className="grow gap-2 items-center">
                 <h1 className="text-xl font-bold pb-3">Status</h1>
                 <p className="text-lg bg-green-700  py-2 px-3 rounded-full text-white text-center w-fit">
-                  {packageDetails?.status}
+                  fixthis
                 </p>
               </div>
             </div>
