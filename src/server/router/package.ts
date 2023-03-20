@@ -105,14 +105,23 @@ export const packageRouter = router({
     const { postgresQuery } = ctx;
 
     const packageList = await postgresQuery(
-      `SELECT ("status", "location_id", "type", "PACKAGE"."createdAt") FROM "PACKAGE", "PACKAGE_LOCATION_HISTORY" WHERE "PACKAGE"."package_id" = "PACKAGE_LOCATION_HISTORY"."package_id" LIMIT 10 `,
+      `SELECT p.*, plh.*
+      FROM "PACKAGE" p
+      INNER JOIN (
+          SELECT package_id, MAX("processedAt") AS latest_date
+          FROM "PACKAGE_LOCATION_HISTORY"
+          GROUP BY package_id
+      ) plh2 ON p.package_id = plh2.package_id
+      INNER JOIN "PACKAGE_LOCATION_HISTORY" plh
+          ON plh.package_id = plh2.package_id
+          AND plh."processedAt" = plh2.latest_date`,
       []
     );
     console.log(packageList.rows);
 
     return {
       status: "success",
-      packageList: packageList.rows as PackageSchema[],
+      packageList: packageList.rows as PackageSchemaWithStatus[],
     };
   }),
 
@@ -145,16 +154,40 @@ export const packageRouter = router({
 
 export interface PackageSchema {
   package_id: string;
-  cost: number;
   sender_id: string;
   receiver_id: string;
+  cost: number;
   weight: number;
   type: string;
   size: string;
-  status: string;
-  location_id: string;
   createdBy: string;
   updatedBy: string;
   createdAt: Date;
   updatedAt: Date;
 }
+
+export interface PackageSchemaWithStatus extends PackageSchema {
+  package_location_id: number;
+  location_id: string;
+  intransitcounter: number;
+  status: string;
+  processedAt: string;
+}
+//example output
+// {
+//   package_id: '21c57f4f-2c83-4d77-a7a4-39364a88abb4',
+//   sender_id: '116e3c4c-d5f3-494d-9531-2f5ba142d068',
+//   receiver_id: '5faba5e1-6066-4bad-ab6d-175079fdc26e',
+//   cost: '0',
+//   weight: '182',
+//   type: 'box',
+//   size: 'extra large',
+//   createdAt: 2023-03-19T10:21:41.560Z,
+//   createdBy: '6fa0e11c-adef-4f74-85df-a0dfa31b43d6',
+//   updatedAt: 2023-03-19T05:00:00.000Z,
+//   updatedBy: '6fa0e11c-adef-4f74-85df-a0dfa31b43d6',
+//   package_location_id: 19,
+//   location_id: '80202',
+//   intransitcounter: 3,
+//   status: 'fail'
+// }

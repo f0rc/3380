@@ -30,10 +30,10 @@ const getPackages = async () => {
           FROM "PACKAGE_LOCATION_HISTORY"
           WHERE "status" IN ('fail', 'delivered')
         )
-        ORDER BY "createdAt" ASC
+        ORDER BY "processedAt" ASC
         LIMIT 1
       )
-      ORDER BY "createdAt" ASC
+      ORDER BY "processedAt" ASC
       LIMIT 10;`,
       []
     );
