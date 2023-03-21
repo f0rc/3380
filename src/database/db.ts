@@ -3,7 +3,7 @@ import Postgres from "pg";
 
 const pool = new Postgres.Pool({
   host: "localhost",
-  port: 5433,
+  port: 6543,
   user: "test",
   password: "test",
   database: "test",
