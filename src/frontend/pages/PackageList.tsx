@@ -83,10 +83,6 @@ const PackageList = () => {
     return <div>Error</div>;
   }
 
-  // useEffect(() => {
-  //   console.log(sort?.column, sort?.direction);
-  // }, [sort]);
-
   return (
     <div className="">
       <div className="min-h-[80hv] mt-20">
