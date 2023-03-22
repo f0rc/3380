@@ -11,9 +11,9 @@
     "client": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "dbMigration": "psql -f ./src/database/schema2.sql -h localhost -U test -p 6543 -d test",
-    "dropSchema": "psql -f ./src/database/drop.sql -h localhost -U test -p 6543 -d test",
-    "dbtest": "npm run dropSchema && npm run dbMigration && tsx src/database/seed.ts"
+    "dbMigration": "export PGPASSWORD='test'; psql -f ./src/database/schema2.sql -h localhost -U test -p 6543 -d test",
+    "dropSchema": "export PGPASSWORD='test'; psql -f ./src/database/drop.sql -h localhost -U test -p 6543 -d test",
+    "dbtest": "pnpm run dropSchema && pnpm run dbMigration && tsx src/database/seed.ts"
   },
   "dependencies": {
     "@headlessui/react": "0.0.0-insiders.0c0601f",

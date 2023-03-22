@@ -10,6 +10,7 @@ const PackageDetail = () => {
   const navigate = useNavigate();
 
   // fetch package history
+  console.log("STATE", state.data);
 
   useEffect(() => {
     if (!state) {
@@ -17,7 +18,7 @@ const PackageDetail = () => {
     }
   });
 
-  const packageDetails = state?.packageData?.packageDetails as PackageSchema;
+  const packageDetails = state?.data as PackageSchema;
 
   return (
     <div className="min-h-[80hv]">
