@@ -18,6 +18,7 @@ const PackageList = () => {
   );
 
   const [sort, setSort] = useState({ column: "no", direction: "asc" });
+  const originalIndices = packages.map((_, index) => index); // store the original indices of the objects
   const sortedPackages = packages.sort((a, b) => {
     const { column, direction } = sort;
     const sortOrder = direction === "asc" ? "asc" : "desc";
@@ -83,10 +84,20 @@ const PackageList = () => {
     return <div>Error</div>;
   }
 
-  // useEffect(() => {
-  //   console.log(sort?.column, sort?.direction);
-  // }, [sort]);
+<<<<<<< Updated upstream
+<<<<<<< Updated upstream
+<<<<<<< Updated upstream
+  const numberedData = sortedPackages.map((item, index) => {
+    const newItem = { ...item, id: originalIndices[index] + 1 }; // use the original index to number the items
+    return newItem;
+  });
 
+=======
+>>>>>>> Stashed changes
+=======
+>>>>>>> Stashed changes
+=======
+>>>>>>> Stashed changes
   return (
     <div className="">
       <div className="min-h-[80hv] mt-20">
@@ -187,7 +198,7 @@ const PackageList = () => {
               </tr>
             </thead>
             <tbody className="text-gray-100 text-center text-[1.2rem]">
-              {packages.map((pkg, index) => {
+              {numberedData.map((pkg, index) => {
                 return (
                   <tr
                     key={pkg.package_id}
@@ -196,7 +207,7 @@ const PackageList = () => {
                     } `}
                   >
                     <td className="px-6 py-4 border-r  border-b border-gray-300">
-                      {pkg.package_id}
+                      {pkg.id}
                     </td>
                     <td className="px-6 py-4 border-b border-r border-gray-300">
                       {pkg.type}
