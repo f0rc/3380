@@ -84,11 +84,14 @@ const PackageList = () => {
     return <div>Error</div>;
   }
 
+<<<<<<< Updated upstream
   const numberedData = sortedPackages.map((item, index) => {
     const newItem = { ...item, id: originalIndices[index] + 1 }; // use the original index to number the items
     return newItem;
   });
 
+=======
+>>>>>>> Stashed changes
   return (
     <div className="">
       <div className="min-h-[80hv] mt-20">
