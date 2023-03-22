@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   PackageSchema,
   PackageSchemaWithStatus,
@@ -6,6 +7,7 @@ import {
 import { api } from "src/server/utils/api";
 
 const PackageList = () => {
+  const navigate = useNavigate();
   const [packages, setPackages] = useState([] as PackageSchemaWithStatus[]);
 
   const { data, isLoading, isError } = api.package.packageList.useQuery(
@@ -18,8 +20,12 @@ const PackageList = () => {
   );
 
   const [sort, setSort] = useState({ column: "no", direction: "asc" });
-  const originalIndices = packages.map((_, index) => index); // store the original indices of the objects
-  const sortedPackages = packages.sort((a, b) => {
+  const packagesWithIndices = packages.map((packageItem, index) => ({
+    ...packageItem,
+    package_number: index + 1,
+  }));
+
+  const sortedPackages = packagesWithIndices.sort((a, b) => {
     const { column, direction } = sort;
     const sortOrder = direction === "asc" ? "asc" : "desc";
     const sortColumn = column as
@@ -29,6 +35,12 @@ const PackageList = () => {
       | "size"
       | "processedAt"
       | "status";
+
+    if (sortColumn === "no") {
+      return sortOrder === "asc"
+        ? a.package_number - b.package_number
+        : b.package_number - a.package_number;
+    }
 
     if (sortColumn === "type") {
       return sortOrder === "asc"
@@ -54,18 +66,12 @@ const PackageList = () => {
         : b.status.localeCompare(a.status);
     }
 
-    if (sortColumn === "no") {
-      return sortOrder === "asc"
-        ? a.status.localeCompare(b.package_id)
-        : b.status.localeCompare(a.package_id);
-    }
     return 0;
   });
 
   const handleSortColumn = (
     column: "no" | "type" | "weight" | "size" | "processedAt" | "status"
   ) => {
-    console.log(column, sort.column, sort.direction);
     if (column === sort.column) {
       // setSortOrder(sortOrder === "asc" ? "desc" : "asc");
       setSort((prev) => ({
@@ -84,19 +90,21 @@ const PackageList = () => {
     return <div>Error</div>;
   }
 
-  // const numberedData = sortedPackages.map((item, index) => {
-  //   const newItem = { ...item, id: originalIndices[index] + 1 }; // use the original index to number the items
-  //   return newItem;
-  // });
+  const handlePackageClick = (packageDetails: PackageSchema) => {
+    navigate(`/package/${packageDetails.package_id}`, {
+      state: { data: packageDetails },
+    });
+  };
+
   return (
     <div className="">
       <div className="min-h-[80hv] mt-20">
         <div className="flex justify-center align-middle">
-          <table className="table-auto w-3/4 bg-[#4124] rounded-lg shadow-md overflow-hidden">
-            <thead className="bg-gray-800 text-lg">
-              <tr>
+          <table className="table-auto w-3/4 bg-[#1D1D1C] shadow-md overflow-hidden text-[#e5e5e5] border border-[#41413E]">
+            <thead className="text-lg">
+              <tr className="">
                 <th
-                  className="px-6 py-4 border-r  border-b border-gray-300 font-bold uppercase text-white cursor-pointer"
+                  className="px-6 py-4 border-r  border-b border-[#41413E] font-bold uppercase cursor-pointer"
                   onClick={() => handleSortColumn("no")}
                 >
                   No.
@@ -111,7 +119,7 @@ const PackageList = () => {
                   )}
                 </th>
                 <th
-                  className="px-6 py-4 border-b border-r border-gray-300 font-bold  uppercase text-white cursor-pointer"
+                  className="px-6 py-4 border-b border-r border-[#41413E] font-bold  uppercase  cursor-pointer"
                   onClick={() => handleSortColumn("type")}
                 >
                   Type
@@ -126,7 +134,7 @@ const PackageList = () => {
                   )}
                 </th>
                 <th
-                  className="px-6 py-4 border-b border-r border-gray-300 font-bold  uppercase text-white  cursor-pointer"
+                  className="px-6 py-4 border-b border-r border-[#41413E] font-bold  uppercase   cursor-pointer"
                   onClick={() => handleSortColumn("weight")}
                 >
                   Weight
@@ -141,7 +149,7 @@ const PackageList = () => {
                   )}
                 </th>
                 <th
-                  className="px-6 py-4 border-b border-r border-gray-300 font-bold uppercase text-white cursor-pointer"
+                  className="px-6 py-4 border-b border-r border-[#41413E] font-bold uppercase  cursor-pointer"
                   onClick={() => handleSortColumn("size")}
                 >
                   Size
@@ -156,7 +164,7 @@ const PackageList = () => {
                   )}
                 </th>
                 <th
-                  className="px-6 py-4 border-b border-r border-gray-300 font-bold  uppercase text-white cursor-pointer"
+                  className="px-6 py-4 border-b border-r border-[#41413E] font-bold  uppercase  cursor-pointer"
                   onClick={() => handleSortColumn("processedAt")}
                 >
                   Last Update
@@ -171,7 +179,7 @@ const PackageList = () => {
                   )}
                 </th>
                 <th
-                  className="px-6 py-4 border-b  border-gray-300 font-bold uppercase text-white cursor-pointer"
+                  className="px-6 py-4 border-b  border-[#41413E] font-bold uppercase  cursor-pointer"
                   onClick={() => handleSortColumn("status")}
                 >
                   status
@@ -187,31 +195,33 @@ const PackageList = () => {
                 </th>
               </tr>
             </thead>
+
             <tbody className="text-gray-100 text-center text-[1.2rem]">
               {sortedPackages.map((pkg, index) => {
                 return (
                   <tr
                     key={pkg.package_id}
                     className={`${
-                      index % 2 === 0 ? "bg-gray-800" : "bg-gray-700"
-                    } `}
+                      index % 2 === 0 ? "bg-[#3A3A38]" : "bg-[#2F2F2E]"
+                    }  hover:bg-[#c0bcbc] hover:text-[#1D1D1C] cursor-pointer`}
+                    onClick={() => handlePackageClick(pkg)}
                   >
-                    <td className="px-6 py-4 border-r  border-b border-gray-300">
-                      {pkg.package_id}
+                    <td className="px-6 py-4 border-r  border-b border-[#41413E]">
+                      {pkg.package_number}
                     </td>
-                    <td className="px-6 py-4 border-b border-r border-gray-300">
+                    <td className="px-6 py-4 border-b border-r border-[#41413E]">
                       {pkg.type}
                     </td>
-                    <td className="px-6 py-4 border-b border-r border-gray-300">
+                    <td className="px-6 py-4 border-b border-r border-[#41413E]">
                       {pkg.weight}
                     </td>
-                    <td className="px-6 py-4 border-b border-r border-gray-300">
+                    <td className="px-6 py-4 border-b border-r border-[#41413E]">
                       {pkg.size}
                     </td>
-                    <td className="px-6 py-4 border-b border-r border-gray-300">
+                    <td className="px-6 py-4 border-b border-r border-[#41413E]">
                       {new Date(pkg.processedAt).toLocaleString()}
                     </td>
-                    <td className="px-6 py-4 border-b  border-gray-300">
+                    <td className="px-6 py-4 border-b  border-[#41413E]">
                       <span
                         className={` px-2 py-1 text-sm font-semibold  rounded-md ${
                           pkg.status === "accepted"

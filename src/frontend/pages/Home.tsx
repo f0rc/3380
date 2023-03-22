@@ -9,7 +9,7 @@ const Home = () => {
   const [packageId, setPackageId] = useState<string>("");
   const [error, setError] = useState<string>("");
 
-  const { data: packageData, refetch } =
+  const { data: packageDetails, refetch } =
     api.package.packageDetailsPublic.useQuery(
       {
         package_id: packageId,
@@ -22,15 +22,15 @@ const Home = () => {
   };
 
   useEffect(() => {
-    console.log("DATA", packageData);
-    if (packageData?.status === "success") {
+    console.log("DATA", packageDetails);
+    if (packageDetails?.status === "success") {
       navigator(`package/${packageId}`, {
-        state: { packageData: packageData },
+        state: { data: packageDetails?.packageDetails },
       });
-    } else if (packageData?.status === "error") {
+    } else if (packageDetails?.status === "error") {
       setError("Package not found");
     }
-  }, [packageData]);
+  }, [packageDetails]);
 
   return (
     <div className="flex items-center justify-center mt-36">
