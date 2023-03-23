@@ -1,7 +1,6 @@
 import { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "src/server/utils/api";
-import { AuthContext, AuthProvider } from "../auth/SessionProvider";
 
 const Home = () => {
   const navigator = useNavigate();
