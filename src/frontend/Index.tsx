@@ -10,7 +10,7 @@ import Layout from "./pages/Layout";
 import Login from "./pages/Login";
 import PackageList from "./pages/PackageList";
 import Signup from "./pages/Signup";
-import Products from "./pages/Products";
+import Products from "./pages/product/Products";
 
 const Index = () => {
   return (
