@@ -5,15 +5,17 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "src/server/utils/api";
 import { AuthContext } from "../auth/SessionProvider";
+import { useContext } from "react";
 
 
 const WorkLog = () => {
     const { id } = useParams(); //get sessions user id
     const { name } = useLocation(); //get sessions user name
     const { role } = useState(); //get role
-    const { authenticated }= useContext(AuthContext);
-    };
 
+    };
+    // figure out authenticated to extract sessions
+    const { authenticated }= useContext(AuthContext);
 
 return (
     <div className="min-h-[80hv]">
@@ -24,15 +26,15 @@ return (
             <div className="flex flex-row gap-4 mt-10 bg-[#3a3a38]/50 p-12 rounded-md border-2 border-[#41413E] shadow-2xl">
               <div className="grow gap-2 items-center">
                 <h1 className="text-xl font-bold pb-3">Employee Name</h1>
-                <p className="text-lg">{authenticated?.user.name}</p>
+                <p className="text-lg">{authenticated?.user?.username}</p>
               </div>
               <div className="grow gap-2 items-center">
                 <h1 className="text-xl font-bold pb-3">Employee ID</h1>
-                <p className="text-lg">{authenticated?.user.ID}</p>
+                <p className="text-lg">{authenticated?.user?.id}</p>
               </div>
               <div className="grow gap-2 items-center">
                 <h1 className="text-xl font-bold pb-3">Position</h1>
-                <p className="text-lg">{authenticated?.user.role}</p>
+                <p className="text-lg">{authenticated?.user?.role}</p>
               </div>
                 
               <div className="grow gap-2 items-center"> 
