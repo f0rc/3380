@@ -10,6 +10,8 @@ import {
   personSchemaType,
 } from "./formSchema";
 
+import Spinner from "../../icons/Spinner";
+
 export const PackageInfoForm = (
   props: React.PropsWithChildren<{ onNext: () => void }>
 ) => {
@@ -325,7 +327,7 @@ export const SenderInfoForm = (
             {/* <div className="flex flex-col"> */}
             <input
               type="text"
-              placeholder="Fist Name"
+              placeholder="First Name"
               className="inputFieldRegister"
               {...register("firstName")}
             />
@@ -334,7 +336,7 @@ export const SenderInfoForm = (
             )}
             <input
               type="text"
-              placeholder="lastName"
+              placeholder="Last Name"
               className="inputFieldRegister"
               {...register("lastName")}
             />
@@ -355,7 +357,7 @@ export const SenderInfoForm = (
             )}
             <input
               type="text"
-              placeholder="phone"
+              placeholder="Phone Number"
               className="inputFieldRegister"
               {...register("phone")}
             />
@@ -365,7 +367,7 @@ export const SenderInfoForm = (
             {/* </div> */}
             <input
               type="text"
-              placeholder="address"
+              placeholder="Street Address"
               className="inputFieldRegister"
               {...register("address")}
             />
@@ -374,7 +376,7 @@ export const SenderInfoForm = (
             )}
             <input
               type="text"
-              placeholder="city"
+              placeholder="City"
               className="inputFieldRegister"
               {...register("city")}
             />
@@ -383,7 +385,7 @@ export const SenderInfoForm = (
             )}
             <input
               type="text"
-              placeholder="state"
+              placeholder="State"
               className="inputFieldRegister"
               {...register("state")}
             />
@@ -392,7 +394,7 @@ export const SenderInfoForm = (
             )}
             <input
               type="number"
-              placeholder="zip"
+              placeholder="Zip Code"
               className="inputFieldRegister decoration-none"
               {...register("zip")}
             />
@@ -419,6 +421,7 @@ export const SummaryForm = (
     onNext: () => void;
     onPrev: () => void;
     submitForm: () => void;
+    isLoading: boolean;
   }>
 ) => {
   const { form } = useContext(FormStateContext);
@@ -473,16 +476,31 @@ export const SummaryForm = (
           </div>
         </div>
         <div className="flex gap-4 items-center justify-center">
-          <button type="button" className="formButton" onClick={props.onPrev}>
-            Previous
-          </button>
-          <button
-            type="submit"
-            className="formButton"
-            onClick={props.submitForm}
-          >
-            Submit
-          </button>
+          {props.isLoading ? (
+            <button type="button" className="" disabled>
+              <div className="flex justify-center">
+                <Spinner />
+              </div>
+            </button>
+          ) : (
+            <>
+              <button
+                type="button"
+                className="formButton"
+                onClick={props.onPrev}
+              >
+                Previous
+              </button>
+
+              <button
+                type="submit"
+                className="formButton"
+                onClick={props.submitForm}
+              >
+                Submit
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>

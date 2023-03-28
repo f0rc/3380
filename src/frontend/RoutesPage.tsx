@@ -10,6 +10,7 @@ import Layout from "./pages/Layout";
 import Login from "./pages/Login";
 import PackageDetail from "./pages/PackageDetail";
 import PackageList from "./pages/PackageList";
+import Profile from "./pages/Profile";
 import Signup from "./pages/Signup";
 
 const RoutesPage = () => {
@@ -21,6 +22,7 @@ const RoutesPage = () => {
           <Route index element={<Home />} />
           <Route path="signup" element={<Signup />} />
           <Route path="login" element={<Login />} />
+          <Route path="profile" element={<Profile />} />
           {authenticated?.user?.role && authenticated.user.role >= 1 && (
             <>
               <Route path="create-package" element={<CreatePackage />} />

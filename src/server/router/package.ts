@@ -105,28 +105,31 @@ export const packageRouter = router({
     const { postgresQuery } = ctx;
 
     const packageList = await postgresQuery(
-      // `SELECT p.*, plh.*
-      // FROM "PACKAGE" p, "CUSTOMER" cu, "PACKAGE_LOCATION_HISTORY" plh
-      // WHERE cu."user_id" = $1 AND (p."receiver_id" = cu."customer_id" OR p."sender_id" = cu."customer_id")
-      //     AND plh."processedAt" = (
-      //         SELECT MAX("processedAt")
-      //         FROM "PACKAGE_LOCATION_HISTORY"
-      //         WHERE package_id = p.package_id
-      //     )
-      //     AND plh.package_id = p.package_id;`,
-      `SELECT p.*, plh.*
-       FROM "PACKAGE" p
-       INNER JOIN (
-            SELECT package_id, MAX("processedAt") AS latest_date
-           FROM "PACKAGE_LOCATION_HISTORY"
-           GROUP BY package_id
+      `
+      SELECT p.*, plh.*
+      FROM "PACKAGE" p      
+      INNER JOIN (
+      SELECT package_id, MAX("processedAt") AS latest_date
+      FROM "PACKAGE_LOCATION_HISTORY"
+      GROUP BY package_id
       ) plh2 ON p.package_id = plh2.package_id
-         INNER JOIN "PACKAGE_LOCATION_HISTORY" plh
-             ON plh.package_id = plh2.package_id
-            AND plh."processedAt" = plh2.latest_date`,
-      []
+      
+      INNER JOIN "PACKAGE_LOCATION_HISTORY" plh
+      ON plh.package_id = plh2.package_id
+      AND plh."processedAt" = plh2.latest_date
+      
+      WHERE p."sender_id" IN (
+        SELECT "customer_id"
+        FROM "CUSTOMER"
+        WHERE "user_id" = $1
+    ) OR p."receiver_id" IN (
+        SELECT "customer_id"
+        FROM "CUSTOMER"
+        WHERE "user_id" = $1
     );
-    console.log(packageList.rows);
+      `,
+      [ctx.session.user.id]
+    );
 
     return {
       status: "success",
@@ -200,3 +203,24 @@ export interface PackageSchemaWithStatus extends PackageSchema {
 //   intransitcounter: 3,
 //   status: 'fail'
 // }
+
+//extra for later use
+// `SELECT p.*, plh.*
+// FROM "PACKAGE" p, "CUSTOMER" cu, "PACKAGE_LOCATION_HISTORY" plh
+// WHERE cu."user_id" = $1 AND (p."receiver_id" = cu."customer_id" OR p."sender_id" = cu."customer_id")
+//     AND plh."processedAt" = (
+//         SELECT MAX("processedAt")
+//         FROM "PACKAGE_LOCATION_HISTORY"
+//         WHERE package_id = p.package_id
+//     )
+//     AND plh.package_id = p.package_id;`,
+// `SELECT p.*, plh.*
+//  FROM "PACKAGE" p
+//  INNER JOIN (
+//       SELECT package_id, MAX("processedAt") AS latest_date
+//      FROM "PACKAGE_LOCATION_HISTORY"
+//      GROUP BY package_id
+// ) plh2 ON p.package_id = plh2.package_id
+//    INNER JOIN "PACKAGE_LOCATION_HISTORY" plh
+//        ON plh.package_id = plh2.package_id
+//       AND plh."processedAt" = plh2.latest_date`,
