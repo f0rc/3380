@@ -9,7 +9,8 @@
 
 
 body{
-    @apply bg-[#242423] min-h-screen w-full text-[#E5E5E5] 
+    @apply bg-[#242423] min-h-screen w-full text-[#E5E5E5];
+    overscroll-behavior: none;
 }
 .inputFieldRegister {
     @apply border-b border-zinc-700 bg-transparent p-2 text-xl transition-colors  ease-in-out focus:border-[#dfe22c] focus:outline-none
