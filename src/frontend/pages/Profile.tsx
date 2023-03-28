@@ -9,7 +9,7 @@ function Profile() {
         <div className="mt-10 flex flex-col px-10 gap-12">
           <img src={imgUrl} className="object-fill h-48 w-48 rounded-full " />
           <div className="flex flex-col gap-6">
-            <h1 className="text-3xl font-bold">Username</h1>
+            <h1 className="text-3xl font-bold">NAME</h1>
             <h2 className="text-xl font-bold">User Bio</h2>
           </div>
         </div>
