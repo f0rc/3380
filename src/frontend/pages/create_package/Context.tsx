@@ -9,6 +9,7 @@ import {
   SummaryForm,
 } from "./PackageMultiStepForm";
 import { api } from "src/server/utils/api";
+import { useNavigate } from "react-router-dom";
 
 const FORM_STEPS = [
   {
@@ -76,11 +77,17 @@ const CreateMultiStepForm = () => {
     [setForm]
   );
 
-  const { mutateAsync } = api.package.createPackage.useMutation({
-    onSuccess: () => {
-      console.log("success");
-    },
-  });
+  const navigate = useNavigate();
+  const { mutateAsync, isLoading, data } =
+    api.package.createPackage.useMutation({
+      onSuccess: (data) => {
+        console.log("success");
+        const packageDetails = data?.package;
+        navigate(`/package/${data?.package.package_id}`, {
+          state: { data: packageDetails },
+        });
+      },
+    });
 
   async function submitForm() {
     await mutateAsync(form);
@@ -135,6 +142,7 @@ const CreateMultiStepForm = () => {
                       onNext={nextStep}
                       onPrev={prevStep}
                       submitForm={submitForm}
+                      isLoading={isLoading}
                     />
                   </Tab.Panel>
                 </Tab.Panels>

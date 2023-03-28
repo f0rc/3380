@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useCallback, useState } from "react";
 import { api } from "src/server/utils/api";
 import { Link, useNavigate } from "react-router-dom";
-import Spinner from "../icons/spinner";
+import Spinner from "../icons/Spinner";
 
 const Login = () => {
   const navigate = useNavigate();
