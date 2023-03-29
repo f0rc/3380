@@ -341,3 +341,39 @@ CREATE TRIGGER insert_LOCTION_HISTORY_trigger
 AFTER INSERT ON "PACKAGE"
 FOR EACH ROW
 EXECUTE FUNCTION insert_LOCATION_HISTORY();
+
+
+CREATE TRIGGER adding_Profit ON orders
+AFTER INSERT ON purchases
+FOR EACH ROW
+BEGIN
+    Update Company
+    CONSTRAINT "company_profit" PRIMARY KEY ("profit"),
+    CONSTRAINT "company_ProductID" PRIMARY KEY("ProductID");
+    CONSTRAINT "Product_Cost" PRIMARY KEY("Cost");
+
+    SELECT company_profit, company_ProductID
+    FROM Company,Product
+    SET company_profit = company_profit+Product_Cost
+    WHERE company.id = NEW.company_id;
+    END IF;
+END;
+
+CREATE TRIGGER receipt_Sender ON orders
+FOR EACH ROW
+BEGIN
+    CONSTRAINT "customer_email" PRIMARY KEY ("email"),
+    "order_id" INT;
+    "order_total" DECIMAL(10,2);
+    "order_date" DATE;
+
+    SELECT customer_email, order_id, total_amount, order_date
+    FROM customer
+    WHERE order_id = NEW.order_id;
+
+    IF customer_email IS NOT NULL THEN
+        SELECT CONCAT('Order Receipt for Order #', order_id, '\n\n',
+                      'Order Date: ', order_date, '\n',
+                      'Total Amount: $', order_total) AS receipt;
+    END IF;
+END; 
