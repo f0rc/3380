@@ -11,7 +11,7 @@ const handler = createHTTPHandler({
 
 const server = http.createServer((req, res) => {
   // CORS change this to your domain
-  res.setHeader("Access-Control-Allow-Origin", "http://localhost:3000");
+  res.setHeader("Access-Control-Allow-Origin", "http://localhost:4173");
   res.setHeader("Access-Control-Request-Method", "GET, POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Methods", "OPTIONS, GET");
   res.setHeader("Access-Control-Allow-Headers", "content-type");

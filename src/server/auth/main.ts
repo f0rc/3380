@@ -1,5 +1,5 @@
-import { postgresQuery } from "src/database/db";
 import { IncomingMessage, ServerResponse } from "http";
+import { postgresQuery } from "src/database/db";
 import { Session } from "src/utils/auth";
 
 export const getServerAuthSession = async (ctx: {

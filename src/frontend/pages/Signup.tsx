@@ -1,10 +1,9 @@
 import { useForm } from "react-hook-form";
-import { SignUpInput, signUpSchema } from "src/server/auth/authSchema";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useCallback, useState } from "react";
-import { api } from "src/server/utils/api";
 import { Link, useNavigate } from "react-router-dom";
 import Spinner from "../icons/Spinner";
+import { SignUpInput, signUpSchema } from "src/server/auth/authSchema";
+import { api } from "src/server/utils/api";
 
 const Signup = () => {
   const navigate = useNavigate();

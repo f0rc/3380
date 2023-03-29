@@ -8,6 +8,11 @@ dotenv.config({ path: ".env" });
  */
 export const serverSchema = z.object({
   DATABASE_URL: z.string(),
+  PGHOST: z.string(),
+  PGUSER: z.string(),
+  PGPASSWORD: z.string(),
+  PGDATABASE: z.string(),
+  PGPORT: z.string(),
 });
 
 /** @typedef {z.input<typeof serverSchema>} MergedInput */

@@ -1,6 +1,6 @@
 import { inferAsyncReturnType } from "@trpc/server";
 import { CreateHTTPContextOptions } from "@trpc/server/adapters/standalone";
-import { postgresQuery } from "src/database/db";
+import { postgresQuery } from "../../database/db";
 import { Session } from "src/utils/auth";
 import { getServerAuthSession } from "../auth/main";
 

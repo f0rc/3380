@@ -1,12 +1,13 @@
 import { randomUUID } from "crypto";
 import Postgres from "pg";
+import { env } from "src/env/env.mjs";
 
 const pool = new Postgres.Pool({
-  host: "localhost",
-  port: 6543,
-  user: "test",
-  password: "test",
-  database: "test",
+  host: env.PGHOST,
+  port: Number(env.PGPORT),
+  user: env.PGUSER,
+  password: env.PGPASSWORD,
+  database: env.PGDATABASE,
 
   max: 20,
   // idleTimeoutMillis: 30000,

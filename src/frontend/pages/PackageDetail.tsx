@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { PackageSchema } from "src/server/router/package";
-import { api } from "src/server/utils/api";
+
 import { z } from "zod";
 
 const PackageDetail = () => {

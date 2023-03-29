@@ -14,16 +14,23 @@
     "moduleResolution": "Node",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "noEmit": true,
+    "noEmit": false,
     "jsx": "react-jsx",
     "incremental": true,
     "noUncheckedIndexedAccess": true,
-    "baseUrl": "."
+    "baseUrl": ".",
+    "outDir": "dist",
+
+    "sourceMap": false,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "skipDefaultLibCheck": true,
+    "importHelpers": false
     // "paths": {
     //   "y/*": ["./src/*"]
     // }
   },
-  "include": ["src", "**/*.ts", "**/*.tsx", "**/*.cjs", "**/*.mjs"]
-  // "exclude": ["node_modules"],
+  "include": ["**/*.ts", "**/*.tsx", "**/*.cjs", "**/*.mjs"],
+  "exclude": ["node_modules"]
   // "references": [{ "path": "./tsconfig.node.json" }]
 }

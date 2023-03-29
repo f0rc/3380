@@ -8,4 +8,14 @@ export default defineConfig({
   server: {
     port: 3000,
   },
+  build: {
+    rollupOptions: {
+      external: [
+        "./src/server/**",
+        "./src/database/**",
+        "./src/utils/**",
+        "./src/env/**",
+      ],
+    },
+  },
 });

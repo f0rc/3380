@@ -9,8 +9,9 @@
     "envTest": "tsx src/env/env.mjs",
     "start": "run-s envTest && run-p dev:*",
     "client": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview",
+    "build:client": "vite build",
+    "build:server": "tsc src/server/**.ts --outDir dist/src/server && tsc src/database/**.ts --outDir dist/src/database",
+    "preview": "pnpm dev:server && vite preview",
     "dbMigration": "export PGPASSWORD='test'; psql -f ./src/database/schema2.sql -h localhost -U test -p 6543 -d test",
     "dropSchema": "export PGPASSWORD='test'; psql -f ./src/database/drop.sql -h localhost -U test -p 6543 -d test",
     "dbtest": "pnpm run dropSchema && pnpm run dbMigration && tsx src/database/seed.ts"

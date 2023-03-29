@@ -1,6 +1,7 @@
 import { useContext, useMemo } from "react";
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import { api } from "src/server/utils/api";
+
 import { AuthContext } from "../auth/SessionProvider";
 
 const Layout = () => {

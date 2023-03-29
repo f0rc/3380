@@ -3,9 +3,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { httpBatchLink, loggerLink } from "@trpc/client";
 import SuperJSON from "superjson";
 import Error from "./pages/Error";
-import { api } from "src/server/utils/api";
 import Index from "./Index";
-import Login from "src/frontend/comps/Login";
+import { api } from "src/server/utils/api";
+
 function App() {
   const [queryClient] = useState(() => new QueryClient());
   const [trpcClient] = useState(() =>
