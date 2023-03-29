@@ -13,7 +13,7 @@ const server = http.createServer((req, res) => {
   // CORS change this to your domain
   res.setHeader(
     "Access-Control-Allow-Origin",
-    `https://testsssss-client.vercel.app`
+    `https://3380-client.vercel.app`
   );
   res.setHeader("Access-Control-Request-Method", "GET, POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Methods", "OPTIONS, GET");
@@ -30,7 +30,7 @@ const server = http.createServer((req, res) => {
 });
 
 const port = process.env.PORT || 8080;
-const host = "https://testsssss-production.up.railway.app";
+const host = "https://3380-production.up.railway.app";
 
 server.on("listening", () => {
   console.log(`listening on https://${host}:${port} `);
