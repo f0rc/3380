@@ -24,7 +24,7 @@
 - tracking page (majid)
 - employee dependents page
 - connect shopping cart to db (austin)
-- create insert query for chopping Order (austin)
+- create insert query for shopping Order (austin)
 
 
 # fixes: 
