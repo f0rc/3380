@@ -341,3 +341,17 @@ CREATE TRIGGER insert_LOCTION_HISTORY_trigger
 AFTER INSERT ON "PACKAGE"
 FOR EACH ROW
 EXECUTE FUNCTION insert_LOCATION_HISTORY();
+
+
+-- When a customer orders something from the shopping page, insert info into Order table --
+CREATE FUNCTION insert_Order(_productID TEXT, _qty INTEGER, _email TEXT) RETURNS TEXT AS $$
+DECLARE
+    _customer_id TEXT;
+BEGIN
+    SELECT "customer_id" FROM "CUSTOMER" WHERE _email = "CUSTOMER"."email" INTO _customer_id;
+    -- now insert data --
+    INSERT INTO "Order"("orderID", "productID", "qty", "dateOfPurchase", "updatedBy")
+    VALUES (NEW."orderID", _productID, _qty, GETDATE(), _customer_id);
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
