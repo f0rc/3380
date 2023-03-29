@@ -11,6 +11,7 @@ import Login from "./pages/Login";
 import PackageDetail from "./pages/PackageDetail";
 import PackageList from "./pages/PackageList";
 import Profile from "./pages/Profile";
+import ShoppingIndex from "./pages/shopping/ShoppingIndex";
 import Signup from "./pages/Signup";
 
 const RoutesPage = () => {
@@ -23,6 +24,7 @@ const RoutesPage = () => {
           <Route path="signup" element={<Signup />} />
           <Route path="login" element={<Login />} />
           <Route path="profile" element={<Profile />} />
+          <Route path="shopping" element={<ShoppingIndex />} />
           {authenticated?.user?.role && authenticated.user.role >= 1 && (
             <>
               <Route path="create-package" element={<CreatePackage />} />
