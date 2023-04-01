@@ -1,5 +1,5 @@
 {
-  "name": "@examples/minimal-react",
+  "name": "@postoffice/base",
   "private": true,
   "version": "10.18.0",
   "workspaces": [

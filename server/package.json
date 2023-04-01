@@ -1,5 +1,5 @@
 {
-  "name": "@examples/minimal-react-server",
+  "name": "@postoffice/server",
   "version": "10.18.0",
   "private": true,
   "scripts": {

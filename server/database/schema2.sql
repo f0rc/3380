@@ -109,25 +109,7 @@ CREATE TABLE "WORKS_FOR" (
     CONSTRAINT "WORKS_FOR_EMPLOYEE_FK" FOREIGN KEY ("employee_id") REFERENCES "EMPLOYEE"("employee_id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE TABLE "Company"(
-    "companyID" TEXT NOT NULL,
-    "ceo_fistName" VARCHAR(30) NOT NULL,
-    "ceo_lastname" VARCHAR(30) NOT NULL,
-    "email" TEXT NOT NULL,
-    "ceo_phoneNumber" INTEGER NOT NULL,
-    "companyName" TEXT NOT NULL,
-    "address_street" TEXT NOT NULL,
-    "address_street_2" TEXT,
-    "address_city" TEXT NOT NULL,
-    "address_state" TEXT NOT NULL,
-    "address_zipcode" INTEGER NOT NULL,
-    "revenue" INTEGER NOT NULL,
-    "profit" INTEGER NOT NULL,
-    "createdAt" DATE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" DATE NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT "company_pkey" PRIMARY KEY ("companyID")
-);
 CREATE TABLE "TRUCK" (
     "truck_id" TEXT NOT NULL PRIMARY KEY,
     "truck_type" VARCHAR(20) NOT NULL CHECK ("truck_type" IN('llv','van', 'semitruck')),
@@ -168,24 +150,53 @@ CREATE TABLE "DEPENDANT" (
     FOREIGN KEY ("employee_id") REFERENCES "EMPLOYEE"("employee_id")
 );
 
-CREATE TABLE "Product" (
-    "productID" TEXT NOT NULL,
-    "itemName" TEXT NOT NULL,
-    "cost" INT NOT NULL, --cost to buy
-    "msrp" INT NOT NULL, --cost to sell MSRP = Manufacturer Suggested Retail Price
+CREATE TABLE "PRODUCT" (
+    "product_id" TEXT NOT NULL,
+    "product_name" VARCHAR(255) NOT NULL,
+    "product_description" TEXT,
+    "price" DECIMAL(10, 2) NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    PRIMARY KEY ("productID")
+    CONSTRAINT "PRODUCT_PK" PRIMARY KEY ("product_id")
 );
 
-CREATE TABLE "Order" (
-    "orderID" TEXT NOT NULL,
-    "productID" TEXT NOT NULL,
-    "qty" SMALLINT NOT NULL,
-    "dateOfPurchase" DATE NOT NULL DEFAULT CURRENT_DATE, 
-    "updatedBy" TEXT NOT NULL, 
+CREATE TABLE "PRODUCT_INVENTORY" (
+    "product_inventory_id" SERIAL NOT NULL,
+    "product_id" TEXT NOT NULL,
+    "postoffice_location_id" TEXT NOT NULL,
+    "quantity" INTEGER NOT NULL DEFAULT 0,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    PRIMARY KEY ("orderID"),
-    FOREIGN KEY ("productID") REFERENCES "Product"("productID")
+    CONSTRAINT "PRODUCT_INVENTORY_PK" PRIMARY KEY ("product_inventory_id"),
+    CONSTRAINT "PRODUCT_INVENTORY_PRODUCT_FK" FOREIGN KEY ("product_id") REFERENCES "PRODUCT"("product_id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "PRODUCT_INVENTORY_LOCATION_FK" FOREIGN KEY ("postoffice_location_id") REFERENCES "POSTOFFICE_LOCATION"("postoffice_location_id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE "PRODUCT_TRANSACTION" (
+    "product_transaction_id" SERIAL NOT NULL,
+    "product_id" TEXT NOT NULL,
+    "postoffice_location_id" TEXT NOT NULL,
+    "transaction_type" VARCHAR(20) NOT NULL CHECK ("transaction_type" IN('purchase', 'sale', 'transfer')),
+    "quantity" INTEGER NOT NULL,
+    "transaction_date" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdBy" TEXT NOT NULL,
+
+    CONSTRAINT "PRODUCT_TRANSACTION_PK" PRIMARY KEY ("product_transaction_id"),
+    CONSTRAINT "PRODUCT_TRANSACTION_PRODUCT_FK" FOREIGN KEY ("product_id") REFERENCES "PRODUCT"("product_id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "PRODUCT_TRANSACTION_LOCATION_FK" FOREIGN KEY ("postoffice_location_id") REFERENCES "POSTOFFICE_LOCATION"("postoffice_location_id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+
+CREATE TABLE "SALES_ORDER" (
+  "id" SERIAL PRIMARY KEY,
+  "postoffice_location_id" INTEGER NOT NULL,
+  "customer_id" INTEGER NOT NULL,
+  "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "created_by" INTEGER NOT NULL,
+  FOREIGN KEY ("postoffice_location_id") REFERENCES "POST_OFFICE_LOCATION"("id"),
+  FOREIGN KEY ("customer_id") REFERENCES "CUSTOMER"("id"),
+  FOREIGN KEY ("created_by") REFERENCES "EMPLOYEE"("id")
 );
 
 
@@ -377,3 +388,25 @@ BEGIN
                       'Total Amount: $', order_total) AS receipt;
     END IF;
 END; 
+
+
+-- need to fix this
+-- CREATE TABLE "Company"(
+--     "companyID" TEXT NOT NULL,
+--     "ceo_fistName" VARCHAR(30) NOT NULL,
+--     "ceo_lastname" VARCHAR(30) NOT NULL,
+--     "email" TEXT NOT NULL,
+--     "ceo_phoneNumber" INTEGER NOT NULL,
+--     "companyName" TEXT NOT NULL,
+--     "address_street" TEXT NOT NULL,
+--     "address_street_2" TEXT,
+--     "address_city" TEXT NOT NULL,
+--     "address_state" TEXT NOT NULL,
+--     "address_zipcode" INTEGER NOT NULL,
+--     "revenue" INTEGER NOT NULL,
+--     "profit" INTEGER NOT NULL,
+--     "createdAt" DATE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+--     "updatedAt" DATE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+--     CONSTRAINT "company_pkey" PRIMARY KEY ("companyID")
+-- );
