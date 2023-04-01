@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { trpc } from "../utils/trpc";
 
@@ -33,7 +33,6 @@ const Home = () => {
   return (
     <div className="flex items-center justify-center mt-36">
       {/* a big search bar in the middle of the screen for tracking a package */}
-
       <div className="flex flex-col w-full gap-4 justify-center items-center align-middle">
         <h1 className="text-4xl font-bold text-center">Track your package</h1>
         {error.length > 1 && <p className="text-red-500">{error}</p>}

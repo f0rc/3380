@@ -1,5 +1,5 @@
 {
-  "name": "@examples/minimal-react-client",
+  "name": "@postoffice/client",
   "private": true,
   "version": "10.18.0",
   "type": "module",
