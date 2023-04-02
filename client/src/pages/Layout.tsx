@@ -14,6 +14,157 @@ const Layout = () => {
     return false;
   }, [authenticated]);
 
+  const availableRoutes = (user: typeof authenticated) => {
+    if (user?.user?.role === 1) {
+      // user is clerk
+      return (
+        <>
+          <li>
+            <NavLink
+              to="/create-package"
+              reloadDocument={true}
+              className={({ isActive }) =>
+                isActive ? "navItemActive" : "navInactive"
+              }
+            >
+              Create Package
+            </NavLink>
+          </li>
+          <li>
+            <NavLink
+              to="/package-list"
+              reloadDocument={true}
+              className={({ isActive }) =>
+                isActive ? "navItemActive" : "navInactive"
+              }
+            >
+              Packages
+            </NavLink>
+          </li>
+          {/* <Route path="add-dependants" element={<TODO />} /> */}
+          {/* <Route path="submit hours" element={<TODO />} /> */}
+        </>
+      );
+    } else if (user?.user?.role === 2) {
+      // user is driver
+      return (
+        <>
+          {/* <Route path="add-dependants" element={<TODO />} /> */}
+          {/* <Route path="submit hours" element={<TODO />} /> */}
+        </>
+      );
+    } else if (user?.user?.role === 3) {
+      // user is manager
+      return (
+        <>
+          <li>
+            <NavLink
+              to="/package-list"
+              reloadDocument={true}
+              className={({ isActive }) =>
+                isActive ? "navItemActive" : "navInactive"
+              }
+            >
+              Packages
+            </NavLink>
+          </li>
+          <li>
+            <NavLink
+              to="/create-package"
+              reloadDocument={true}
+              className={({ isActive }) =>
+                isActive ? "navItemActive" : "navInactive"
+              }
+            >
+              Create Package
+            </NavLink>
+          </li>
+          <li>
+            <NavLink
+              to="/create-employee"
+              reloadDocument={true}
+              className={({ isActive }) =>
+                isActive ? "navItemActive" : "navInactive"
+              }
+            >
+              Create Employee
+            </NavLink>
+          </li>
+          <li>
+            <NavLink
+              to="/add-product"
+              reloadDocument={true}
+              className={({ isActive }) =>
+                isActive ? "navItemActive" : "navInactive"
+              }
+            >
+              Add Product
+            </NavLink>
+          </li>
+          {/* <Route path="CRUD PRODUCTS" element={<TODO />} /> */}
+          {/* <Route path="VIEW REPORTS" element={<TODO />} /> */}
+          {/* <Route path="add-dependants" element={<TODO />} /> */}
+          {/* <Route path="submit hours" element={<TODO />} /> */}
+        </>
+      );
+    } else if (user?.user?.role === 4) {
+      // user is CEO
+      return (
+        <>
+          {/* add the ability to chose manager as role */}
+          <li>
+            <NavLink
+              to="/create-package"
+              reloadDocument={true}
+              className={({ isActive }) =>
+                isActive ? "navItemActive" : "navInactive"
+              }
+            >
+              Create Package
+            </NavLink>
+          </li>
+          <li>
+            <NavLink
+              to="/create-employee"
+              reloadDocument={true}
+              className={({ isActive }) =>
+                isActive ? "navItemActive" : "navInactive"
+              }
+            >
+              Create Employee
+            </NavLink>
+          </li>
+          {/* <Route path="CRUD PRODUCTS" element={<TODO />} /> */}
+          {/* <Route path="VIEW REPORTS" element={<TODO />} /> */}
+          {/* <Route path="add-dependants" element={<TODO />} /> */}
+          {/* <Route path="submit hours" element={<TODO />} /> */}
+          {/* <Route path="CRUD OFFICE LOCATIONS" element={<TODO />} />  */}
+        </>
+      );
+    }
+  };
+
+  const allloggedRoutes = (user: typeof authenticated) => {
+    // default logged in user routes
+    if (user?.expires) {
+      return (
+        <>
+          <li>
+            <NavLink
+              to="/package-list"
+              reloadDocument={true}
+              className={({ isActive }) =>
+                isActive ? "navItemActive" : "navInactive"
+              }
+            >
+              Packages
+            </NavLink>
+          </li>
+        </>
+      );
+    }
+  };
+
   // handle login logout
 
   const { mutateAsync } = trpc.auth.logout.useMutation({
@@ -81,45 +232,13 @@ const Layout = () => {
                   Home
                 </NavLink>
               </li>
-              <li>
-                <NavLink
-                  to="/package-list"
-                  reloadDocument={true}
-                  className={({ isActive }) =>
-                    isActive ? "navItemActive" : "navInactive"
-                  }
-                >
-                  Packages
-                </NavLink>
-              </li>
+
               {/* Clerk nav items */}
 
-              {extendedNav ? (
-                <>
-                  <li>
-                    <NavLink
-                      to="/create-package"
-                      reloadDocument={true}
-                      className={({ isActive }) =>
-                        isActive ? "navItemActive" : "navInactive"
-                      }
-                    >
-                      Create Package
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink
-                      to="/create-employee"
-                      reloadDocument={true}
-                      className={({ isActive }) =>
-                        isActive ? "navItemActive" : "navInactive"
-                      }
-                    >
-                      Create Employee
-                    </NavLink>
-                  </li>
-                </>
-              ) : null}
+              <>
+                {extendedNav ? allloggedRoutes(authenticated) : null}
+                {extendedNav ? availableRoutes(authenticated) : null}
+              </>
             </ul>
           </div>
         </div>

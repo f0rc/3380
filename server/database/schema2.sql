@@ -155,6 +155,8 @@ CREATE TABLE "PRODUCT" (
     "product_name" VARCHAR(255) NOT NULL,
     "product_description" TEXT,
     "price" DECIMAL(10, 2) NOT NULL,
+    "product_image" TEXT NOT NULL,
+    "createdBy" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -190,13 +192,13 @@ CREATE TABLE "PRODUCT_TRANSACTION" (
 
 CREATE TABLE "SALES_ORDER" (
   "id" SERIAL PRIMARY KEY,
-  "postoffice_location_id" INTEGER NOT NULL,
-  "customer_id" INTEGER NOT NULL,
+  "postoffice_location_id" TEXT NOT NULL,
+  "customer_id" TEXT NOT NULL,
   "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  "created_by" INTEGER NOT NULL,
-  FOREIGN KEY ("postoffice_location_id") REFERENCES "POST_OFFICE_LOCATION"("id"),
-  FOREIGN KEY ("customer_id") REFERENCES "CUSTOMER"("id"),
-  FOREIGN KEY ("created_by") REFERENCES "EMPLOYEE"("id")
+  "created_by" TEXT NOT NULL,
+  FOREIGN KEY ("postoffice_location_id") REFERENCES "POSTOFFICE_LOCATION"("postoffice_location_id"),
+  FOREIGN KEY ("customer_id") REFERENCES "CUSTOMER"("customer_id"),
+  FOREIGN KEY ("created_by") REFERENCES "EMPLOYEE"("employee_id")
 );
 
 
@@ -354,40 +356,42 @@ FOR EACH ROW
 EXECUTE FUNCTION insert_LOCATION_HISTORY();
 
 
-CREATE TRIGGER adding_Profit ON orders
-AFTER INSERT ON purchases
-FOR EACH ROW
-BEGIN
-    Update Company
-    CONSTRAINT "company_profit" PRIMARY KEY ("profit"),
-    CONSTRAINT "company_ProductID" PRIMARY KEY("ProductID");
-    CONSTRAINT "Product_Cost" PRIMARY KEY("Cost");
 
-    SELECT company_profit, company_ProductID
-    FROM Company,Product
-    SET company_profit = company_profit+Product_Cost
-    WHERE company.id = NEW.company_id;
-    END IF;
-END;
+-- does not work
+-- CREATE TRIGGER adding_Profit ON orders
+-- AFTER INSERT ON purchases
+-- FOR EACH ROW
+-- BEGIN
+--     Update Company
+--     CONSTRAINT "company_profit" PRIMARY KEY ("profit"),
+--     CONSTRAINT "company_ProductID" PRIMARY KEY("ProductID");
+--     CONSTRAINT "Product_Cost" PRIMARY KEY("Cost");
 
-CREATE TRIGGER receipt_Sender ON orders
-FOR EACH ROW
-BEGIN
-    CONSTRAINT "customer_email" PRIMARY KEY ("email"),
-    "order_id" INT;
-    "order_total" DECIMAL(10,2);
-    "order_date" DATE;
+--     SELECT company_profit, company_ProductID
+--     FROM Company,Product
+--     SET company_profit = company_profit+Product_Cost
+--     WHERE company.id = NEW.company_id;
+--     END IF;
+-- END;
 
-    SELECT customer_email, order_id, total_amount, order_date
-    FROM customer
-    WHERE order_id = NEW.order_id;
+-- CREATE TRIGGER receipt_Sender ON orders
+-- FOR EACH ROW
+-- BEGIN
+--     CONSTRAINT "customer_email" PRIMARY KEY ("email"),
+--     "order_id" INT;
+--     "order_total" DECIMAL(10,2);
+--     "order_date" DATE;
 
-    IF customer_email IS NOT NULL THEN
-        SELECT CONCAT('Order Receipt for Order #', order_id, '\n\n',
-                      'Order Date: ', order_date, '\n',
-                      'Total Amount: $', order_total) AS receipt;
-    END IF;
-END; 
+--     SELECT customer_email, order_id, total_amount, order_date
+--     FROM customer
+--     WHERE order_id = NEW.order_id;
+
+--     IF customer_email IS NOT NULL THEN
+--         SELECT CONCAT('Order Receipt for Order #', order_id, '\n\n',
+--                       'Order Date: ', order_date, '\n',
+--                       'Total Amount: $', order_total) AS receipt;
+--     END IF;
+-- END; 
 
 
 -- need to fix this
