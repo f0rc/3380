@@ -28,6 +28,7 @@
   },
   "dependencies": {
     "dotenv": "^16.0.3",
+    "firebase": "^9.19.1",
     "superjson": "^1.12.2"
   }
 }
