@@ -9,6 +9,8 @@ export interface Session {
     id: string;
     email: string;
     username?: string;
+    employee_id?: string;
+    customer_id?: string;
   } & DefaultSession["user"];
   expires: Date;
 }
