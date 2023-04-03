@@ -20,7 +20,6 @@ export const CreateEmployee = () => {
       role: 1,
       salary: -1,
       startDate: "",
-      locationID: "",
       address_street: "",
       address_city: "",
       address_state: "",
@@ -230,21 +229,40 @@ export const CreateEmployee = () => {
               </div>
             </div>
 
+            <div className="flex -mx-3 mb-6"></div>
+
             <div className="flex -mx-3 mb-6">
-              <div className="w-2/3 px-3 mb-6 md:mb-0">
+              <div className="w-1/3 px-3 mb-6 md:mb-0">
                 <label className="block uppercase tracking-wide text-gray-50 text-xs font-bold mb-2">
-                  Branch
+                  SALARY
                 </label>
                 <input
-                  type="text"
-                  id="locationID"
-                  placeholder="CHANGE THIS TO SEARCH FOR BRANCH"
-                  {...register("locationID")}
+                  type="number"
+                  id="salary"
+                  {...register("salary", { valueAsNumber: true })}
                   className={`'appearance-none block w-full bg-transparent border  rounded py-3 px-4 mb-3 leading-tight focus:outline-none foc' ${
-                    errors.locationID ? "border-red-500" : ""
+                    errors.salary ? "border-red-500" : ""
                   }`}
                 />
-                {errors.locationID && (
+                {errors.salary && (
+                  <p className="text-red-500 text-xs italic">
+                    Plsease fill out this field
+                  </p>
+                )}
+              </div>
+              <div className="w-1/3 px-3 mb-6 md:mb-0">
+                <label className="block uppercase tracking-wide text-gray-50 text-xs font-bold mb-2">
+                  Start Date
+                </label>
+                <input
+                  type="date"
+                  id="startDate"
+                  {...register("startDate")}
+                  className={`'appearance-none block w-full bg-transparent border  rounded py-3 px-4 mb-3 leading-tight focus:outline-none foc' ${
+                    errors.startDate ? "border-red-500" : ""
+                  }`}
+                />
+                {errors.startDate && (
                   <p className="text-red-500 text-xs italic">
                     Plsease fill out this field
                   </p>
@@ -264,45 +282,6 @@ export const CreateEmployee = () => {
                   }`}
                 />
                 {errors.role && (
-                  <p className="text-red-500 text-xs italic">
-                    Plsease fill out this field
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <div className="flex -mx-3 mb-6">
-              <div className="w-full px-3 mb-6 md:mb-0">
-                <label className="block uppercase tracking-wide text-gray-50 text-xs font-bold mb-2">
-                  SALARY
-                </label>
-                <input
-                  type="number"
-                  id="salary"
-                  {...register("salary", { valueAsNumber: true })}
-                  className={`'appearance-none block w-full bg-transparent border  rounded py-3 px-4 mb-3 leading-tight focus:outline-none foc' ${
-                    errors.salary ? "border-red-500" : ""
-                  }`}
-                />
-                {errors.salary && (
-                  <p className="text-red-500 text-xs italic">
-                    Plsease fill out this field
-                  </p>
-                )}
-              </div>
-              <div className="w-full px-3 mb-6 md:mb-0">
-                <label className="block uppercase tracking-wide text-gray-50 text-xs font-bold mb-2">
-                  Start Date
-                </label>
-                <input
-                  type="date"
-                  id="startDate"
-                  {...register("startDate")}
-                  className={`'appearance-none block w-full bg-transparent border  rounded py-3 px-4 mb-3 leading-tight focus:outline-none foc' ${
-                    errors.startDate ? "border-red-500" : ""
-                  }`}
-                />
-                {errors.startDate && (
                   <p className="text-red-500 text-xs italic">
                     Plsease fill out this field
                   </p>
@@ -331,7 +310,6 @@ export const employeeSchema = z.object({
   role: z.number().min(1).max(4),
 
   salary: z.number().min(1),
-  locationID: z.string().min(1).max(50),
 
   address_street: z.string().min(1).max(50),
   address_city: z.string().min(1).max(50),

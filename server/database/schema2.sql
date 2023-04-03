@@ -9,7 +9,7 @@ CREATE TABLE "EMPLOYEE" (
 
     "role" INTEGER DEFAULT 0 NOT NULL CHECK ("role" <= 4 AND "role" >= 0),
     "salary" INTEGER NOT NULL CHECK ("salary" >= 0),
-    "postoffice_location_id" TEXT NOT NULL, --refer to Post_Office_Loactions
+    "manager_id" TEXT, --nullable because the first employee is the manager
 
     "address_street" TEXT NOT NULL,
     "address_city" TEXT NOT NULL,
@@ -49,11 +49,12 @@ CREATE TABLE "CUSTOMER" (
 CREATE TABLE "PACKAGE_LOCATION_HISTORY" (
     "package_location_id" SERIAL NOT NULL,
     "package_id" TEXT NOT NULL, --refer to Package
-    "location_id" TEXT NOT NULL,
+    "postoffice_location_id" TEXT NOT NULL,
     "intransitcounter" INTEGER NOT NULL DEFAULT 0,
     -- make a status
     "status" TEXT NOT NULL CHECK ("status" IN('accepted', 'transit', 'delivered','out-for-delivery', 'fail')),
     "processedAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "processedBy" TEXT NOT NULL, --employee ID
 
     CONSTRAINT "package_location_id" PRIMARY KEY ("package_location_id")
 );
@@ -85,15 +86,11 @@ CREATE TABLE "POSTOFFICE_LOCATION" (
     "address_city" TEXT NOT NULL,
     "address_state" TEXT NOT NULL,
     "address_zipcode" INTEGER NOT NULL,
-    "phonenumber" INTEGER NOT NULL,
-    "email" TEXT NOT NULL,
-    "postoffice_location_manager" TEXT NOT NULL,    --uses Fkey
+    "postoffice_location_manager" TEXT,    --uses Fkey
 
 
     "createdAt" DATE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "createdBy" TEXT NOT NULL, --employee ID
     "updatedAt" DATE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedBy" TEXT NOT NULL, --employee ID
     
 
     CONSTRAINT "POSTOFFICE_LOCATION_PK" PRIMARY KEY ("postoffice_location_id"),
@@ -101,12 +98,11 @@ CREATE TABLE "POSTOFFICE_LOCATION" (
 );
 
 CREATE TABLE "WORKS_FOR" (
-    "works_for_id" SERIAL NOT NULL,
     "employee_id" TEXT NOT NULL, --Pkey 
-    "hours" INTEGER NOT NULL,
+    "postoffice_location_id" TEXT,
+    "hours" INTEGER DEFAULT 0 NOT NULL,
 
-    CONSTRAINT "WORKS_FOR_PK" PRIMARY KEY ("works_for_id"),
-    CONSTRAINT "WORKS_FOR_EMPLOYEE_FK" FOREIGN KEY ("employee_id") REFERENCES "EMPLOYEE"("employee_id") ON DELETE CASCADE ON UPDATE CASCADE
+    CONSTRAINT "WORKS_FOR_PK" PRIMARY KEY ("employee_id", "postoffice_location_id")
 );
 
 
@@ -304,7 +300,7 @@ FOR EACH ROW
 EXECUTE FUNCTION insert_user();
 
 
--- after the inser of employee, check a users table with email of the employee if it exists then update the employee table
+-- put userid into employee table when a new employee is added
 CREATE OR REPLACE FUNCTION insert_employee() RETURNS TRIGGER AS $$
 DECLARE
     emp_user_id TEXT;
@@ -322,7 +318,7 @@ AFTER INSERT ON "EMPLOYEE"
 FOR EACH ROW
 EXECUTE FUNCTION insert_employee();
 
-
+-- put userid into customer table when a new customer is added
 CREATE OR REPLACE FUNCTION insert_Customer() RETURNS TRIGGER AS $$
 BEGIN
     IF EXISTS (SELECT 1 FROM "USER" WHERE "email" = NEW."email") THEN
@@ -337,23 +333,23 @@ AFTER INSERT ON "CUSTOMER"
 FOR EACH ROW
 EXECUTE FUNCTION insert_Customer();
 
-
-CREATE OR REPLACE FUNCTION insert_LOCATION_HISTORY() RETURNS TRIGGER AS $$
-DECLARE
-    emp_location_id TEXT;
+-- update "USER" table when a new "USER" is added with the same role as the "EMPLOYEE" table if the "EMPLOYEE" table has a matching email
+CREATE OR REPLACE FUNCTION update_user_role() RETURNS TRIGGER AS $$
 BEGIN
-    SELECT "postoffice_location_id" FROM "EMPLOYEE" WHERE "EMPLOYEE"."user_id" = NEW."createdBy" INTO emp_location_id;
-    -- insert into package location history after insert on package
-    INSERT INTO "PACKAGE_LOCATION_HISTORY" ("package_id","location_id", "status")
-    VALUES (NEW."package_id", emp_location_id, 'accepted');
+    IF EXISTS (SELECT 1 FROM "EMPLOYEE" WHERE "email" = NEW."email") THEN
+        UPDATE "USER" SET "role" = (SELECT "role" FROM "EMPLOYEE" WHERE "email" = NEW."email") WHERE "email" = NEW."email";
+    END IF;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER insert_LOCTION_HISTORY_trigger
-AFTER INSERT ON "PACKAGE"
+CREATE TRIGGER update_user_role_trigger
+AFTER INSERT ON "USER"
 FOR EACH ROW
-EXECUTE FUNCTION insert_LOCATION_HISTORY();
+EXECUTE FUNCTION update_user_role();
+
+
+-- trigger to add a new entry into "WORKS_FOR" table when a new employee is added
 
 
 
