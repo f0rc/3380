@@ -1,168 +1,43 @@
 import { useContext, useMemo } from "react";
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import { AuthContext } from "../auth/SessionProvider";
+import { availableRoutes } from "../RoutesPage";
 import { trpc } from "../utils/trpc";
+
+export interface RouteType {
+  path: string;
+  index?: boolean;
+  element: React.ReactNode;
+  label: string;
+  isNav?: boolean;
+}
 
 const Layout = () => {
   const navigatr = useNavigate();
   const { authenticated } = useContext(AuthContext);
 
-  const extendedNav = useMemo(() => {
-    if (authenticated) {
-      return true;
-    }
-    return false;
-  }, [authenticated]);
+  // const extendedNav = useMemo(() => {
+  //   if (authenticated) {
+  //     return true;
+  //   }
+  //   return false;
+  // }, [authenticated]);
 
-  const availableRoutes = (user: typeof authenticated) => {
-    if (user?.user?.role === 1) {
-      // user is clerk
-      return (
-        <>
-          <li>
-            <NavLink
-              to="/create-package"
-              reloadDocument={true}
-              className={({ isActive }) =>
-                isActive ? "navItemActive" : "navInactive"
-              }
-            >
-              Create Package
-            </NavLink>
-          </li>
-          <li>
-            <NavLink
-              to="/package-list"
-              reloadDocument={true}
-              className={({ isActive }) =>
-                isActive ? "navItemActive" : "navInactive"
-              }
-            >
-              Packages
-            </NavLink>
-          </li>
-          {/* <Route path="add-dependants" element={<TODO />} /> */}
-          {/* <Route path="submit hours" element={<TODO />} /> */}
-        </>
-      );
-    } else if (user?.user?.role === 2) {
-      // user is driver
-      return (
-        <>
-          {/* <Route path="add-dependants" element={<TODO />} /> */}
-          {/* <Route path="submit hours" element={<TODO />} /> */}
-        </>
-      );
-    } else if (user?.user?.role === 3) {
-      // user is manager
-      return (
-        <>
-          <li>
-            <NavLink
-              to="/package-list"
-              reloadDocument={true}
-              className={({ isActive }) =>
-                isActive ? "navItemActive" : "navInactive"
-              }
-            >
-              Packages
-            </NavLink>
-          </li>
-          <li>
-            <NavLink
-              to="/create-package"
-              reloadDocument={true}
-              className={({ isActive }) =>
-                isActive ? "navItemActive" : "navInactive"
-              }
-            >
-              Create Package
-            </NavLink>
-          </li>
-          <li>
-            <NavLink
-              to="/create-employee"
-              reloadDocument={true}
-              className={({ isActive }) =>
-                isActive ? "navItemActive" : "navInactive"
-              }
-            >
-              Create Employee
-            </NavLink>
-          </li>
-          <li>
-            <NavLink
-              to="/add-product"
-              reloadDocument={true}
-              className={({ isActive }) =>
-                isActive ? "navItemActive" : "navInactive"
-              }
-            >
-              Add Product
-            </NavLink>
-          </li>
-          {/* <Route path="CRUD PRODUCTS" element={<TODO />} /> */}
-          {/* <Route path="VIEW REPORTS" element={<TODO />} /> */}
-          {/* <Route path="add-dependants" element={<TODO />} /> */}
-          {/* <Route path="submit hours" element={<TODO />} /> */}
-        </>
-      );
-    } else if (user?.user?.role === 4) {
-      // user is CEO
-      return (
-        <>
-          {/* add the ability to chose manager as role */}
-          <li>
-            <NavLink
-              to="/create-package"
-              reloadDocument={true}
-              className={({ isActive }) =>
-                isActive ? "navItemActive" : "navInactive"
-              }
-            >
-              Create Package
-            </NavLink>
-          </li>
-          <li>
-            <NavLink
-              to="/create-employee"
-              reloadDocument={true}
-              className={({ isActive }) =>
-                isActive ? "navItemActive" : "navInactive"
-              }
-            >
-              Create Employee
-            </NavLink>
-          </li>
-          {/* <Route path="CRUD PRODUCTS" element={<TODO />} /> */}
-          {/* <Route path="VIEW REPORTS" element={<TODO />} /> */}
-          {/* <Route path="add-dependants" element={<TODO />} /> */}
-          {/* <Route path="submit hours" element={<TODO />} /> */}
-          {/* <Route path="CRUD OFFICE LOCATIONS" element={<TODO />} />  */}
-        </>
-      );
-    }
-  };
-
-  const allloggedRoutes = (user: typeof authenticated) => {
-    // default logged in user routes
-    if (user?.expires) {
-      return (
-        <>
-          <li>
-            <NavLink
-              to="/package-list"
-              reloadDocument={true}
-              className={({ isActive }) =>
-                isActive ? "navItemActive" : "navInactive"
-              }
-            >
-              Packages
-            </NavLink>
-          </li>
-        </>
-      );
-    }
+  const renderNavItems = (routes: RouteType[]) => {
+    return routes
+      .filter((route) => route.isNav)
+      .map((route) => (
+        <li key={route.path}>
+          <NavLink
+            to={route.path}
+            className={({ isActive }) =>
+              isActive ? "navItemActive" : "navInactive"
+            }
+          >
+            {route.label}
+          </NavLink>
+        </li>
+      ));
   };
 
   // handle login logout
@@ -221,24 +96,8 @@ const Layout = () => {
           >
             <ul className="flex flex-col rounded-lg md:flex-row space-x-8 mt-0 text-lg font-medium">
               {/* public nav items */}
-              <li>
-                <NavLink
-                  to="/"
-                  reloadDocument={true}
-                  className={({ isActive }) =>
-                    isActive ? "navItemActive" : "navInactive"
-                  }
-                >
-                  Home
-                </NavLink>
-              </li>
 
-              {/* Clerk nav items */}
-
-              <>
-                {extendedNav ? allloggedRoutes(authenticated) : null}
-                {extendedNav ? availableRoutes(authenticated) : null}
-              </>
+              <>{renderNavItems(availableRoutes(authenticated))}</>
             </ul>
           </div>
         </div>

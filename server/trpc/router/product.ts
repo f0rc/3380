@@ -45,8 +45,9 @@ export const productRouter = router({
       );
 
       // get employee postoffice location
+      //TODO ADD A BRANCH VALUE FROM FORM SO THAT MANAGER CAN SELECT WHICH BRANCH TO ADD PRODUCT TO
       const employeePostofficeLocation = await postgresQuery(
-        `SELECT "postoffice_location_id" FROM "EMPLOYEE" WHERE "employee_id" = $1`,
+        `SELECT "postoffice_location_id" FROM "WORKS_FOR" WHERE "employee_id" = $1`,
         [ctx.session?.user?.employee_id]
       );
 
@@ -68,53 +69,3 @@ export const productRouter = router({
       };
     }),
 });
-
-// CREATE TABLE "PRODUCT" (
-//   "product_id" TEXT NOT NULL,
-//   "product_name" VARCHAR(255) NOT NULL,
-//   "product_description" TEXT,
-//   "price" DECIMAL(10, 2) NOT NULL,
-//   "product_image" TEXT NOT NULL,
-//   "createdBy" TEXT NOT NULL,
-//   "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-//   "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-//   CONSTRAINT "PRODUCT_PK" PRIMARY KEY ("product_id")
-// );
-
-// CREATE TABLE "PRODUCT_INVENTORY" (
-//   "product_inventory_id" SERIAL NOT NULL,
-//   "product_id" TEXT NOT NULL,
-//   "postoffice_location_id" TEXT NOT NULL,
-//   "quantity" INTEGER NOT NULL DEFAULT 0,
-//   "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-//   CONSTRAINT "PRODUCT_INVENTORY_PK" PRIMARY KEY ("product_inventory_id"),
-//   CONSTRAINT "PRODUCT_INVENTORY_PRODUCT_FK" FOREIGN KEY ("product_id") REFERENCES "PRODUCT"("product_id") ON DELETE CASCADE ON UPDATE CASCADE,
-//   CONSTRAINT "PRODUCT_INVENTORY_LOCATION_FK" FOREIGN KEY ("postoffice_location_id") REFERENCES "POSTOFFICE_LOCATION"("postoffice_location_id") ON DELETE CASCADE ON UPDATE CASCADE
-// );
-
-// CREATE TABLE "PRODUCT_TRANSACTION" (
-//   "product_transaction_id" SERIAL NOT NULL,
-//   "product_id" TEXT NOT NULL,
-//   "postoffice_location_id" TEXT NOT NULL,
-//   "transaction_type" VARCHAR(20) NOT NULL CHECK ("transaction_type" IN('purchase', 'sale', 'transfer')),
-//   "quantity" INTEGER NOT NULL,
-//   "transaction_date" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-//   "createdBy" TEXT NOT NULL,
-
-//   CONSTRAINT "PRODUCT_TRANSACTION_PK" PRIMARY KEY ("product_transaction_id"),
-//   CONSTRAINT "PRODUCT_TRANSACTION_PRODUCT_FK" FOREIGN KEY ("product_id") REFERENCES "PRODUCT"("product_id") ON DELETE CASCADE ON UPDATE CASCADE,
-//   CONSTRAINT "PRODUCT_TRANSACTION_LOCATION_FK" FOREIGN KEY ("postoffice_location_id") REFERENCES "POSTOFFICE_LOCATION"("postoffice_location_id") ON DELETE CASCADE ON UPDATE CASCADE
-// );
-
-// CREATE TABLE "SALES_ORDER" (
-// "id" SERIAL PRIMARY KEY,
-// "postoffice_location_id" TEXT NOT NULL,
-// "customer_id" TEXT NOT NULL,
-// "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-// "created_by" TEXT NOT NULL,
-// FOREIGN KEY ("postoffice_location_id") REFERENCES "POSTOFFICE_LOCATION"("postoffice_location_id"),
-// FOREIGN KEY ("customer_id") REFERENCES "CUSTOMER"("customer_id"),
-// FOREIGN KEY ("created_by") REFERENCES "EMPLOYEE"("employee_id")
-// );
