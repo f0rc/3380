@@ -83,15 +83,35 @@ export const packageRouter = router({
       const makePackage = await postgresQuery(
         `INSERT INTO "PACKAGE" ("package_id", "cost", "sender_id", "receiver_id", "weight", "type", "size", "createdBy", "updatedBy") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
         [
-          package_ID,
-          0, //##TODO: make this real cost
-          senderID,
-          receiverID,
-          steps.packageInfo.value.packageWeight,
-          steps.packageInfo.value.packageType,
-          steps.packageInfo.value.packageSize,
-          ctx.session.user.id, // employeeID
-          ctx.session.user.id, // employeeID
+          package_ID, // package_id
+          0, // cost
+          senderID, // senderID
+          receiverID, // receiverID
+          steps.packageInfo.value.packageWeight, // weight
+          steps.packageInfo.value.packageType, // type
+          steps.packageInfo.value.packageSize, // size
+          ctx.session.user.id, // employeeID // createdBy
+          ctx.session.user.id, // employeeID // updatedBy
+        ]
+      );
+
+      // make package location history
+      //get clerk location
+      const clerkLocation = await postgresQuery(
+        `SELECT "postoffice_location_id" FROM "WORKS_FOR" WHERE "employee_id" = $1`,
+        [ctx.session.user.employee_id]
+      );
+
+      console.log("clerkLocation", clerkLocation.rows[0]);
+
+      const makePackageLocationHistory = await postgresQuery(
+        `INSERT INTO "PACKAGE_LOCATION_HISTORY" ("package_id", "postoffice_location_id", "status", 
+        "processedBy") VALUES ($1, $2, $3, $4) RETURNING *`,
+        [
+          package_ID, // package_id
+          clerkLocation.rows[0].postoffice_location_id, // postoffice_location_id // clerk location
+          "accepted",
+          ctx.session.user.employee_id, // employeeID // createdBy
         ]
       );
 
@@ -107,17 +127,17 @@ export const packageRouter = router({
     const packageList = await postgresQuery(
       `
       SELECT p.*, plh.*
-      FROM "PACKAGE" p      
+      FROM "PACKAGE" p
       INNER JOIN (
       SELECT package_id, MAX("processedAt") AS latest_date
       FROM "PACKAGE_LOCATION_HISTORY"
       GROUP BY package_id
       ) plh2 ON p.package_id = plh2.package_id
-      
+
       INNER JOIN "PACKAGE_LOCATION_HISTORY" plh
       ON plh.package_id = plh2.package_id
       AND plh."processedAt" = plh2.latest_date
-      
+
       WHERE p."sender_id" IN (
         SELECT "customer_id"
         FROM "CUSTOMER"
@@ -130,6 +150,8 @@ export const packageRouter = router({
       `,
       [ctx.session.user.id]
     );
+
+    console.log("packageList", packageList.rows);
 
     return {
       status: "success",
@@ -145,7 +167,17 @@ export const packageRouter = router({
       const { package_id } = input;
 
       const packageDetails = await postgresQuery(
-        `SELECT "PACKAGE"."package_id", "type", "size", "weight", "status", "location_id" FROM "PACKAGE", "PACKAGE_LOCATION_HISTORY" WHERE "PACKAGE"."package_id" = $1 AND "PACKAGE"."package_id" = "PACKAGE_LOCATION_HISTORY"."package_id" LIMIT 1`,
+        `WITH latest_package_location AS (
+          SELECT plh.*
+          FROM "PACKAGE_LOCATION_HISTORY" plh
+          WHERE plh."package_id" = $1
+          ORDER BY plh."processedAt" DESC
+          LIMIT 1
+      )
+      SELECT p.*, lpl.*
+      FROM "PACKAGE" p
+      JOIN latest_package_location lpl ON p."package_id" = lpl."package_id"
+      WHERE p."package_id" = $1;`,
         [package_id]
       );
 
@@ -204,23 +236,15 @@ export interface PackageSchemaWithStatus extends PackageSchema {
 //   status: 'fail'
 // }
 
-//extra for later use
-// `SELECT p.*, plh.*
-// FROM "PACKAGE" p, "CUSTOMER" cu, "PACKAGE_LOCATION_HISTORY" plh
-// WHERE cu."user_id" = $1 AND (p."receiver_id" = cu."customer_id" OR p."sender_id" = cu."customer_id")
-//     AND plh."processedAt" = (
-//         SELECT MAX("processedAt")
-//         FROM "PACKAGE_LOCATION_HISTORY"
-//         WHERE package_id = p.package_id
-//     )
-//     AND plh.package_id = p.package_id;`,
-// `SELECT p.*, plh.*
-//  FROM "PACKAGE" p
-//  INNER JOIN (
-//       SELECT package_id, MAX("processedAt") AS latest_date
-//      FROM "PACKAGE_LOCATION_HISTORY"
-//      GROUP BY package_id
-// ) plh2 ON p.package_id = plh2.package_id
-//    INNER JOIN "PACKAGE_LOCATION_HISTORY" plh
-//        ON plh.package_id = plh2.package_id
-//       AND plh."processedAt" = plh2.latest_date`,
+// CREATE TABLE "PACKAGE_LOCATION_HISTORY" (
+//   "package_location_id" SERIAL NOT NULL,
+//   "package_id" TEXT NOT NULL, --refer to Package
+//   "postoffice_location_id" TEXT NOT NULL,
+//   "intransitcounter" INTEGER NOT NULL DEFAULT 0,
+//   -- make a status
+//   "status" TEXT NOT NULL CHECK ("status" IN('accepted', 'transit', 'delivered','out-for-delivery', 'fail')),
+//   "processedAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+//   "processedBy" TEXT NOT NULL, --employee ID
+
+//   CONSTRAINT "package_location_id" PRIMARY KEY ("package_location_id")
+// );
