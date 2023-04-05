@@ -15,16 +15,8 @@
 
 
 # todo:
-- work log page
-- stats page
-- driver page
-- list packages page (clerk, manager, ceo) (majid)
-- user list packages page (customer, clerk, manager, ceo) (majid)
-- package details page (majid)
-- tracking page (majid)
-- employee dependents page
+
 
 
 # fixes: 
-- `create package` and `create employee` form control
-- designs overall
+
