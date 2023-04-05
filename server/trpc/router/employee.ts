@@ -29,7 +29,7 @@ export const employeeRouter = router({
 
       //TODO ADD A WORKS FOR INSERT INTO DB FOR THE LOCATION input.locationID
       const dbCreateEmployee = await postgresQuery(
-        `INSERT INTO "EMPLOYEE" ("employee_id", "email","firstname", "lastname", "birthdate", "role", "salary", "address_street", "address_city", "address_state", "address_zipcode", "startdate" , "createdBy", "updatedBy") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING "employee_id" as empID`,
+        `INSERT INTO "EMPLOYEE" ("employee_id", "email","firstname", "lastname", "birthdate", "role", "salary", "manager_id" "address_street", "address_city", "address_state", "address_zipcode", "startdate" , "createdBy", "updatedBy") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING "employee_id" as empID`,
         [
           randomUUID(), //##TODO: make this a uuid in the db automatically
           input.email,
@@ -38,6 +38,7 @@ export const employeeRouter = router({
           input.birthDate,
           input.role,
           input.salary,
+          ctx.session.user.employee_id,
           // input.locationID,
 
           input.address_street,
@@ -129,7 +130,34 @@ export const employeeRouter = router({
         employee: dbGetEmployee.rows[0] as employeeDetail,
       };
     }),
+
+  getAllManagers: protectedProcedure.query(async ({ ctx }) => {
+    const { postgresQuery } = ctx;
+
+    const dbGetAllManagers = await postgresQuery(
+      // get all the employees that have a lower role than the current user
+      `SELECT E.employee_id as manager_id, E.firstname as manager_firstname, E.lastname as manager_lastname FROM "EMPLOYEE" AS E WHERE E.role = 3;`,
+      []
+    );
+
+    if (dbGetAllManagers.rows.length === 0)
+      return {
+        status: "fail",
+        message: "No managers found",
+      };
+
+    return {
+      status: "success",
+      employees: dbGetAllManagers.rows as manager[],
+    };
+  }),
 });
+
+export interface manager {
+  manager_id: string;
+  manager_firstname: string;
+  manager_lastname: string;
+}
 
 export interface employeeList {
   employee_id: string;
