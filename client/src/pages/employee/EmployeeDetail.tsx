@@ -25,7 +25,7 @@ const EmployeeDetail = () => {
     employeeID: id,
   });
 
-  const {} = useForm({
+  const { watch, handleSubmit, register } = useForm({
     defaultValues: {
       firstname: data?.employee.firstname,
       lastname: data?.employee.lastname,
@@ -38,12 +38,13 @@ const EmployeeDetail = () => {
       role: data?.employee.role,
       salary: data?.employee.salary,
       manager_id: data?.employee.manager_id,
-      postoffice_address_street: data?.employee.postoffice_address_street,
-      postoffice_address_city: data?.employee.postoffice_address_city,
-      postoffice_address_state: data?.employee.postoffice_address_state,
-      postoffice_address_zipcode: data?.employee.postoffice_address_zipcode,
+      postoffice_name: data?.employee.postoffice_locationname,
     },
   });
+
+  const onSubmit = async (data: any) => {
+    console.log(data);
+  };
 
   if (isLoading) {
     return <div>Loading...</div>;
@@ -75,115 +76,88 @@ const EmployeeDetail = () => {
       <div className="min-h-[80hv]">
         <div className="flex align-middle">
           <div className="container mx-40 mt-10">
-            <h1 className="text-4xl font-bold text-start">Employee Details</h1>
+            <div className="flex justify-center gap-x-4">
+              <h1 className="text-4xl font-bold text-center">
+                Employee Details
+              </h1>
+            </div>
 
-            <div className="flex flex-col">
-              <div className="flex flex-row gap-4 mt-10 bg-[#3a3a38]/50 p-12 rounded-md border-2 border-[#41413E] shadow-2xl w-1/2">
-                <div className="flex flex-col grow">
-                  <div className="flex grow gap-2 items-center">
+            <div className="flex justify-center items-center">
+              <div className="flex flex-wrap mt-10 bg-[#3a3a38]/50 p-12 rounded-md border-2 border-[#41413E] shadow-2xl w-1/2 flex-col items-center justify-center">
+                <div className="grid grid-cols-2 gap-8">
+                  <div className="flex flex-col gap-2">
                     <h1 className="text-lg font-bold">First Name:</h1>
-                    <p className="">{data.employee.firstname}</p>
+                    <p>{data.employee.firstname}</p>
                   </div>
-
-                  <div className="flex grow gap-2 items-center">
+                  <div className="flex flex-col gap-2">
                     <h1 className="text-lg font-bold">Last Name:</h1>
-                    <p className="">{data.employee.lastname}</p>
+                    <p>{data.employee.lastname}</p>
                   </div>
-
-                  <div className="flex grow gap-2 items-center">
+                  <div className="flex flex-col gap-2">
                     <h1 className="text-lg font-bold">Email:</h1>
-                    <p className="">{data.employee.email}</p>
+                    <p>{data.employee.email}</p>
                   </div>
-                </div>
-
-                <div className="flex flex-col grow">
-                  <div className="flex grow gap-2 items-center">
-                    <div className=" flex flex-col gap-1">
-                      <h1 className="text-lg font-bold">Address:</h1>
-                      {/* format the address to make it look good */}
-                      <p className="">
-                        {data.employee.address_street},
-                        {data.employee.address_city},
-                        {data.employee.address_state}
-                      </p>
-                      <p className="">{data.employee.address_zipcode}</p>
-                    </div>
+                  <div className="flex flex-col gap-2">
+                    <h1 className="text-lg font-bold">Address:</h1>
+                    <p>
+                      {data.employee.address_street},{" "}
+                      {data.employee.address_city},{" "}
+                      {data.employee.address_state}
+                    </p>
+                    <p>{data.employee.address_zipcode}</p>
                   </div>
-
-                  <div className="flex grow gap-2 items-center">
+                  <div className="flex flex-col gap-2">
                     <h1 className="text-lg font-bold">Birth Date:</h1>
-                    <p className="">
+                    <p>
                       {new Date(data.employee.birthdate).toLocaleDateString()}
                     </p>
                   </div>
-                </div>
-              </div>
-              <h1 className="text-4xl font-bold text-start mt-10">
-                Office Details
-              </h1>
-              <div className="flex flex-row gap-4 mt-10 bg-[#3a3a38]/50 p-12 rounded-md border-2 border-[#41413E] shadow-2xl w-fit">
-                <div className="flex flex-col grow">
-                  <div className="flex grow gap-2 items-center">
+                  <div className="flex flex-col gap-2">
                     <h1 className="text-lg font-bold">ROLE:</h1>
-                    <p className="">{getRole(data.employee.role)}</p>
+                    <p>{getRole(data.employee.role)}</p>
                   </div>
-
-                  <div className="flex grow gap-2 items-center">
+                  <div className="flex flex-col gap-2">
                     <h1 className="text-lg font-bold">Salary:</h1>
-                    <p className="">${Currency(data.employee.salary)}</p>
+                    <p>${Currency(data.employee.salary)}</p>
                   </div>
-
-                  <div className="flex grow gap-2 items-center">
+                  <div className="flex flex-col gap-2">
                     <h1 className="text-lg font-bold">Supervisor:</h1>
-                    <p className="">
-                      {data.employee.manager_lastname ?? "not available"}
+                    <p>{data.employee.manager_lastname ?? "not available"}</p>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <h1 className="text-lg font-bold">Office Address:</h1>
+                    <p>
+                      {data.employee.postoffice_address_street},{" "}
+                      {data.employee.postoffice_address_city},{" "}
+                      {data.employee.postoffice_address_state}
                     </p>
+                    <p>{data.employee.postoffice_address_zipcode}</p>
                   </div>
-                </div>
-
-                <div className="flex flex-col grow">
-                  <div className="flex grow gap-2 items-center">
-                    <div className=" flex flex-col gap-1">
-                      <h1 className="text-lg font-bold">Office Address:</h1>
-                      {/* format the address to make it look good */}
-                      <p className="">
-                        {data.employee.postoffice_address_street},
-                        {data.employee.postoffice_address_city},
-                        {data.employee.postoffice_address_state}
-                      </p>
-                      <p className="">
-                        {data.employee.postoffice_address_zipcode}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex flex-col grow">
-                  <div className="flex grow gap-2 items-center">
+                  <div className="flex flex-col gap-2">
                     <h1 className="text-lg font-bold">Hours Worked:</h1>
-                    <p className="">{data.employee.hours}</p>
+                    <p>{data.employee.hours}</p>
                   </div>
-
-                  <div className="flex grow gap-2 items-center">
+                  <div className="flex flex-col gap-2">
                     <h1 className="text-lg font-bold">Hired By:</h1>
-                    <p className="">{data.employee.createdBy}</p>
+                    <p>{data.employee.createdBy}</p>
                   </div>
                 </div>
               </div>
+            </div>
+            <div className="flex justify-center mt-10">
+              <button
+                onClick={openModal}
+                className="block text-white focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center border border-calm-yellow hover:bg-zinc-900"
+                type="button"
+              >
+                Update Employee
+              </button>
             </div>
           </div>
         </div>
         {/* <pre>{JSON.stringify(packageDetails, null, 2)}</pre> */}
       </div>
-      <div className="flex justify-center m-5">
-        <button
-          onClick={openModal}
-          className="block text-white focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center border border-calm-yellow hover:bg-zinc-900"
-          type="button"
-        >
-          Update Employee
-        </button>
-      </div>
+
       <div className="flex">
         <Modal
           isOpen={modalIsOpen}

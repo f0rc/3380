@@ -13,6 +13,8 @@ import Login from "./pages/Login";
 import PackageDetail from "./pages/PackageDetail";
 import PackageList from "./pages/PackageList";
 import { AddLocation } from "./pages/postoffice/AddLocation";
+import ListLocations from "./pages/postoffice/ListLocation";
+import LocationDetail from "./pages/postoffice/LocationDetail";
 import { AddProduct } from "./pages/products/AddProduct";
 
 import Profile from "./pages/Profile";
@@ -80,6 +82,18 @@ const ceoRoutes = [
     element: <AddLocation />,
     label: "Add Location",
     isNav: true,
+  },
+  {
+    path: "locations",
+    element: <ListLocations />,
+    label: "Locations",
+    isNav: false,
+  },
+  {
+    path: "location/:id",
+    element: <LocationDetail />,
+    label: "Locations",
+    isNav: false,
   },
 ];
 

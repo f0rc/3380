@@ -90,36 +90,36 @@ const createAdmin = async () => {
   //   ["c0cb263c-8e18-4ba5-85ce-70b5451b9f37"]
   // );
   // console.log(testinggg.rows);
+
+  // const getAllPostOfficeLocations = await postgresQuery(
+  //   `SELECT P.postoffice_location_id, P.locationname, P.address_street, P.address_city, P.address_state, P.address_zipcode FROM "POSTOFFICE_LOCATION" AS P`,
+  //   []
+  // );
+  // console.log(getAllPostOfficeLocations.rows);
+  const getCountOfEmployeesAtEachLocation = await postgresQuery(
+    `SELECT postoffice_location_id, COUNT(DISTINCT employee_id) as employee_count
+    FROM "WORKS_FOR"
+    GROUP BY postoffice_location_id;`,
+    []
+  );
+
+  console.log(getCountOfEmployeesAtEachLocation.rows);
 };
 
 createAdmin();
-// const x = {
-//   employee_id: "c0cb263c-8e18-4ba5-85ce-70b5451b9f37",
-//   user_id: null,
-//   email: "fuck@fuck.com",
-//   firstname: "fuck",
-//   lastname: "fuck",
-//   birthdate: new Date("1121-01-01T05:50:36.000Z"),
-//   role: 1,
-//   salary: 10200,
-//   manager_id: null,
-//   manager_lastname: null,
 
-//   address_street: "kaljsdf",
-//   address_city: "laksjfd",
-//   address_state: "alskjfd",
-//   address_zipcode: 1283,
+// CREATE TABLE "POSTOFFICE_LOCATION" (
+//   "postoffice_location_id" TEXT NOT NULL, --Pkey
+//   "locationname" TEXT NOT NULL,
+//   "address_street" TEXT NOT NULL,
+//   "address_city" TEXT NOT NULL,
+//   "address_state" TEXT NOT NULL,
+//   "address_zipcode" INTEGER NOT NULL,
+//   "postoffice_location_manager" TEXT,    --uses Fkey
 
-//   startdate: new Date("2023-01-26T06:00:00.000Z"),
-//   createAt: new Date("2023-04-03T06:23:22.681Z"),
-//   createdBy: "0eeba770-7b60-4e87-95f3-869729b1b373",
-//   updatedAt: new Date("2023-04-03T06:23:22.681Z"),
-//   updatedBy: "0eeba770-7b60-4e87-95f3-869729b1b373",
+//   "createdAt" DATE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+//   "updatedAt" DATE NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-//   postoffice_locationname: "money muel",
-//   postoffice_address_street: "123 jane st",
-//   postoffice_address_city: "fuck",
-//   postoffice_address_state: "you",
-//   postoffice_address_zipcode: 1234,
-//   hours: 0,
-// };
+//   CONSTRAINT "POSTOFFICE_LOCATION_PK" PRIMARY KEY ("postoffice_location_id"),
+//   CONSTRAINT "POSTOFFICE_LOCATION_MANAGER_FK" FOREIGN KEY ("postoffice_location_manager") REFERENCES "EMPLOYEE"("employee_id") ON DELETE CASCADE ON UPDATE CASCADE
+// );
