@@ -9,7 +9,7 @@ CREATE TABLE "EMPLOYEE" (
 
     "role" INTEGER DEFAULT 0 NOT NULL CHECK ("role" <= 4 AND "role" >= 0),
     "salary" INTEGER NOT NULL CHECK ("salary" >= 0),
-    "manager_id" TEXT, --nullable because the first employee is the manager
+    "manager_id" TEXT NOT NULL (CHECK ("manager_id" != "employee_id")),
 
     "address_street" TEXT NOT NULL,
     "address_city" TEXT NOT NULL,
