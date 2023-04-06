@@ -3,9 +3,11 @@ import React from "react";
 import { useForm } from "react-hook-form";
 
 import { z } from "zod";
-import { trpc } from "../utils/trpc";
+import { trpc } from "../../utils/trpc";
+import { useNavigate } from "react-router-dom";
 
 export const CreateEmployee = () => {
+  const navigate = useNavigate();
   const {
     register,
     handleSubmit,
@@ -30,7 +32,7 @@ export const CreateEmployee = () => {
 
   const { mutateAsync } = trpc.employee.createEmployee.useMutation({
     onSuccess: () => {
-      console.log("emplopyee made success");
+      navigate("/employee-list");
     },
   });
 

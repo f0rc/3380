@@ -2,7 +2,7 @@ import { useContext, useEffect } from "react";
 import { Route, Routes, useRoutes } from "react-router-dom";
 import { Session } from "../../server/trpc/auth/auth";
 import { AuthContext, AuthProvider } from "./auth/SessionProvider";
-import { CreateEmployee } from "./pages/CreateEmployee";
+import { CreateEmployee } from "./pages/employee/CreateEmployee";
 import CreatePackage from "./pages/CreatePackage";
 import Employee from "./pages/employee/Employee";
 import EmployeeDetail from "./pages/employee/EmployeeDetail";
