@@ -8,8 +8,11 @@ import { trpc } from "../../utils/trpc";
 import { storage } from "../../utils/firebase";
 import { v4 } from "uuid";
 import Spinner from "../../icons/Spinner";
+import { useNavigate } from "react-router-dom";
 
 export const AddLocation = () => {
+  const navigate = useNavigate();
+
   const {
     register,
     handleSubmit,
@@ -28,7 +31,7 @@ export const AddLocation = () => {
 
   const { mutateAsync, isLoading } = trpc.location.create.useMutation({
     onSuccess: () => {
-      console.log("success");
+      navigate("/locations");
     },
   });
 
