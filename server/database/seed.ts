@@ -96,14 +96,42 @@ const createAdmin = async () => {
   //   []
   // );
   // console.log(getAllPostOfficeLocations.rows);
-  const getCountOfEmployeesAtEachLocation = await postgresQuery(
-    `SELECT postoffice_location_id, COUNT(DISTINCT employee_id) as employee_count
-    FROM "WORKS_FOR"
-    GROUP BY postoffice_location_id;`,
+  // const getCountOfEmployeesAtEachLocation = await postgresQuery(
+  //   `SELECT postoffice_location_id, COUNT(DISTINCT employee_id) as employee_count
+  //   FROM "WORKS_FOR"
+  //   GROUP BY postoffice_location_id;`,
+  //   []
+  // );
+
+  // console.log(getCountOfEmployeesAtEachLocation.rows);
+
+  const dbGetEmployee = await postgresQuery(
+    // get all the employees that have a lower role than the current user
+    `SELECT
+      E.employee_id,
+      E.firstname,
+      E.lastname,
+      E.role,
+      E.salary,
+      E.manager_id,
+      M.lastname AS manager_lastname,
+      PL.locationname,
+      PL.address_street,
+      PL.address_city,
+      PL.address_state,
+      PL.address_zipcode,
+      WF.hours
+    FROM
+        "EMPLOYEE" AS E
+        LEFT JOIN "WORKS_FOR" AS WF ON E.employee_id = WF.employee_id
+        LEFT JOIN "POSTOFFICE_LOCATION" AS PL ON WF.postoffice_location_id = PL.postoffice_location_id
+        LEFT JOIN "EMPLOYEE" AS M ON E.manager_id = M.employee_id
+    ORDER BY
+        E.employee_id;`,
     []
   );
 
-  console.log(getCountOfEmployeesAtEachLocation.rows);
+  console.log(dbGetEmployee.rows);
 };
 
 createAdmin();

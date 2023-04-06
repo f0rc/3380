@@ -29,7 +29,7 @@ export const employeeRouter = router({
 
       //TODO ADD A WORKS FOR INSERT INTO DB FOR THE LOCATION input.locationID
       const dbCreateEmployee = await postgresQuery(
-        `INSERT INTO "EMPLOYEE" ("employee_id", "email","firstname", "lastname", "birthdate", "role", "salary", "manager_id" "address_street", "address_city", "address_state", "address_zipcode", "startdate" , "createdBy", "updatedBy") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING "employee_id" as empID`,
+        `INSERT INTO "EMPLOYEE" ("employee_id", "email","firstname", "lastname", "birthdate", "role", "salary", "manager_id", "address_street", "address_city", "address_state", "address_zipcode", "startdate" , "createdBy", "updatedBy") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING "employee_id" as empID`,
         [
           randomUUID(), //##TODO: make this a uuid in the db automatically
           input.email,
@@ -79,14 +79,12 @@ export const employeeRouter = router({
         WF.hours
       FROM
           "EMPLOYEE" AS E
-          JOIN "WORKS_FOR" AS WF ON E.employee_id = WF.employee_id
-          JOIN "POSTOFFICE_LOCATION" AS PL ON WF.postoffice_location_id = PL.postoffice_location_id
+          LEFT JOIN "WORKS_FOR" AS WF ON E.employee_id = WF.employee_id
+          LEFT JOIN "POSTOFFICE_LOCATION" AS PL ON WF.postoffice_location_id = PL.postoffice_location_id
           LEFT JOIN "EMPLOYEE" AS M ON E.manager_id = M.employee_id
-      WHERE
-          E.role < $1
       ORDER BY
           E.employee_id;`,
-      [ctx.session.user.role]
+      []
     );
 
     console.log(dbGetEmployee.rows);
@@ -113,8 +111,8 @@ export const employeeRouter = router({
         WF.hours
       FROM
           "EMPLOYEE" AS E
-          JOIN "WORKS_FOR" AS WF ON E.employee_id = WF.employee_id
-          JOIN "POSTOFFICE_LOCATION" AS PL ON WF.postoffice_location_id = PL.postoffice_location_id
+          LEFT JOIN "WORKS_FOR" AS WF ON E.employee_id = WF.employee_id
+          LEFT JOIN "POSTOFFICE_LOCATION" AS PL ON WF.postoffice_location_id = PL.postoffice_location_id
           LEFT JOIN "EMPLOYEE" AS M ON E.manager_id = M.employee_id
       WHERE
           E.employee_id = $1

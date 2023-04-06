@@ -21,9 +21,10 @@ const EmployeeDetail = () => {
     return <div>Error</div>;
   }
 
-  const { data, isLoading, isError } = trpc.employee.getEmployee.useQuery({
-    employeeID: id,
-  });
+  const { data, isLoading, isError, isSuccess } =
+    trpc.employee.getEmployee.useQuery({
+      employeeID: id,
+    });
 
   const { watch, handleSubmit, register } = useForm({
     defaultValues: {
@@ -52,6 +53,10 @@ const EmployeeDetail = () => {
 
   if (isError) {
     return <div>Error</div>;
+  }
+
+  if (isSuccess) {
+    console.log(data);
   }
 
   const getRole = (role: number) => {
@@ -99,12 +104,17 @@ const EmployeeDetail = () => {
                   </div>
                   <div className="flex flex-col gap-2">
                     <h1 className="text-lg font-bold">Address:</h1>
-                    <p>
-                      {data.employee.address_street},{" "}
-                      {data.employee.address_city},{" "}
-                      {data.employee.address_state}
-                    </p>
-                    <p>{data.employee.address_zipcode}</p>
+
+                    {data.employee.address_street ? (
+                      <p>
+                        {data.employee.address_street},{" "}
+                        {data.employee.address_city},{" "}
+                        {data.employee.address_state},{" "}
+                        {data.employee.address_zipcode}
+                      </p>
+                    ) : (
+                      "N/A"
+                    )}
                   </div>
                   <div className="flex flex-col gap-2">
                     <h1 className="text-lg font-bold">Birth Date:</h1>
@@ -126,12 +136,18 @@ const EmployeeDetail = () => {
                   </div>
                   <div className="flex flex-col gap-2">
                     <h1 className="text-lg font-bold">Office Address:</h1>
-                    <p>
-                      {data.employee.postoffice_address_street},{" "}
-                      {data.employee.postoffice_address_city},{" "}
-                      {data.employee.postoffice_address_state}
-                    </p>
-                    <p>{data.employee.postoffice_address_zipcode}</p>
+                    {data.employee.postoffice_address_street ? (
+                      <p>
+                        {data.employee.postoffice_locationname}
+                        <br />
+                        {data.employee.postoffice_address_street},{" "}
+                        {data.employee.postoffice_address_city},{" "}
+                        {data.employee.postoffice_address_state},{" "}
+                        {data.employee.postoffice_address_zipcode}
+                      </p>
+                    ) : (
+                      "N/A"
+                    )}
                   </div>
                   <div className="flex flex-col gap-2">
                     <h1 className="text-lg font-bold">Hours Worked:</h1>

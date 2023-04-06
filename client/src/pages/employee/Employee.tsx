@@ -99,6 +99,7 @@ const Employee = () => {
   }
 
   const handlePackageClick = (employee: any) => {
+    console.log("NAV", employee);
     navigate(`/employee/${employee.employee_id}`, {
       state: { data: employee },
     });
