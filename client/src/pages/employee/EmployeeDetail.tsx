@@ -3,11 +3,15 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { trpc } from "../../utils/trpc";
 import Modal from "react-modal";
 import { useForm } from "react-hook-form";
+import Spinner from "../../icons/Spinner";
 
 const EmployeeDetail = () => {
   const [modalIsOpen, setModalIsOpen] = useState(false);
-
-  const openModal = () => {
+  const [modalLoading, setModalLoading] = useState(false);
+  const openModal = async () => {
+    setModalLoading(true);
+    await getAllManagers.refetch();
+    setModalLoading(false);
     setModalIsOpen(true);
   };
 
@@ -26,26 +30,40 @@ const EmployeeDetail = () => {
       employeeID: id,
     });
 
-  const { watch, handleSubmit, register } = useForm({
+  const getAllManagers = trpc.employee.getAllManagers.useQuery(undefined, {
+    enabled: false,
+  });
+
+  const getAllLocations = trpc.location.getOffliceLocationNameID.useQuery(
+    undefined,
+    {
+      enabled: false,
+    }
+  );
+
+  const {
+    watch,
+    handleSubmit,
+    register,
+    formState: { errors },
+  } = useForm({
     defaultValues: {
       firstname: data?.employee.firstname,
       lastname: data?.employee.lastname,
-      email: data?.employee.email,
       address_street: data?.employee.address_street,
       address_city: data?.employee.address_city,
       address_state: data?.employee.address_state,
       address_zipcode: data?.employee.address_zipcode,
-      birthdate: data?.employee.birthdate,
       role: data?.employee.role,
       salary: data?.employee.salary,
       manager_id: data?.employee.manager_id,
-      postoffice_name: data?.employee.postoffice_locationname,
+      postoffice_location_id: data?.employee.postoffice_location_id,
     },
   });
 
-  const onSubmit = async (data: any) => {
-    console.log(data);
-  };
+  const onSubmit = handleSubmit(async (data) => {
+    setModalLoading(true);
+  });
 
   if (isLoading) {
     return <div>Loading...</div>;
@@ -161,13 +179,17 @@ const EmployeeDetail = () => {
               </div>
             </div>
             <div className="flex justify-center mt-10">
-              <button
-                onClick={openModal}
-                className="block text-white focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center border border-calm-yellow hover:bg-zinc-900"
-                type="button"
-              >
-                Update Employee
-              </button>
+              {modalLoading ? (
+                <Spinner />
+              ) : (
+                <button
+                  onClick={openModal}
+                  className="block text-white focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center border border-calm-yellow hover:bg-zinc-900"
+                  type="button"
+                >
+                  Update Employee
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -202,101 +224,175 @@ const EmployeeDetail = () => {
                     xmlns="http:www.w3.org/2000/svg"
                   >
                     <path
-                      fill-rule="evenodd"
+                      fillRule="evenodd"
                       d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                      clip-rule="evenodd"
+                      clipRule="evenodd"
                     ></path>
                   </svg>
                   <span className="sr-only">Close modal</span>
                 </button>
               </div>
-              <form action="#">
+              <form onSubmit={onSubmit}>
                 <div className="grid gap-4 mb-4 sm:grid-cols-2">
                   <div>
-                    <label
-                      htmlFor="name"
-                      className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                    >
+                    <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                       Name
                     </label>
                     <input
                       type="text"
-                      name="name"
-                      id="name"
-                      value="iPad Air Gen 5th Wi-Fi"
+                      {...register("firstname")}
                       className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                      placeholder="Ex. Apple iMac 27&ldquo;"
+                      defaultValue={data.employee.firstname}
                     />
                   </div>
                   <div>
-                    <label
-                      htmlFor="brand"
-                      className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                    >
-                      Brand
+                    <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                      Last Name
                     </label>
                     <input
                       type="text"
-                      name="brand"
-                      id="brand"
-                      value="Google"
+                      {...register("lastname")}
                       className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                      placeholder="Ex. Apple"
                     />
                   </div>
                   <div>
-                    <label
-                      htmlFor="price"
-                      className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                    >
-                      Price
+                    <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                      Manager
                     </label>
-                    <input
-                      type="number"
-                      value="399"
-                      name="price"
-                      id="price"
-                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                      placeholder="$299"
-                    />
+                    <>
+                      {getAllManagers.isLoading ? (
+                        <div className="flex items-center space-x-2">
+                          <div className="w-6 h-6 border-2 border-gray-200 rounded-full animate-spin"></div>
+                        </div>
+                      ) : getAllManagers?.data?.employees ? (
+                        <select
+                          id="manager_id"
+                          className="block w-full px-4 py-2 text-sm text-gray-900 border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:border-gray-400 dark:focus:shadow-outline-gray focus:border-primary-300 focus:outline-none focus:ring focus:ring-primary-200 focus:ring-opacity-50"
+                          {...register("manager_id")}
+                        >
+                          <option value={data?.employee?.manager_id ?? "-1"}>
+                            {data.employee.manager_lastname ?? "Select Manager"}
+                          </option>
+
+                          {getAllManagers?.data?.employees.map((employee) => (
+                            <option
+                              value={employee.manager_id}
+                              key={employee.manager_id}
+                            >
+                              {employee.manager_firstname}{" "}
+                              {employee.manager_lastname}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <div className="flex items-center space-x-2">
+                          <p>NO MANAGERS FOUND</p>
+                        </div>
+                      )}
+                    </>
                   </div>
-                  <div>
-                    <label
-                      htmlFor="category"
-                      className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                    >
-                      Category
+                  <div className="mb-4">
+                    <label className="block uppercase tracking-wide text-gray-50 text-xs font-bold mb-2">
+                      Role
                     </label>
                     <select
-                      id="category"
+                      defaultValue={getRole(data.employee.role)}
+                      {...register("role", { valueAsNumber: true })}
                       className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
                     >
-                      <option selected={true}>Electronics</option>
-                      <option value="TV">TV/Monitors</option>
-                      <option value="PC">PC</option>
-                      <option value="GA">Gaming/Console</option>
-                      <option value="PH">Phones</option>
+                      <option value={1}>Clerk</option>
+                      <option value={2}>Driver</option>
+                      <option value={3}>Manager</option>
                     </select>
                   </div>
-                  <div className="sm:col-span-2">
-                    <label
-                      htmlFor="description"
-                      className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                    >
-                      Description
-                    </label>
-                    <textarea
-                      id="description"
-                      rows={5}
-                      className="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                      placeholder="Write a description..."
-                    >
-                      Standard glass, 3.8GHz 8-core 10th-generation Intel Core
-                      i7 processor, Turbo Boost up to 5.0GHz, 16GB 2666MHz DDR4
-                      memory, Radeon Pro 5500 XT with 8GB of GDDR6 memory, 256GB
-                      SSD storage, Gigabit Ethernet, Magic Mouse 2, Magic
-                      Keyboard - US
-                    </textarea>
+                </div>
+                <div>
+                  <div>
+                    <div className="flex -mx-3 mb-6">
+                      <div className="w-full px-3 mb-6 md:mb-0">
+                        <label className="block uppercase tracking-wide text-gray-50 text-xs font-bold mb-2">
+                          Street Address
+                        </label>
+                        <input
+                          type="text"
+                          id="address_street"
+                          placeholder="123 Jane Street"
+                          {...register("address_street")}
+                          className={`'appearance-none block w-full bg-transparent border  rounded py-3 px-4 mb-3 leading-tight focus:outline-none foc' ${
+                            errors.address_street ? "border-red-500" : ""
+                          }`}
+                        />
+                        {errors.address_street && (
+                          <p className="text-red-500 text-xs italic">
+                            Plsease fill out this field
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex  -mx-3 mb-6">
+                      <div className="w-full md:w-1/2 px-3 mb-6 md:mb-0">
+                        <label className="block uppercase tracking-wide text-gray-50 text-xs font-bold mb-2">
+                          City
+                        </label>
+                        <input
+                          type="text"
+                          id="city"
+                          placeholder="City"
+                          {...register("address_city")}
+                          className={`'appearance-none block w-full bg-transparent border  rounded py-3 px-4 mb-3 leading-tight focus:outline-none foc' ${
+                            errors.address_city ? "border-red-500" : ""
+                          }`}
+                        />
+                        {errors.address_city && (
+                          <p className="text-red-500 text-xs italic">
+                            Plsease fill out this field
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="w-full md:w-1/2 px-3 mb-6 md:mb-0">
+                        <label className="block uppercase tracking-wide text-gray-50 text-xs font-bold mb-2">
+                          State
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Texas"
+                          id="lastName"
+                          {...register("address_state", {
+                            required: true,
+                          })}
+                          className={`'appearance-none block w-full bg-transparent border  rounded py-3 px-4 mb-3 leading-tight focus:outline-none foc' ${
+                            errors.address_state ? "border-red-500" : ""
+                          }`}
+                        />
+                        {errors.address_state && (
+                          <p className="text-red-500 text-xs italic">
+                            Plsease fill out this field
+                          </p>
+                        )}
+                      </div>
+                      <div className="w-full md:w-1/2 px-3 mb-6 md:mb-0">
+                        <label className="block uppercase tracking-wide text-gray-50 text-xs font-bold mb-2">
+                          Zip CODE
+                        </label>
+                        <input
+                          type="number"
+                          placeholder="000000"
+                          id="lastName"
+                          {...register("address_zipcode", {
+                            required: true,
+                          })}
+                          className={`'appearance-none block w-full bg-transparent border  rounded py-3 px-4 mb-3 leading-tight focus:outline-none foc' ${
+                            errors.address_zipcode ? "border-red-500" : ""
+                          }`}
+                        />
+                        {errors.address_zipcode && (
+                          <p className="text-red-500 text-xs italic">
+                            Plsease fill out this field
+                          </p>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-center space-x-4">
@@ -318,9 +414,9 @@ const EmployeeDetail = () => {
                       xmlns="http:www.w3.org/2000/svg"
                     >
                       <path
-                        fill-rule="evenodd"
+                        fillRule="evenodd"
                         d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
-                        clip-rule="evenodd"
+                        clipRule="evenodd"
                       ></path>
                     </svg>
                     Cancel
@@ -336,3 +432,20 @@ const EmployeeDetail = () => {
 };
 
 export default EmployeeDetail;
+
+// <div className="sm:col-span-2">
+// <label
+//   htmlFor="description"
+//   className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+// >
+//   Description
+// </label>
+// <textarea
+//   id="description"
+//   rows={5}
+//   className="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+//   placeholder="Write a description..."
+// >
+//   Keyboard - US
+// </textarea>
+// </div>

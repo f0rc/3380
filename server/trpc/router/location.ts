@@ -10,6 +10,16 @@ export const postOfficeLocationSchema = z.object({
   address_zipcode: z.number(),
 });
 
+export const UpdatepostOfficeLocationSchema = z.object({
+  postoffice_location_id: z.string(),
+  locationname: z.string(),
+  address_street: z.string(),
+  address_city: z.string(),
+  address_state: z.string(),
+  address_zipcode: z.number(),
+  postoffice_location_manager: z.string(),
+});
+
 export type postOfficeLocationSchemaType = z.infer<
   typeof postOfficeLocationSchema
 >;
@@ -88,44 +98,186 @@ export const locationRouter = router({
   }),
 
   setManager: protectedProcedure
-    .input(z.object({ manager_id: z.string(), location_id: z.string() }))
+    .input(
+      z.object({ manager_id: z.string(), postoffice_location_id: z.string() })
+    )
     .mutation(async ({ input, ctx }) => {
       const { postgresQuery } = ctx;
-      const { manager_id, location_id } = input;
+      const { manager_id, postoffice_location_id } = input;
 
-      const setManager = await postgresQuery(
-        `UPDATE "POSTOFFICE_LOCATION" SET "postoffice_location_manager" = $1 WHERE "postoffice_location_id" = $2 RETURNING *;`,
-        [manager_id, location_id]
-      );
-      const updateManager = await postgresQuery(
-        `UPDATE "WORKS_FOR" SET "postoffice_location_id" = $1 WHERE "employee_id" = $2 RETURNING *;`,
-        [location_id, manager_id]
-      );
-
-      const getManager = await postgresQuery(
-        `SELECT E.firstname as manager_firstname, E.lastname as manager_lastname
-        FROM "EMPLOYEE" AS E
-        WHERE E.employee_id = $1;`,
+      // check if a manager was assigned to a location before and remove his manager id from the postofficelocation
+      const getPreviousManager = await postgresQuery(
+        `SELECT "postoffice_location_id" FROM "POSTOFFICE_LOCATION" WHERE "postoffice_location_manager" = $1;`,
         [manager_id]
       );
 
-      if (getManager.rows.length === 0) {
+      if (getPreviousManager.rows.length !== 0) {
+        console.log("previous manager found");
+        const removeManager = await postgresQuery(
+          `UPDATE "POSTOFFICE_LOCATION" SET "postoffice_location_manager" = NULL WHERE "postoffice_location_id" = $1 RETURNING *;`,
+          [getPreviousManager.rows[0].postoffice_location_id]
+        );
+      }
+
+      const setManager = await postgresQuery(
+        `UPDATE "POSTOFFICE_LOCATION" SET "postoffice_location_manager" = $1 WHERE "postoffice_location_id" = $2 RETURNING *;`,
+        [manager_id, postoffice_location_id]
+      );
+      const updateManager = await postgresQuery(
+        `UPDATE "WORKS_FOR" SET "postoffice_location_id" = $2 WHERE "employee_id" = $1 RETURNING *;`,
+        [manager_id, postoffice_location_id]
+      );
+
+      if (updateManager.rows.length === 0 || setManager.rows.length === 0) {
         return {
           status: "fail",
-          message: "No manager found with that ID",
+          message: "Something went wrong",
         };
       }
 
       return {
         status: "success",
-        office: {
-          ...setManager.rows[0],
-          manager_firstname: getManager.rows[0].manager_firstname,
-          manager_lastname: getManager.rows[0].manager_lastname,
-        } as getAllOfficeLocations,
       };
     }),
+
+  updateLocation: protectedProcedure
+    .input(UpdatepostOfficeLocationSchema)
+    .mutation(async ({ input, ctx }) => {
+      const { postgresQuery } = ctx;
+      const {
+        postoffice_location_id,
+        locationname,
+        address_street,
+        address_city,
+        address_state,
+        address_zipcode,
+        postoffice_location_manager,
+      } = input;
+
+      const updateLocation = await postgresQuery(
+        `UPDATE "POSTOFFICE_LOCATION" SET "locationname" = $1, "address_street" = $2, "address_city" = $3, "address_state" = $4, "address_zipcode" = $5, "postoffice_location_manager" = $6 WHERE "postoffice_location_id" = $7 RETURNING *;`,
+        [
+          locationname,
+          address_street,
+          address_city,
+          address_state,
+          address_zipcode,
+          postoffice_location_manager,
+          postoffice_location_id,
+        ]
+      );
+
+      if (updateLocation.rows.length === 0) {
+        return {
+          status: "fail",
+          message: "No location found with that ID",
+        };
+      }
+
+      return {
+        status: "success",
+      };
+    }),
+
+  hireEmployee: protectedProcedure
+    .input(z.object({ employee_id: z.string(), location_id: z.string() }))
+    .mutation(async ({ input, ctx }) => {
+      const { postgresQuery } = ctx;
+      const { employee_id, location_id } = input;
+
+      const hireEmployee = await postgresQuery(
+        `UPDATE "WORKS_FOR" SET "postoffice_location_id" = $1 WHERE "employee_id" = $2 RETURNING *;`,
+        [location_id, employee_id]
+      );
+
+      if (hireEmployee.rows.length === 0) {
+        return {
+          status: "fail",
+          message: "No employee found with that ID",
+        };
+      }
+
+      return {
+        status: "success",
+        employee: hireEmployee.rows[0],
+      };
+    }),
+
+  getLocationDetails: protectedProcedure
+    .input(z.object({ postoffice_location_id: z.string() }))
+    .query(async ({ input, ctx }) => {
+      const { postgresQuery } = ctx;
+      const { postoffice_location_id } = input;
+
+      const getLocation = await postgresQuery(
+        `SELECT
+        P.postoffice_location_id,
+        P.locationname,
+        P.address_street,
+        P.address_city,
+        P.address_state,
+        P.address_zipcode,
+        E.firstname as manager_firstname,
+        E.lastname as manager_lastname,
+        COUNT(DISTINCT WF.employee_id) as employee_count
+      FROM
+        "POSTOFFICE_LOCATION" AS P
+        LEFT JOIN "EMPLOYEE" AS E ON P.postoffice_location_manager = E.employee_id
+        LEFT JOIN "WORKS_FOR" AS WF ON P.postoffice_location_id = WF.postoffice_location_id
+      WHERE
+        P.postoffice_location_id = $1
+      GROUP BY
+        P.postoffice_location_id,
+        P.locationname,
+        P.address_street,
+        P.address_city,
+        P.address_state,
+        P.address_zipcode,
+        E.firstname,
+        E.lastname;`,
+        [postoffice_location_id]
+      );
+
+      if (getLocation.rows.length === 0) {
+        return {
+          status: "fail",
+          message: "No location found with that ID",
+        };
+      }
+
+      return {
+        status: "success",
+        location: getLocation.rows[0] as getAllOfficeLocations,
+      };
+    }),
+
+  getOffliceLocationNameID: protectedProcedure.query(async ({ ctx }) => {
+    const { postgresQuery } = ctx;
+
+    const getLocationNameID = await postgresQuery(
+      `SELECT "postoffice_location_id", "locationname" FROM "POSTOFFICE_LOCATION";`,
+      []
+    );
+
+    if (getLocationNameID.rows.length === 0) {
+      return {
+        status: "fail",
+        message: "No locations found",
+      };
+    }
+
+    return {
+      status: "success",
+      locations: getLocationNameID.rows as getAllOfficeLocationsNameID[],
+    };
+  }),
 });
+
+// create a partial type of the getAllOfficeLocations interface to only include offline_location_id and locationname
+export type getAllOfficeLocationsNameID = Pick<
+  getAllOfficeLocations,
+  "postoffice_location_id" | "locationname"
+>;
 
 export interface getAllOfficeLocations {
   postoffice_location_id: string;
