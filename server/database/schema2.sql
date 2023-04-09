@@ -9,7 +9,7 @@ CREATE TABLE "EMPLOYEE" (
 
     "role" INTEGER DEFAULT 0 NOT NULL CHECK ("role" <= 4 AND "role" >= 0),
     "salary" INTEGER NOT NULL CHECK ("salary" >= 0),
-    "manager_id" TEXT NOT NULL (CHECK ("manager_id" != "employee_id")),
+    "manager_id" TEXT CHECK ("manager_id" != "employee_id"),
 
     "address_street" TEXT NOT NULL,
     "address_city" TEXT NOT NULL,
@@ -17,7 +17,7 @@ CREATE TABLE "EMPLOYEE" (
     "address_zipcode" INTEGER NOT NULL,
     "startdate" DATE NOT NULL,
 
-    "createAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "createdBy" TEXT NOT NULL,
     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedBy" TEXT NOT NULL,
@@ -98,11 +98,12 @@ CREATE TABLE "POSTOFFICE_LOCATION" (
 );
 
 CREATE TABLE "WORKS_FOR" (
-    "employee_id" TEXT NOT NULL, --Pkey 
+    "works_for_id" SERIAL NOT NULL, --Pkey
+    "employee_id" TEXT NOT NULL UNIQUE,
     "postoffice_location_id" TEXT,
     "hours" INTEGER DEFAULT 0 NOT NULL,
 
-    CONSTRAINT "WORKS_FOR_PK" PRIMARY KEY ("employee_id", "postoffice_location_id")
+    CONSTRAINT "WORKS_FOR_PK" PRIMARY KEY ("works_for_id")
 );
 
 
