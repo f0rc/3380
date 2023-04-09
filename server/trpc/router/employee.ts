@@ -103,6 +103,7 @@ export const employeeRouter = router({
         `SELECT
         E.*,
         M.lastname AS manager_lastname,
+        PL.postoffice_location_id,
         PL.locationname AS postoffice_locationname,
         PL.address_street AS postoffice_address_street,
         PL.address_city AS postoffice_address_city,
@@ -172,39 +173,6 @@ export interface employeeList {
   address_state: string;
   address_zipcode: number;
 }
-
-// list employee detail example
-// {
-//   employee_id: "c0cb263c-8e18-4ba5-85ce-70b5451b9f37",
-//   user_id: null,
-//   email: "fuck@fuck.com",
-//   firstname: "fuck",
-//   lastname: "fuck",
-//   birthdate: new Date("1121-01-01T05:50:36.000Z"),
-//   role: 1,
-//   salary: 10200,
-//   manager_id: null,
-//   manager_lastname: null,
-
-//   address_street: "kaljsdf",
-//   address_city: "laksjfd",
-//   address_state: "alskjfd",
-//   address_zipcode: 1283,
-
-//   startdate: new Date("2023-01-26T06:00:00.000Z"),
-//   createAt: new Date("2023-04-03T06:23:22.681Z"),
-//   createdBy: "0eeba770-7b60-4e87-95f3-869729b1b373",
-//   updatedAt: new Date("2023-04-03T06:23:22.681Z"),
-//   updatedBy: "0eeba770-7b60-4e87-95f3-869729b1b373",
-
-//   postoffice_locationname: "money muel",
-//   postoffice_address_street: "123 jane st",
-//   postoffice_address_city: "fuck",
-//   postoffice_address_state: "you",
-//   postoffice_address_zipcode: 1234,
-//   hours: 0,
-// };
-
 export interface employeeDetail {
   employee_id: string;
   user_id: string | null;
@@ -222,6 +190,7 @@ export interface employeeDetail {
   address_zipcode: number;
   startdate: string;
   createdBy: string;
+  postoffice_location_id: string;
   postoffice_locationname: string;
   postoffice_address_street: string;
   postoffice_address_city: string;
@@ -229,18 +198,3 @@ export interface employeeDetail {
   postoffice_address_zipcode: number;
   hours: number;
 }
-
-// employee list
-// {
-//   employee_id: 'c0cb263c-8e18-4ba5-85ce-70b5451b9f37',
-//   firstname: 'fuck',
-//   lastname: 'fuck',
-//   role: 1,
-//   manager_id: null,
-//   manager_lastname: null,
-//   locationname: 'money muel',
-//   address_street: '123 jane st',
-//   address_city: 'fuck',
-//   address_state: 'you',
-//   address_zipcode: 1234
-// }

@@ -13,7 +13,7 @@ export function App() {
       transformer: superjson,
       links: [
         loggerLink({
-          enabled: (opts) => true,
+          enabled: () => false,
         }),
 
         httpBatchLink({

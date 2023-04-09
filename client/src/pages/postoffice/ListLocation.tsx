@@ -79,7 +79,7 @@ const ListLocations = () => {
     );
     console.log("INDEX", foundLocation?.locationname);
     navigate(`/location/${locationId}`, {
-      state: { data: foundLocation },
+      state: { data: foundLocation?.postoffice_location_id },
     });
     console.log(data);
   };

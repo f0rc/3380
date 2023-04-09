@@ -34,7 +34,12 @@ const LocationDetail = () => {
   }
 
   console.log("STATE: ", state);
-  const [stateData, setStateData] = useState(state.data);
+
+  const getLocationDetail = trpc.location.getLocationDetails.useQuery({
+    postoffice_location_id: state.data,
+  });
+
+  console.log("LOCATION DETAIL: ", getLocationDetail.data?.location);
 
   const getAllManagers = trpc.employee.getAllManagers.useQuery(undefined, {
     enabled: false,
@@ -47,31 +52,27 @@ const LocationDetail = () => {
   });
 
   useEffect(() => {
-    console.log("USE", stateData.manager_lastname);
-  }, [stateData]);
+    console.log("USE", getLocationDetail.data?.location?.manager_lastname);
+  }, [getLocationDetail]);
 
   const setManager = trpc.location.setManager.useMutation({
     onSuccess: (data) => {
-      console.log("SUCCESS", data.office?.manager_lastname);
-      setStateData(data.office);
+      console.log("SUCCESS", data.message);
       closeModal2();
+      getLocationDetail.refetch();
+    },
+    onError: (error) => {
+      console.log("ERROR", error);
     },
   });
 
   const submitManagerUpdate = handleSubmit(async (updateManager) => {
     await setManager.mutateAsync({
-      location_id: stateData.postoffice_location_id,
+      postoffice_location_id: state.data,
       manager_id: updateManager.manager_id,
     });
+    console.log(updateManager);
   });
-
-  //   if (isLoading) {
-  //     return <div>Loading...</div>;
-  //   }
-
-  //   if (isError) {
-  //     return <div>Error</div>;
-  //   }
 
   return (
     <div>
@@ -89,19 +90,23 @@ const LocationDetail = () => {
                 <div className="grid grid-cols-2 gap-8">
                   <div className="flex flex-col gap-2">
                     <h1 className="text-lg font-bold">Location Name:</h1>
-                    <p>{stateData.locationname}</p>
+                    <p>{getLocationDetail.data?.location?.locationname}</p>
                   </div>
                   <div className="flex flex-col gap-2">
                     <h1 className="text-lg font-bold">Address:</h1>
                     <p>
-                      {stateData.address_street}, {stateData.address_city},{" "}
-                      {stateData.address_state}, {stateData.address_zipcode}
+                      {getLocationDetail.data?.location?.address_street},{" "}
+                      {getLocationDetail.data?.location?.address_city},{" "}
+                      {getLocationDetail.data?.location?.address_state},{" "}
+                      {getLocationDetail.data?.location?.address_zipcode}
                     </p>
                   </div>
                   <div className="flex flex-col gap-2">
                     <h1 className="text-lg font-bold">Manager Lastname:</h1>
-                    {stateData.manager_lastname ? (
-                      <p>{stateData.manager_lastname}</p>
+                    {getLocationDetail.data?.location?.manager_lastname ? (
+                      <p>
+                        {getLocationDetail.data?.location?.manager_lastname}
+                      </p>
                     ) : (
                       <div className="flex justify-start items-center">
                         <button
@@ -116,7 +121,7 @@ const LocationDetail = () => {
                   </div>
                   <div className="flex flex-col gap-2">
                     <h1 className="text-lg font-bold">Employee Count:</h1>
-                    <p>{stateData.employee_count}</p>
+                    <p>{getLocationDetail.data?.location?.employee_count}</p>
                   </div>
                 </div>
               </div>
@@ -179,7 +184,7 @@ const LocationDetail = () => {
                       htmlFor="category"
                       className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                     >
-                      Category
+                      Manager
                     </label>
                     <>
                       {getAllManagers.isLoading ? (
@@ -188,22 +193,29 @@ const LocationDetail = () => {
                           <div className="w-6 h-6 border-2 border-gray-200 rounded-full animate-spin"></div>
                           <div className="w-6 h-6 border-2 border-gray-200 rounded-full animate-spin"></div>
                         </div>
+                      ) : getAllManagers?.data?.employees ? (
+                        <select
+                          id="manager_id"
+                          className="block w-full px-4 py-2 text-sm text-gray-900 border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:border-gray-400 dark:focus:shadow-outline-gray focus:border-primary-300 focus:outline-none focus:ring focus:ring-primary-200 focus:ring-opacity-50"
+                          {...register("manager_id")}
+                        >
+                          <option value="0" disabled>
+                            Select Manager
+                          </option>
+                          {getAllManagers?.data?.employees.map((employee) => (
+                            <option
+                              value={employee.manager_id}
+                              key={employee.manager_id}
+                            >
+                              {employee.manager_firstname}{" "}
+                              {employee.manager_lastname}
+                            </option>
+                          ))}
+                        </select>
                       ) : (
-                        getAllManagers?.data?.employees && (
-                          <select
-                            id="manager_id"
-                            className="block w-full px-4 py-2 text-sm text-gray-900 border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:border-gray-400 dark:focus:shadow-outline-gray focus:border-primary-300 focus:outline-none focus:ring focus:ring-primary-200 focus:ring-opacity-50"
-                            {...register("manager_id")}
-                          >
-                            <option value="0">Select Category</option>
-                            {getAllManagers?.data?.employees.map((employee) => (
-                              <option value={employee.manager_id}>
-                                {employee.manager_firstname}{" "}
-                                {employee.manager_lastname}
-                              </option>
-                            ))}
-                          </select>
-                        )
+                        <div className="flex items-center space-x-2">
+                          <p>NO MANAGERS FOUND</p>
+                        </div>
                       )}
                     </>
                   </div>
