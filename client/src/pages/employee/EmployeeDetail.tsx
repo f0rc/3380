@@ -10,7 +10,10 @@ const EmployeeDetail = () => {
   const [modalLoading, setModalLoading] = useState(false);
   const openModal = async () => {
     setModalLoading(true);
+    await employeeInfo.refetch();
     await getAllManagers.refetch();
+    await getAllLocations.refetch();
+    reset();
     setModalLoading(false);
     setModalIsOpen(true);
   };
@@ -25,11 +28,6 @@ const EmployeeDetail = () => {
     return <div>Error</div>;
   }
 
-  const { data, isLoading, isError, isSuccess } =
-    trpc.employee.getEmployee.useQuery({
-      employeeID: id,
-    });
-
   const getAllManagers = trpc.employee.getAllManagers.useQuery(undefined, {
     enabled: false,
   });
@@ -41,41 +39,72 @@ const EmployeeDetail = () => {
     }
   );
 
+  const employeeInfo = trpc.employee.getEmployee.useQuery({
+    employeeID: id,
+  });
   const {
     watch,
     handleSubmit,
     register,
     formState: { errors },
+    reset,
   } = useForm({
     defaultValues: {
-      firstname: data?.employee.firstname,
-      lastname: data?.employee.lastname,
-      address_street: data?.employee.address_street,
-      address_city: data?.employee.address_city,
-      address_state: data?.employee.address_state,
-      address_zipcode: data?.employee.address_zipcode,
-      role: data?.employee.role,
-      salary: data?.employee.salary,
-      manager_id: data?.employee.manager_id,
-      postoffice_location_id: data?.employee.postoffice_location_id,
+      email: employeeInfo.data?.employee.email,
+      firstname: employeeInfo.data?.employee.firstname,
+      lastname: employeeInfo.data?.employee.lastname,
+      address_street: employeeInfo.data?.employee.address_street,
+      address_city: employeeInfo.data?.employee.address_city,
+      address_state: employeeInfo.data?.employee.address_state,
+      address_zipcode: employeeInfo.data?.employee.address_zipcode,
+      role: employeeInfo.data?.employee.role,
+      salary: employeeInfo.data?.employee.salary,
+      manager_id: employeeInfo.data?.employee.manager_id,
+      postoffice_location_id:
+        employeeInfo.data?.employee.postoffice_location_id,
     },
   });
 
-  const onSubmit = handleSubmit(async (data) => {
-    setModalLoading(true);
+  const updateEmployee = trpc.employee.updateEmployee.useMutation({
+    onSuccess: () => {
+      closeModal();
+      employeeInfo.refetch();
+    },
   });
 
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
+  const onSubmit = handleSubmit(async (updateData) => {
+    console.log(updateData);
+    await updateEmployee.mutateAsync({
+      email: updateData.email,
+      firstname: updateData.firstname,
+      lastname: updateData.lastname,
+      address_street: updateData.address_street,
+      address_city: updateData.address_city,
+      address_state: updateData.address_state,
+      address_zipcode: updateData.address_zipcode,
+      role: updateData.role,
+      salary: updateData.salary,
+      manager_id: updateData.manager_id ?? undefined,
+      postoffice_location_id: updateData.postoffice_location_id,
+    });
+  });
 
-  if (isError) {
-    return <div>Error</div>;
-  }
-
-  if (isSuccess) {
-    console.log(data);
-  }
+  useEffect(() => {
+    reset({
+      email: employeeInfo.data?.employee.email,
+      firstname: employeeInfo.data?.employee.firstname,
+      lastname: employeeInfo.data?.employee.lastname,
+      address_street: employeeInfo.data?.employee.address_street,
+      address_city: employeeInfo.data?.employee.address_city,
+      address_state: employeeInfo.data?.employee.address_state,
+      address_zipcode: employeeInfo.data?.employee.address_zipcode,
+      role: employeeInfo.data?.employee.role,
+      salary: employeeInfo.data?.employee.salary,
+      manager_id: employeeInfo.data?.employee.manager_id,
+      postoffice_location_id:
+        employeeInfo.data?.employee.postoffice_location_id,
+    });
+  }, [employeeInfo.data]);
 
   const getRole = (role: number) => {
     switch (role) {
@@ -85,6 +114,8 @@ const EmployeeDetail = () => {
         return "Driver";
       case 3:
         return "Manager";
+      case 4:
+        return "Admin";
       default:
         return "Unknown";
     }
@@ -93,6 +124,14 @@ const EmployeeDetail = () => {
   const Currency = (amount: number) => {
     return amount.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, "$&,");
   };
+
+  if (employeeInfo.isLoading) {
+    return <div>Loading...</div>;
+  }
+
+  if (employeeInfo.isError) {
+    return <div>Error</div>;
+  }
 
   return (
     <div>
@@ -110,25 +149,25 @@ const EmployeeDetail = () => {
                 <div className="grid grid-cols-2 gap-8">
                   <div className="flex flex-col gap-2">
                     <h1 className="text-lg font-bold">First Name:</h1>
-                    <p>{data.employee.firstname}</p>
+                    <p>{employeeInfo.data.employee.firstname}</p>
                   </div>
                   <div className="flex flex-col gap-2">
                     <h1 className="text-lg font-bold">Last Name:</h1>
-                    <p>{data.employee.lastname}</p>
+                    <p>{employeeInfo.data.employee.lastname}</p>
                   </div>
                   <div className="flex flex-col gap-2">
                     <h1 className="text-lg font-bold">Email:</h1>
-                    <p>{data.employee.email}</p>
+                    <p>{employeeInfo.data.employee.email}</p>
                   </div>
                   <div className="flex flex-col gap-2">
                     <h1 className="text-lg font-bold">Address:</h1>
 
-                    {data.employee.address_street ? (
+                    {employeeInfo.data.employee.address_street ? (
                       <p>
-                        {data.employee.address_street},{" "}
-                        {data.employee.address_city},{" "}
-                        {data.employee.address_state},{" "}
-                        {data.employee.address_zipcode}
+                        {employeeInfo.data.employee.address_street},{" "}
+                        {employeeInfo.data.employee.address_city},{" "}
+                        {employeeInfo.data.employee.address_state},{" "}
+                        {employeeInfo.data.employee.address_zipcode}
                       </p>
                     ) : (
                       "N/A"
@@ -137,31 +176,37 @@ const EmployeeDetail = () => {
                   <div className="flex flex-col gap-2">
                     <h1 className="text-lg font-bold">Birth Date:</h1>
                     <p>
-                      {new Date(data.employee.birthdate).toLocaleDateString()}
+                      {new Date(
+                        employeeInfo.data.employee.birthdate
+                      ).toLocaleDateString()}
                     </p>
                   </div>
                   <div className="flex flex-col gap-2">
                     <h1 className="text-lg font-bold">ROLE:</h1>
-                    <p>{getRole(data.employee.role)}</p>
+                    <p>{getRole(employeeInfo.data.employee.role)}</p>
                   </div>
                   <div className="flex flex-col gap-2">
                     <h1 className="text-lg font-bold">Salary:</h1>
-                    <p>${Currency(data.employee.salary)}</p>
+                    <p>${Currency(employeeInfo.data.employee.salary)}</p>
                   </div>
                   <div className="flex flex-col gap-2">
                     <h1 className="text-lg font-bold">Supervisor:</h1>
-                    <p>{data.employee.manager_lastname ?? "not available"}</p>
+                    <p>
+                      {employeeInfo.data.employee.manager_lastname ??
+                        "not available"}
+                    </p>
                   </div>
                   <div className="flex flex-col gap-2">
                     <h1 className="text-lg font-bold">Office Address:</h1>
-                    {data.employee.postoffice_address_street ? (
+                    {employeeInfo.data.employee.postoffice_address_street ? (
                       <p>
-                        {data.employee.postoffice_locationname}
+                        {employeeInfo.data.employee.postoffice_locationname}
                         <br />
-                        {data.employee.postoffice_address_street},{" "}
-                        {data.employee.postoffice_address_city},{" "}
-                        {data.employee.postoffice_address_state},{" "}
-                        {data.employee.postoffice_address_zipcode}
+                        {
+                          employeeInfo.data.employee.postoffice_address_street
+                        }, {employeeInfo.data.employee.postoffice_address_city},{" "}
+                        {employeeInfo.data.employee.postoffice_address_state},{" "}
+                        {employeeInfo.data.employee.postoffice_address_zipcode}
                       </p>
                     ) : (
                       "N/A"
@@ -169,11 +214,11 @@ const EmployeeDetail = () => {
                   </div>
                   <div className="flex flex-col gap-2">
                     <h1 className="text-lg font-bold">Hours Worked:</h1>
-                    <p>{data.employee.hours}</p>
+                    <p>{employeeInfo.data.employee.hours}</p>
                   </div>
                   <div className="flex flex-col gap-2">
                     <h1 className="text-lg font-bold">Hired By:</h1>
-                    <p>{data.employee.createdBy}</p>
+                    <p>{employeeInfo.data.employee.createdBy}</p>
                   </div>
                 </div>
               </div>
@@ -199,6 +244,7 @@ const EmployeeDetail = () => {
       <div className="flex">
         <Modal
           isOpen={modalIsOpen}
+          ariaHideApp={false}
           onRequestClose={closeModal}
           contentLabel="Update Product Modal"
           className="flex relative items-center justify-center h-full w-full p-4 md:p-0"
@@ -235,29 +281,32 @@ const EmployeeDetail = () => {
               <form onSubmit={onSubmit}>
                 <div className="grid gap-4 mb-4 sm:grid-cols-2">
                   <div>
-                    <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                      Name
+                    <label className="block uppercase tracking-wide text-gray-50 text-xs font-bold mb-2">
+                      First Name
                     </label>
                     <input
                       type="text"
                       {...register("firstname")}
-                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                      defaultValue={data.employee.firstname}
+                      className={`'appearance-none block w-full bg-transparent border  rounded py-3 px-4 mb-3 leading-tight focus:outline-none foc' ${
+                        errors.firstname ? "border-red-500" : ""
+                      }`}
                     />
                   </div>
                   <div>
-                    <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                    <label className="block uppercase tracking-wide text-gray-50 text-xs font-bold mb-2">
                       Last Name
                     </label>
                     <input
                       type="text"
                       {...register("lastname")}
-                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                      className={`'appearance-none block w-full bg-transparent border  rounded py-3 px-4 mb-3 leading-tight focus:outline-none foc' ${
+                        errors.lastname ? "border-red-500" : ""
+                      }`}
                     />
                   </div>
                   <div>
-                    <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                      Manager
+                    <label className="block uppercase tracking-wide text-gray-50 text-xs font-bold mb-2">
+                      Supervisor
                     </label>
                     <>
                       {getAllManagers.isLoading ? (
@@ -267,11 +316,19 @@ const EmployeeDetail = () => {
                       ) : getAllManagers?.data?.employees ? (
                         <select
                           id="manager_id"
-                          className="block w-full px-4 py-2 text-sm text-gray-900 border border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:border-gray-400 dark:focus:shadow-outline-gray focus:border-primary-300 focus:outline-none focus:ring focus:ring-primary-200 focus:ring-opacity-50"
+                          className={`'appearance-none block w-full bg-transparent border  rounded py-3 px-4 mb-3 leading-tight focus:outline-none foc' ${
+                            errors.manager_id ? "border-red-500" : ""
+                          }`}
                           {...register("manager_id")}
                         >
-                          <option value={data?.employee?.manager_id ?? "-1"}>
-                            {data.employee.manager_lastname ?? "Select Manager"}
+                          <option
+                            value={
+                              employeeInfo.data?.employee?.manager_id ?? "-1"
+                            }
+                            className=""
+                          >
+                            {employeeInfo.data.employee.manager_lastname ??
+                              "Select Manager"}
                           </option>
 
                           {getAllManagers?.data?.employees.map((employee) => (
@@ -291,19 +348,79 @@ const EmployeeDetail = () => {
                       )}
                     </>
                   </div>
-                  <div className="mb-4">
+                  <div>
+                    <>
+                      <label className="block uppercase tracking-wide text-gray-50 text-xs font-bold mb-2">
+                        Work Location
+                      </label>
+                      {getAllLocations.isLoading ? (
+                        <div className="flex items-center space-x-2">
+                          <div className="w-6 h-6 border-2 border-gray-200 rounded-full animate-spin"></div>
+                        </div>
+                      ) : getAllLocations?.data?.locations ? (
+                        <select
+                          id="postoffice_location_id"
+                          className={`'appearance-none block w-full bg-transparent border  rounded py-3 px-4 mb-3 leading-tight focus:outline-none foc' ${
+                            errors.postoffice_location_id
+                              ? "border-red-500"
+                              : ""
+                          }`}
+                          {...register("postoffice_location_id")}
+                        >
+                          <option
+                            value={
+                              employeeInfo.data?.employee
+                                ?.postoffice_location_id ?? "-1"
+                            }
+                          >
+                            {employeeInfo.data.employee
+                              .postoffice_locationname ?? "Select A Location"}
+                          </option>
+
+                          {getAllLocations?.data?.locations.map((location) => (
+                            <option
+                              value={location.postoffice_location_id}
+                              key={location.postoffice_location_id}
+                            >
+                              {location.locationname}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <div className="flex items-center space-x-2">
+                          <p>NO MANAGERS FOUND</p>
+                        </div>
+                      )}
+                    </>
+                  </div>
+                  <div className="">
                     <label className="block uppercase tracking-wide text-gray-50 text-xs font-bold mb-2">
                       Role
                     </label>
                     <select
-                      defaultValue={getRole(data.employee.role)}
+                      defaultValue={getRole(employeeInfo.data.employee.role)}
                       {...register("role", { valueAsNumber: true })}
-                      className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                      className={`'appearance-none block w-full bg-transparent border  rounded py-3 px-4 mb-3 leading-tight focus:outline-none foc' ${
+                        errors.role ? "border-red-500" : ""
+                      }`}
                     >
                       <option value={1}>Clerk</option>
                       <option value={2}>Driver</option>
                       <option value={3}>Manager</option>
+                      {/* <option value={4}>Supervisor</option> */}
                     </select>
+                  </div>
+                  <div>
+                    <label className="block uppercase tracking-wide text-gray-50 text-xs font-bold mb-2">
+                      Salary
+                    </label>
+                    <input
+                      type="number"
+                      {...register("salary")}
+                      className={`'appearance-none block w-full bg-transparent border  rounded py-3 px-4 mb-3 leading-tight focus:outline-none foc' ${
+                        errors.salary ? "border-red-500" : ""
+                      }`}
+                    />
                   </div>
                 </div>
                 <div>
@@ -426,6 +543,9 @@ const EmployeeDetail = () => {
             </div>
           </div>
         </Modal>
+      </div>
+      <div>
+        <pre>{JSON.stringify(watch(), null, 2)}</pre>
       </div>
     </div>
   );

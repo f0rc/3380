@@ -11,9 +11,23 @@ export const packageRouter = router({
     .mutation(async ({ ctx, input }) => {
       const { postgresQuery } = ctx;
       const { steps } = input;
-      console.log("SESSION ID", ctx.session.user);
 
-      console.log(steps.senderInfo.value.email);
+      //get clerk location
+      const clerkLocation = await postgresQuery(
+        `SELECT "postoffice_location_id" FROM "WORKS_FOR" WHERE "employee_id" = $1`,
+        [ctx.session.user.employee_id]
+      );
+      console.log("clerkLocation", clerkLocation.rows[0]);
+      if (
+        clerkLocation.rowCount === 0 ||
+        clerkLocation.rows[0].postoffice_location_id === null
+      ) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Clerk is not assigned to a location",
+        });
+      }
+
       const getSender = async () => {
         try {
           const getSenderID = await postgresQuery(
@@ -95,14 +109,14 @@ export const packageRouter = router({
         ]
       );
 
-      // make package location history
-      //get clerk location
-      const clerkLocation = await postgresQuery(
-        `SELECT "postoffice_location_id" FROM "WORKS_FOR" WHERE "employee_id" = $1`,
-        [ctx.session.user.employee_id]
-      );
+      if (makePackage.rowCount === 0) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Could not create package",
+        });
+      }
 
-      console.log("clerkLocation", clerkLocation.rows[0]);
+      // make package location history
 
       const makePackageLocationHistory = await postgresQuery(
         `INSERT INTO "PACKAGE_LOCATION_HISTORY" ("package_id", "postoffice_location_id", "status", 
@@ -114,6 +128,13 @@ export const packageRouter = router({
           ctx.session.user.employee_id, // employeeID // createdBy
         ]
       );
+
+      if (makePackageLocationHistory.rowCount === 0) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Could not create package location history",
+        });
+      }
 
       return {
         status: "success",

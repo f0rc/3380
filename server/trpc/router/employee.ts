@@ -19,6 +19,22 @@ export const employeeSchema = z.object({
   startDate: z.string().min(1).max(50),
 });
 
+export const employeeUpdateSchema = z.object({
+  email: z.string(),
+  firstname: z.string(),
+  lastname: z.string(),
+  address_street: z.string(),
+  address_city: z.string(),
+  address_state: z.string(),
+  address_zipcode: z.number(),
+  role: z.number(),
+  salary: z.number(),
+  manager_id: z.string(),
+  postoffice_location_id: z.string(),
+});
+
+export type employeeUpdateSchema = z.infer<typeof employeeUpdateSchema>;
+
 export type employeeSchemaType = z.infer<typeof employeeSchema>;
 
 export const employeeRouter = router({
@@ -150,6 +166,60 @@ export const employeeRouter = router({
       employees: dbGetAllManagers.rows as manager[],
     };
   }),
+
+  updateEmployee: protectedProcedure
+    .input(employeeUpdateSchema.partial())
+    .mutation(async ({ ctx, input }) => {
+      const { postgresQuery } = ctx;
+      // TODO: add a check to make sure the user is allowed to update the employee
+      // TODO: bug where updating the employee when they are a manager to demote them to an employee will not update the manager_id of the employees they manage ?? maybe a trigger in the db?
+
+      const dbUpdateEmployee = await postgresQuery(
+        `UPDATE "EMPLOYEE" SET 
+        "firstname" = $1, 
+        "lastname" = $2, 
+        "role" = $3, 
+        "salary" = $4, 
+        "manager_id" = $5, 
+        "address_street" = $6, 
+        "address_city" = $7, 
+        "address_state" = $8, 
+        "address_zipcode" = $9, 
+        "updatedBy" = $10 
+        WHERE "email" = $11 RETURNING employee_id;`,
+        [
+          input.firstname, //1
+          input.lastname, //2
+          input.role, //3
+          input.salary, //4
+          input.manager_id, //5
+          input.address_street, //6
+          input.address_city, //7
+          input.address_state, //8
+          input.address_zipcode, //9
+          ctx.session.user.employee_id, // employeeID //10
+          input.email, //11
+        ]
+      );
+
+      const dbUpdateWorksFor = await postgresQuery(
+        `UPDATE "WORKS_FOR" SET
+        "postoffice_location_id" = $1
+        WHERE "employee_id" = $2;`,
+        [input.postoffice_location_id, dbUpdateEmployee.rows[0].employee_id]
+      );
+
+      if (dbUpdateEmployee.rows.length === 0)
+        return {
+          status: "fail",
+          message: "No employee found",
+        };
+
+      return {
+        status: "success",
+        message: "Employee updated",
+      };
+    }),
 });
 
 export interface manager {

@@ -19,6 +19,7 @@ import { AddProduct } from "./pages/products/AddProduct";
 
 import Profile from "./pages/Profile";
 import Signup from "./pages/Signup";
+import Dashboard from "./pages/Reports/Dashboard";
 
 const baseRoutes = [
   { path: "/", index: true, element: <Home />, label: "Home", isNav: true },
@@ -94,6 +95,12 @@ const ceoRoutes = [
     element: <LocationDetail />,
     label: "Locations",
     isNav: false,
+  },
+  {
+    path: "/reports",
+    element: <Dashboard />,
+    label: "Reports",
+    isNav: true,
   },
 ];
 
