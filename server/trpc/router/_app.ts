@@ -6,6 +6,7 @@ import { employeeRouter } from "./employee";
 import { router } from "../../utils/trpc";
 import { productRouter } from "./product";
 import { locationRouter } from "./location";
+import { reportRouter } from "./reports";
 
 // Add your routers here
 export const appRouter = router({
@@ -16,6 +17,7 @@ export const appRouter = router({
   employee: employeeRouter,
   product: productRouter,
   location: locationRouter,
+  report: reportRouter,
 });
 
 export type AppRouter = typeof appRouter;
