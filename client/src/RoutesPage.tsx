@@ -20,6 +20,7 @@ import { AddProduct } from "./pages/products/AddProduct";
 import Profile from "./pages/Profile";
 import Signup from "./pages/Signup";
 import Dashboard from "./pages/Reports/Dashboard";
+import Money from "./pages/Reports/package/PackageTable";
 
 const baseRoutes = [
   { path: "/", index: true, element: <Home />, label: "Home", isNav: true },
@@ -100,6 +101,12 @@ const ceoRoutes = [
     path: "/reports",
     element: <Dashboard />,
     label: "Reports",
+    isNav: true,
+  },
+  {
+    path: "/table",
+    element: <Money />,
+    label: "sssss",
     isNav: true,
   },
 ];
