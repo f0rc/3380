@@ -7,7 +7,7 @@ const ListLocations = () => {
   const { data, isLoading, isError } =
     trpc.location.getAllOfficeLocations.useQuery(undefined, {
       onSuccess: (data) => {
-        console.log("MONKEY");
+        console.log("MONEY");
       },
     });
 

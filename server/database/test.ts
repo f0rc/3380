@@ -154,11 +154,40 @@ const createAdmin = async () => {
 
   // console.log(dbGetEmployee.rows);
 
-  const removeManager = await postgresQuery(
-    `UPDATE "POSTOFFICE_LOCATION" SET "postoffice_location_manager" = NULL WHERE "postoffice_location_id" = $1 RETURNING *;`,
-    ["661518bf-e987-4141-816d-75b6233e1fa8"]
+  // const removeManager = await postgresQuery(
+  //   `UPDATE "POSTOFFICE_LOCATION" SET "postoffice_location_manager" = NULL WHERE "postoffice_location_id" = $1 RETURNING *;`,
+  //   ["661518bf-e987-4141-816d-75b6233e1fa8"]
+  // );
+  // console.log(removeManager.rows);
+
+  // const packageReport = await postgresQuery(
+  //   `SELECT
+  //   to_char(P."createdAt", 'YYYY-MM') AS month,
+  //   COUNT(P.package_id) AS package_count
+  //   FROM "PACKAGE" AS P
+  //   WHERE TRUE
+  //   AND P."createdAt" >= $1
+  //   AND P."createdAt" <= $2
+  //   GROUP BY
+  //     month
+  //   ORDER BY
+  //     month;`,
+  //   ["2023-01-01", "9999-12-31"]
+  // );
+  // console.log(packageReport.rows);
+
+  const packageReport = await postgresQuery(
+    `SELECT
+        to_char(P."createdAt", 'YYYY-MM') AS month,
+        COUNT(P.package_id) AS package_count
+        FROM "PACKAGE" AS P
+        WHERE TRUE AND P."createdAt" >= '$1' AND P."createdAt" <= '$2' GROUP BY
+            month
+            ORDER BY
+            month;`,
+    ["2023-01-01", "9999-12-31"]
   );
-  console.log(removeManager.rows);
+  console.log(packageReport.rows);
 };
 
 createAdmin();

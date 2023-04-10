@@ -16,13 +16,6 @@ const Layout = () => {
   const navigatr = useNavigate();
   const { authenticated } = useContext(AuthContext);
 
-  // const extendedNav = useMemo(() => {
-  //   if (authenticated) {
-  //     return true;
-  //   }
-  //   return false;
-  // }, [authenticated]);
-
   const renderNavItems = (routes: RouteType[]) => {
     return routes
       .filter((route) => route.isNav)
@@ -44,22 +37,17 @@ const Layout = () => {
 
   const { mutateAsync } = trpc.auth.logout.useMutation({
     onSuccess: (data) => {
-      console.log("logged out", data);
+      window.location.reload();
+      console.log("logged out");
     },
     onError: (error) => {
-      console.log("error", error);
+      console.log("error");
     },
   });
 
   const handleLogout = async () => {
     localStorage.removeItem("auth-session-id");
-    const result = await mutateAsync();
-    if (result.status == "success") {
-      navigatr("/login");
-      window.location.reload();
-    } else {
-      console.log("error", result);
-    }
+    await mutateAsync();
   };
 
   return (
