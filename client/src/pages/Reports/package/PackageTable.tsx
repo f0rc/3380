@@ -26,6 +26,7 @@ import {
 } from "@tanstack/match-sorter-utils";
 
 import { makeData, PackageFakeData } from "../test";
+import { PackageTableData } from "../../../../../server/trpc/router/reports";
 
 declare module "@tanstack/table-core" {
   interface FilterFns {
@@ -64,7 +65,7 @@ const fuzzySort: SortingFn<any> = (rowA, rowB, columnId) => {
   return dir === 0 ? sortingFns.alphanumeric(rowA, rowB, columnId) : dir;
 };
 
-export default function Money() {
+export default function Money({ data }: { data: PackageTableData[] }) {
   const rerender = React.useReducer(() => ({}), {})[1];
 
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
@@ -72,26 +73,26 @@ export default function Money() {
   );
   const [globalFilter, setGlobalFilter] = React.useState("");
 
-  const columns = React.useMemo<ColumnDef<PackageFakeData>[]>(
+  const columns = React.useMemo<ColumnDef<PackageTableData>[]>(
     () => [
       {
-        accessorKey: "package",
+        accessorKey: "package_id",
         header: () => <span>Package</span>,
         footer: (props) => props.column.id,
       },
       {
-        accessorKey: "sender",
+        accessorKey: "sender_email",
         header: "Sender",
         footer: (props) => props.column.id,
       },
       {
-        accessorKey: "receiver",
+        accessorKey: "receiver_email",
         header: "Receiver",
         footer: (props) => props.column.id,
       },
       {
-        accessorKey: "type",
-        header: "type",
+        accessorKey: "cost",
+        header: "cost",
         footer: (props) => props.column.id,
       },
       {
@@ -105,29 +106,29 @@ export default function Money() {
         footer: (props) => props.column.id,
       },
       {
-        accessorKey: "lastupdated",
-        header: "last updated",
+        accessorKey: "type",
+        header: "type",
         footer: (props) => props.column.id,
       },
       {
         accessorKey: "status",
-        header: "status",
+        header: "Status",
         footer: (props) => props.column.id,
       },
     ],
     []
   );
 
-  const [data, setData] = React.useState<PackageFakeData[]>(() =>
-    makeData(1000)
-  );
+  // const [data, setData] = React.useState<PackageFakeData[]>(() =>
+  //   makeData(1000)
+  // );
 
   // format all the data[i].lastupdated to date with only month day and year
-  data.forEach((item) => {
-    item.lastupdated = new Date(item.lastupdated).toLocaleDateString();
-  });
+  // data.forEach((item) => {
+  //   item.lastupdated = new Date(item.lastupdated).toLocaleDateString();
+  // });
 
-  const refreshData = () => setData((old) => makeData(1000));
+  // const refreshData = () => setData((old) => makeData(1000));
 
   const table = useReactTable({
     data,
@@ -165,7 +166,7 @@ export default function Money() {
         <thead>
           {table.getHeaderGroups().map((headerGroup) => (
             <>
-              <tr key={headerGroup.id}>
+              <tr key={headerGroup.id} className="">
                 {headerGroup.headers.map((header) => {
                   return (
                     <>
@@ -209,9 +210,8 @@ export default function Money() {
             return (
               <tr
                 key={row.id}
-                className={`${
-                  row.index % 2 === 0 ? "bg-[#3A3A38]" : "bg-[#2F2F2E]"
-                }  hover:bg-[#c0bcbc] hover:text-[#1D1D1C] cursor-pointer h-2`}
+                className="
+                  hover:bg-[#c0bcbc] hover:text-[#1D1D1C] cursor-pointer h-2 even:bg-[#3A3A38] bg-[#2F2F2E]"
               >
                 {row.getVisibleCells().map((cell) => {
                   return (
@@ -234,13 +234,13 @@ export default function Money() {
       <div className="h-2" />
       <div className="flex flex-row justify-center">
         <div className="flex items-center gap-2">
-          <button
+          {/* <button
             className="border rounded p-1 border-calm-yellow"
             onClick={() => table.setPageIndex(0)}
             disabled={!table.getCanPreviousPage()}
           >
             {"<<"}
-          </button>
+          </button> */}
           <button
             className="border rounded p-1 border-calm-yellow"
             onClick={() => table.previousPage()}
@@ -255,13 +255,13 @@ export default function Money() {
           >
             {">"}
           </button>
-          <button
+          {/* <button
             className="border rounded p-1 border-calm-yellow"
             onClick={() => table.setPageIndex(table.getPageCount() - 1)}
             disabled={!table.getCanNextPage()}
           >
             {">>"}
-          </button>
+          </button> */}
           <span className="flex items-center gap-1">
             <div>Page</div>
             <strong>
@@ -301,9 +301,9 @@ export default function Money() {
         <div>
           <button onClick={() => rerender()}>Force Rerender</button>
         </div>
-        <div>
+        {/* <div>
           <button onClick={() => refreshData()}>Refresh Data</button>
-        </div>
+        </div> */}
       </div>
     </div>
   );

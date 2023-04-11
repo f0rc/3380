@@ -95,30 +95,24 @@ type ChartData = {
 const EmployeeReport = () => {
   const { handleSubmit, register, watch } = useForm({
     defaultValues: {
-      startDate: "",
+      hireDate: "",
+      toHireDate: "",
       hoursMin: 0,
       hoursMax: 0,
       firstName: "",
       lastName: "",
       postoffice_location_id: "",
-      role: "",
+      role: 0,
+      clerkPackages: true,
+      clerkStartDate: "",
+      clerkEndDate: "",
     },
     resolver: zodResolver(employeeReportInput),
   });
 
   const { data, isLoading, isError, refetch, isSuccess } =
     trpc.report.getPackageReport.useQuery(
-      {
-        startDate: watch("startDate"),
-        endDate: watch("endDate"),
-        senderID: watch("senderID"),
-        receiverID: watch("receiverID"),
-        employeeID: watch("employeeID"),
-        postoffice_location_id: watch("postoffice_location_id"),
-        status: watch("status"),
-        type: watch("type") === "all" ? "" : watch("type"),
-        size: watch("size"),
-      },
+      {},
       {
         enabled: false,
       }
@@ -158,60 +152,92 @@ const EmployeeReport = () => {
     console.log(data);
   });
 
+  const [clerk, setClerk] = useState(false);
+
+  useEffect(() => {
+    if (watch("role") === 2) {
+      setClerk(true);
+    }
+  }, [watch("role")]);
+
   // TABLE:
 
   // if (isError) {
   //   return <div>Error</div>;
   // }
 
+  console.log(typeof watch("role"));
+
   return (
     <div className="">
       <div className="flex flex-col gap-4 mt-10 bg-[#3a3a38]/50 p-12 rounded-md border-2 border-[#41413E] shadow-2xl w-full">
         <div className="grow gap-2 items-center">
-          <h1 className="font-bold text-2xl pb-3">Package Report</h1>
+          <h1 className="font-bold text-2xl pb-3">Employee Report</h1>
           <h1 className="text-xl font-bold pb-3">Select Filters:</h1>
           <div className="pb-3 ">
             <form onSubmit={onSubmit} className="">
               <div className="flex flex-row mb-3">
                 <div className="flex flex-col grow gap-3 items-start">
                   <label htmlFor="type" className="text-xl font-bold \">
-                    Package Type:
+                    Employee Role:
                   </label>
                   <select
-                    {...register("type")}
+                    {...register("role", { valueAsNumber: true })}
                     className="font-bold font-xl p-3 bg-transparent border border-calm-yellow outline-none"
-                    placeholder="type"
+                    placeholder="role"
                   >
-                    <option value="envelope">envelope</option>
-                    <option value="box">box</option>
-                    <option value="other">other</option>
-                    <option value="all">all</option>
+                    <option value={1}>driver</option>
+                    <option value={2}>clerk</option>
+                    <option value={3}>manager</option>
+                    <option value={0}>all</option>
                   </select>
+                  {clerk && (
+                    <>
+                      <div className="flex flex-row grow gap-3">
+                        <input
+                          type="checkbox"
+                          className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded justify-center align-middle mt-2"
+                        />
+                        <label
+                          htmlFor="clerkPackages"
+                          className="text-xl font-bold"
+                        >
+                          Packages Made
+                        </label>
+                      </div>
+                      <div className="flex flex-col grow gap-3 items-start">
+                        <h1 className="text-xl font-bold uppercase">
+                          Packages Made from:
+                        </h1>
+                        <input
+                          type="date"
+                          className="font-bold font-xl p-3 bg-transparent border border-calm-yellow outline-none"
+                          {...register("clerkStartDate")}
+                        />
+                      </div>
+                      <div className="flex flex-col grow gap-3 items-start">
+                        <label
+                          htmlFor="to-date"
+                          className="text-xl font-bold uppercase"
+                        >
+                          Packages Made To:
+                        </label>
+                        <input
+                          type="date"
+                          className="font-bold font-xl p-3 bg-transparent border border-calm-yellow outline-none"
+                          {...register("clerkEndDate")}
+                        />
+                      </div>
+                    </>
+                  )}
                 </div>
+
                 <div className="flex flex-col grow gap-3 items-start">
-                  <label
-                    htmlFor="package-size"
-                    className="text-xl font-bold uppercase"
-                  >
-                    package size
-                  </label>
-                  <select
-                    name="package-size"
-                    id="package-size"
-                    className="font-bold font-xl p-3 bg-transparent border border-calm-yellow outline-none"
-                  >
-                    <option value="small">small</option>
-                    <option value="medium">medium</option>
-                    <option value="large">large</option>
-                    <option value="all">all</option>
-                  </select>
-                </div>
-                <div className="flex flex-col grow gap-3 items-start">
-                  <h1 className="text-xl font-bold uppercase">from date</h1>
+                  <h1 className="text-xl font-bold uppercase">Start date</h1>
                   <input
                     type="date"
                     className="font-bold font-xl p-3 bg-transparent border border-calm-yellow outline-none"
-                    {...register("startDate")}
+                    {...register("hireDate")}
                   />
                 </div>
                 <div className="flex flex-col grow gap-3 items-start">
@@ -224,7 +250,7 @@ const EmployeeReport = () => {
                   <input
                     type="date"
                     className="font-bold font-xl p-3 bg-transparent border border-calm-yellow outline-none"
-                    {...register("endDate")}
+                    {...register("toHireDate")}
                   />
                 </div>
               </div>
@@ -233,6 +259,7 @@ const EmployeeReport = () => {
                   generate
                 </button>
               </div>
+              <pre>{JSON.stringify(watch(), null, 2)}</pre>
             </form>
           </div>
         </div>
@@ -284,6 +311,7 @@ export const employeeReportInput = z.object({
   firstName: z.string().optional(),
   lastName: z.string().optional(),
   postoffice_location_id: z.string().optional(),
-  role: z.string().optional(),
+  role: z.number().optional(),
+  clerkPackages: z.number().optional(),
 });
 export default EmployeeReport;

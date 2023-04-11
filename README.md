@@ -15,8 +15,16 @@
 
 
 # todo:
+employee report
 
+products (FAST)
+products report
+mail- pg notify + email code
+show products low stock on manager ui
 
+fix bugs TODOS
+remove console.log
+make paper (THUS?)
 
 # fixes: 
 
