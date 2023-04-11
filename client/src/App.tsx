@@ -17,8 +17,11 @@ export function App() {
         }),
 
         httpBatchLink({
-          url: `${import.meta.env.VITE_BACKEND_URL}`,
+          url: `${import.meta.env.VITE_BACKEND_URL}:${
+            import.meta.env.VITE_BACKEND_PORT
+          }`,
           fetch(url, opts) {
+            console.log(import.meta.env.VITE_BACKEND_PORT);
             return fetch(url, {
               ...opts,
               credentials: "include",

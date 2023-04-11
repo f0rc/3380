@@ -220,6 +220,22 @@ export const employeeRouter = router({
         message: "Employee updated",
       };
     }),
+  // work log get all group hours per week
+  workLogAdd: protectedProcedure
+    .input(z.object({ employeeID: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const { postgresQuery } = ctx;
+
+      const dbGetWorkLog = await postgresQuery(
+        `INSERT INTO "WORK_LOG" VALUES ("employee_id", "hours") RETURNING "WORK_LOG".work_log_id;`, // daily hours logged
+        [input.employeeID]
+      );
+
+      return {
+        status: "success",
+        workLog: dbGetWorkLog.rows,
+      };
+    }),
 });
 
 export interface manager {

@@ -16,15 +16,28 @@
 
 # todo:
 employee report
+ - hours per month
+
+clerk report
+ - packages made by each clerk select up to 10
+
+
 
 products (FAST)
+- add (done)
+- update inventory / delete items from locations
 products report
-mail- pg notify + email code
-show products low stock on manager ui
+- items sold per month
 
-fix bugs TODOS
-remove console.log
-make paper (THUS?)
+triggers
+ - mail- pg notify + email code
+ - show products low stock on manager ui
+
+MISC: 
+- add cost to packages
+- fix bugs TODOS
+- remove console.log
+- make paper (THUS?)
 
 # fixes: 
 
