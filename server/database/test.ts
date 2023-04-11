@@ -66,7 +66,6 @@ const createAdmin = async () => {
   //   []
   // );
   // console.log(dbGetEmployee.rows);
-
   // const getEmployeesBasedOnLocation = await postgresQuery(
   //   // get all the employees that have a works_for at the location of the current user
   //   `SELECT
@@ -89,11 +88,9 @@ const createAdmin = async () => {
   //   `SELECT P.postoffice_location_id, P.locationname, P.address_street, P.address_city, P.address_state, P.address_zipcode, E.firstname as manager_firstname, E.lastname as manager_lastname
   //   FROM "POSTOFFICE_LOCATION" AS P
   //   LEFT JOIN "EMPLOYEE" AS E ON P.postoffice_location_manager = E.employee_id
-
   //   WHERE P.postoffice_location_id = $1;`,
   //   ["7bd4c430-379f-43e1-8d6d-ce69f5632a46"]
   // );
-
   // get the location information as well as the employee count at the location
   // const getLocation = await postgresQuery(
   //   `SELECT
@@ -123,9 +120,7 @@ const createAdmin = async () => {
   //   E.lastname;`,
   //   ["bd1648cc-c15a-4efe-a130-ad6ad3494092"]
   // );
-
   // console.log(getLocation.rows);
-
   // const dbGetEmployee = await postgresQuery(
   //   // get all the employees that have a lower role than the current user
   //   `SELECT
@@ -151,15 +146,12 @@ const createAdmin = async () => {
   //       E.employee_id;`,
   //   []
   // );
-
   // console.log(dbGetEmployee.rows);
-
   // const removeManager = await postgresQuery(
   //   `UPDATE "POSTOFFICE_LOCATION" SET "postoffice_location_manager" = NULL WHERE "postoffice_location_id" = $1 RETURNING *;`,
   //   ["661518bf-e987-4141-816d-75b6233e1fa8"]
   // );
   // console.log(removeManager.rows);
-
   // const packageReport = await postgresQuery(
   //   `SELECT
   //   to_char(P."createdAt", 'YYYY-MM') AS month,
@@ -175,19 +167,51 @@ const createAdmin = async () => {
   //   ["2023-01-01", "9999-12-31"]
   // );
   // console.log(packageReport.rows);
-
-  const packageReport = await postgresQuery(
-    `SELECT
-        to_char(P."createdAt", 'YYYY-MM') AS month,
-        COUNT(P.package_id) AS package_count
-        FROM "PACKAGE" AS P
-        WHERE TRUE AND P."createdAt" >= '$1' AND P."createdAt" <= '$2' GROUP BY
-            month
-            ORDER BY
-            month;`,
-    ["2023-01-01", "9999-12-31"]
-  );
-  console.log(packageReport.rows);
+  // const packageReport = await postgresQuery(
+  //   `SELECT
+  //       to_char(P."createdAt", 'YYYY-MM') AS month,
+  //       COUNT(P.package_id) AS package_count
+  //       FROM "PACKAGE" AS P
+  //       WHERE TRUE AND P."createdAt" >= '$1' AND P."createdAt" <= '$2' GROUP BY
+  //           month
+  //           ORDER BY
+  //           month;`,
+  //   ["2023-01-01", "9999-12-31"]
+  // );
+  // console.log(packageReport.rows);
+  // const lole = await postgresQuery(
+  //   `WITH "latest_status" AS (
+  //     SELECT
+  //         "package_id",
+  //         MAX("processedAt") AS "latest_processed_at"
+  //     FROM "PACKAGE_LOCATION_HISTORY"
+  //     GROUP BY "package_id"
+  // )
+  // SELECT
+  //     P."package_id",
+  //     P."sender_id",
+  //     S."email" AS "sender_email",
+  //     P."receiver_id",
+  //     R."email" AS "receiver_email",
+  //     P."cost",
+  //     P."weight",
+  //     P."size",
+  //     P."type",
+  //     PLH."status",
+  //     P."createdAt",
+  //     to_char(P."createdAt", 'YYYY-MM') AS "month",
+  //     COUNT(P."package_id") AS "package_count"
+  // FROM "PACKAGE" AS P
+  // JOIN "CUSTOMER" AS S ON P."sender_id" = S."customer_id"
+  // JOIN "CUSTOMER" AS R ON P."receiver_id" = R."customer_id"
+  // JOIN "PACKAGE_LOCATION_HISTORY" AS PLH ON P."package_id" = PLH."package_id"
+  // JOIN "latest_status" AS LS ON PLH."package_id" = LS."package_id" AND PLH."processedAt" = LS."latest_processed_at"
+  // GROUP BY P."package_id", S."email", R."email", PLH."status"
+  // ORDER BY P."package_id" LIMIT 10;
+  // `,
+  //   []
+  // );
+  // console.log(lole.rows);
 };
 
 createAdmin();
