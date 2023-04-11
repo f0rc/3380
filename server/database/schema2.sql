@@ -106,6 +106,15 @@ CREATE TABLE "WORKS_FOR" (
     CONSTRAINT "WORKS_FOR_PK" PRIMARY KEY ("works_for_id")
 );
 
+CREATE TABLE "WORK_LOG" (
+    "work_log_id" SERIAL NOT NULL, --Pkey
+    "employee_id" TEXT NOT NULL,
+    "hours" INTEGER NOT NULL,
+    "date" DATE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "WORK_LOG_PK" PRIMARY KEY ("work_log_id")
+);
+
 
 CREATE TABLE "TRUCK" (
     "truck_id" TEXT NOT NULL PRIMARY KEY,
