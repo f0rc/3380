@@ -27,7 +27,7 @@ const Dashboard = () => {
   return (
     <div className="flex justify-center max-h-screen">
       <div className="max-w-[90%]">
-        <div className="flex  mx-20 flex-col w-4/5 -mt-10">
+        <div className="flex  mx-20 flex-col w-11/12 -mt-10">
           <div className="flex flex-col gap-4 mt-10 bg-[#3a3a38]/50 p-12 rounded-md border-2 border-[#41413E] shadow-2xl w-full">
             <div className="grow gap-2 items-center">
               <h1 className="font-bold text-2xl pb-3">Reports</h1>
@@ -42,14 +42,11 @@ const Dashboard = () => {
                   <option value="products">Products</option>
                 </select>
               </div>
-              <div className="grow gap-2 items-center">
-                {renderReportInputs()}
-              </div>
+            </div>
+            <div className="grow gap-2 items-center">
+              {renderReportInputs()}
             </div>
           </div>
-        </div>
-        <div className="flex flex-col gap-4 mt-10 bg-[#3a3a38]/50 p-12 rounded-md border-2 border-[#41413E] shadow-2xl w-full">
-          <Money />
         </div>
       </div>
     </div>

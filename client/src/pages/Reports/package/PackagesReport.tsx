@@ -36,6 +36,7 @@ import {
   compareItems,
 } from "@tanstack/match-sorter-utils";
 import Money from "./PackageTable";
+import Spinner from "../../../icons/Spinner";
 
 declare module "@tanstack/table-core" {
   interface FilterFns {
@@ -98,34 +99,39 @@ const PackagesReport = () => {
     defaultValues: {
       startDate: "",
       endDate: "",
-      senderID: "",
-      receiverID: "",
-      employeeID: "",
-      postoffice_location_id: "",
-      status: "",
       type: "all",
-      size: "",
+      size: "all",
+      senderID: "", // todo
+      receiverID: "", // todo
+      employeeID: "", // todo
+      postoffice_location_id: "", // TODO
+      status: "all", //todo
     },
     resolver: zodResolver(packageReportInput),
   });
 
-  const { data, isLoading, isError, refetch, isSuccess } =
-    trpc.report.getPackageReport.useQuery(
+  const { data, isLoading, isError, refetch, isSuccess, isFetching } =
+    trpc.report.getPackageReportChart.useQuery(
       {
         startDate: watch("startDate"),
         endDate: watch("endDate"),
         senderID: watch("senderID"),
         receiverID: watch("receiverID"),
         employeeID: watch("employeeID"),
-        postoffice_location_id: watch("postoffice_location_id"),
-        status: watch("status"),
+        postoffice_location_id:
+          watch("postoffice_location_id") === "all"
+            ? ""
+            : watch("postoffice_location_id"),
+        status: watch("status") === "all" ? "" : watch("status"),
         type: watch("type") === "all" ? "" : watch("type"),
-        size: watch("size"),
+        size: watch("size") === "all" ? "" : watch("size"),
       },
       {
         enabled: false,
       }
     );
+
+  console.log("IS THIS WORKING?", isFetching);
 
   useEffect(() => {
     if (isSuccess) {
@@ -168,7 +174,7 @@ const PackagesReport = () => {
   // }
 
   return (
-    <div className="">
+    <div className="flex flex-col gap-3">
       <div className="flex flex-col gap-4 mt-10 bg-[#3a3a38]/50 p-12 rounded-md border-2 border-[#41413E] shadow-2xl w-full">
         <div className="grow gap-2 items-center">
           <h1 className="font-bold text-2xl pb-3">Package Report</h1>
@@ -199,8 +205,7 @@ const PackagesReport = () => {
                     package size
                   </label>
                   <select
-                    name="package-size"
-                    id="package-size"
+                    {...register("size")}
                     className="font-bold font-xl p-3 bg-transparent border border-calm-yellow outline-none"
                   >
                     <option value="small">small</option>
@@ -247,8 +252,8 @@ const PackagesReport = () => {
               <Bar
                 data={chartData}
                 style={{
-                  height: "50%",
-                  width: "50%",
+                  height: "100%",
+                  width: "100%",
                   border: "1px dotted rgba(255, 255, 255, 0.2)",
                 }}
                 options={{
@@ -274,8 +279,16 @@ const PackagesReport = () => {
               />
             )}
           </div>
+          {/* <pre>{JSON.stringify(watch(), null, 2)}</pre> */}
         </div>
       </div>
+      {isFetching ? (
+        <Spinner />
+      ) : (
+        chartData &&
+        data?.packageReportTable && <Money data={data.packageReportTable} />
+      )}
+      {}
     </div>
   );
 };
