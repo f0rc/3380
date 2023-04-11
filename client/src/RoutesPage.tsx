@@ -103,12 +103,6 @@ const ceoRoutes = [
     label: "Reports",
     isNav: true,
   },
-  {
-    path: "/table",
-    element: <Money />,
-    label: "sssss",
-    isNav: true,
-  },
 ];
 
 export function availableRoutes(auth: Session | null) {

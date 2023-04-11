@@ -212,6 +212,12 @@ const createAdmin = async () => {
   //   []
   // );
   // console.log(lole.rows);
+
+  const dbGetWorkLog = await postgresQuery(
+    `INSERT INTO "WORK_LOG" ("employee_id", "hours") VALUES ($1, $2) RETURNING *;`, // daily hours logged
+    ["2c8873af-be2a-4942-855e-93f2883b98c5", "8"]
+  );
+  console.log(dbGetWorkLog.rows);
 };
 
 createAdmin();
