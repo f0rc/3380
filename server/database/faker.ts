@@ -254,12 +254,40 @@ const createFakePackages = async (numberOfPackages = 100) => {
   }
 };
 
+const createFakeLogHours = async (numberOfHours = 100) => {
+  const getEmployees = await postgresQuery(
+    `SELECT "employee_id" FROM "WORKS_FOR"`,
+    []
+  );
+
+  const employeeIDs = getEmployees.rows.map((employee) => employee.employee_id);
+
+  for (let i = 0; i < numberOfHours; i++) {
+    try {
+      const employee = faker.helpers.arrayElement(employeeIDs);
+      console.log(`Creating hours ${i + 1}...`);
+      const date = faker.date.past(); // createdAt
+      const makeHours = await postgresQuery(
+        `INSERT INTO "WORK_LOG" ("employee_id", "hours", "date") VALUES ($1, $2, $3)`,
+        [
+          employee, // employeeID
+          faker.datatype.number({ min: 1, max: 24 }), // hours
+          date, // employeeID // createdBy
+        ]
+      );
+    } catch (error) {
+      console.log(`Error creating hours ${i + 1}:`, error);
+    }
+  }
+};
+
 const main = async () => {
-  await createFakeLocations(10);
-  await createFakeManagers(15);
-  await createFakeEmployees(30);
-  await createFakeCustomers(100);
-  await createFakePackages(1000);
+  // await createFakeLocations(10);
+  // await createFakeManagers(15);
+  // await createFakeEmployees(30);
+  // await createFakeCustomers(100);
+  // await createFakePackages(1000);
+  await createFakeLogHours(10000);
 };
 
 main();

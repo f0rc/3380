@@ -7,7 +7,10 @@ import { Bar } from "react-chartjs-2";
 import { LinearScale, TimeScale } from "chart.js";
 import Chart from "chart.js/auto";
 
-import { PackageReportSchema } from "../../../../../server/trpc/router/reports";
+import {
+  PackageReportSchema,
+  postOfficeLocationReport,
+} from "../../../../../server/trpc/router/reports";
 import "chartjs-adapter-date-fns";
 
 import {
@@ -95,41 +98,46 @@ type ChartData = {
 const EmployeeReport = () => {
   const { handleSubmit, register, watch } = useForm({
     defaultValues: {
-      hireDate: "",
-      toHireDate: "",
-      hoursMin: 0,
-      hoursMax: 0,
-      firstName: "",
-      lastName: "",
+      startDate: "",
+      endDate: "",
       postoffice_location_id: "",
       role: 0,
-      clerkPackages: true,
-      clerkStartDate: "",
-      clerkEndDate: "",
     },
     resolver: zodResolver(employeeReportInput),
   });
 
   const { data, isLoading, isError, refetch, isSuccess } =
-    trpc.report.getPackageReport.useQuery(
-      {},
+    trpc.report.getLocationEmployeeReport.useQuery(
+      {
+        endDate: watch("endDate"),
+        startDate: watch("startDate"),
+        postoffice_location_id: watch("postoffice_location_id"),
+        role: watch("role"),
+      },
       {
         enabled: false,
       }
     );
 
+  const locationInfo = trpc.location.getOfficeLocationsFromWorksFor.useQuery();
+
   useEffect(() => {
     if (isSuccess) {
-      setChartData(formatChartData(data.packageReport));
+      setChartData(formatChartData(data.employeeHoursReport));
       console.log("HEHE", chartData);
     }
   }, [data, isSuccess]);
 
   const [chartData, setChartData] = useState<ChartData | null>(null);
 
-  const formatChartData = (chatData: PackageReportSchema[]): ChartData => {
-    const labels = chatData.map((item) => item.month);
-    const values = chatData.map((item) => item.package_count);
+  const formatChartData = (chatData: postOfficeLocationReport[]): ChartData => {
+    const labels = chatData.map(
+      (item) =>
+        item.year +
+        "-" +
+        (item.month.length === 1 ? "0" + item.month : item.month)
+    );
+    const values = chatData.map((item) => Number(item.total_hours));
 
     console.log("labels", labels);
     console.log("values", values);
@@ -137,7 +145,7 @@ const EmployeeReport = () => {
       labels,
       datasets: [
         {
-          label: "Package Count",
+          label: "Hours Worked",
           data: values,
           backgroundColor: "rgba(75, 192, 192, 0.2)",
           borderColor: "rgba(75, 192, 192, 1)",
@@ -151,15 +159,6 @@ const EmployeeReport = () => {
     await refetch();
     console.log(data);
   });
-
-  const [clerk, setClerk] = useState(false);
-
-  useEffect(() => {
-    if (watch("role") === 2) {
-      setClerk(true);
-    }
-  }, [watch("role")]);
-
   // TABLE:
 
   // if (isError) {
@@ -179,56 +178,22 @@ const EmployeeReport = () => {
               <div className="flex flex-row mb-3">
                 <div className="flex flex-col grow gap-3 items-start">
                   <label htmlFor="type" className="text-xl font-bold \">
-                    Employee Role:
+                    Location
                   </label>
-                  <select
-                    {...register("role", { valueAsNumber: true })}
-                    className="font-bold font-xl p-3 bg-transparent border border-calm-yellow outline-none"
-                    placeholder="role"
-                  >
-                    <option value={1}>driver</option>
-                    <option value={2}>clerk</option>
-                    <option value={3}>manager</option>
-                    <option value={0}>all</option>
-                  </select>
-                  {clerk && (
-                    <>
-                      <div className="flex flex-row grow gap-3">
-                        <input
-                          type="checkbox"
-                          className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded justify-center align-middle mt-2"
-                        />
-                        <label
-                          htmlFor="clerkPackages"
-                          className="text-xl font-bold"
-                        >
-                          Packages Made
-                        </label>
-                      </div>
-                      <div className="flex flex-col grow gap-3 items-start">
-                        <h1 className="text-xl font-bold uppercase">
-                          Packages Made from:
-                        </h1>
-                        <input
-                          type="date"
-                          className="font-bold font-xl p-3 bg-transparent border border-calm-yellow outline-none"
-                          {...register("clerkStartDate")}
-                        />
-                      </div>
-                      <div className="flex flex-col grow gap-3 items-start">
-                        <label
-                          htmlFor="to-date"
-                          className="text-xl font-bold uppercase"
-                        >
-                          Packages Made To:
-                        </label>
-                        <input
-                          type="date"
-                          className="font-bold font-xl p-3 bg-transparent border border-calm-yellow outline-none"
-                          {...register("clerkEndDate")}
-                        />
-                      </div>
-                    </>
+                  {locationInfo.isLoading ? (
+                    <div>Loading...</div>
+                  ) : (
+                    <select
+                      className="font-bold font-xl p-3 bg-transparent border border-calm-yellow outline-none"
+                      {...register("postoffice_location_id")}
+                    >
+                      <option value="">All</option>
+                      {locationInfo.data?.locations?.map((location) => (
+                        <option value={location.postoffice_location_id}>
+                          {location.locationname}
+                        </option>
+                      ))}
+                    </select>
                   )}
                 </div>
 
@@ -237,7 +202,7 @@ const EmployeeReport = () => {
                   <input
                     type="date"
                     className="font-bold font-xl p-3 bg-transparent border border-calm-yellow outline-none"
-                    {...register("hireDate")}
+                    {...register("startDate")}
                   />
                 </div>
                 <div className="flex flex-col grow gap-3 items-start">
@@ -250,7 +215,7 @@ const EmployeeReport = () => {
                   <input
                     type="date"
                     className="font-bold font-xl p-3 bg-transparent border border-calm-yellow outline-none"
-                    {...register("toHireDate")}
+                    {...register("endDate")}
                   />
                 </div>
               </div>
@@ -259,7 +224,7 @@ const EmployeeReport = () => {
                   generate
                 </button>
               </div>
-              <pre>{JSON.stringify(watch(), null, 2)}</pre>
+              {/* <pre>{JSON.stringify(watch(), null, 2)}</pre> */}
             </form>
           </div>
         </div>
@@ -285,6 +250,9 @@ const EmployeeReport = () => {
                       type: "time",
                       time: {
                         unit: "month",
+                        displayFormats: {
+                          month: "yyyy-MM",
+                        },
                       },
                     },
                     y: {
@@ -297,6 +265,9 @@ const EmployeeReport = () => {
                 }}
               />
             )}
+          </div>
+          <div>
+            <pre>{JSON.stringify(data, null, 2)}</pre>
           </div>
         </div>
       </div>
