@@ -212,12 +212,68 @@ const createAdmin = async () => {
   //   []
   // );
   // console.log(lole.rows);
-
-  const dbGetWorkLog = await postgresQuery(
-    `INSERT INTO "WORK_LOG" ("employee_id", "hours") VALUES ($1, $2) RETURNING *;`, // daily hours logged
-    ["2c8873af-be2a-4942-855e-93f2883b98c5", "8"]
+  // const dbGetWorkLog = await postgresQuery(
+  //   `INSERT INTO "WORK_LOG" ("employee_id", "hours") VALUES ($1, $2) RETURNING *;`, // daily hours logged
+  //   ["2c8873af-be2a-4942-855e-93f2883b98c5", "8"]
+  // );
+  // console.log(dbGetWorkLog.rows);
+  //   const hehehe = await postgresQuery(
+  //     `SELECT
+  //     employee_id,
+  //     date_trunc('week', date) AS week_start_date,
+  //     SUM(hours) AS total_hours
+  // FROM
+  //     "WORK_LOG"
+  // WHERE
+  //     employee_id = $1
+  // GROUP BY
+  //     employee_id,
+  //     date_trunc('week', date)`,
+  //     ["2c8873af-be2a-4942-855e-93f2883b98c5"]
+  //   );
+  //   console.log(hehehe.rows);
+  //   const usls = await postgresQuery(
+  //     `WITH weekly_hours AS (
+  //       SELECT
+  //           employee_id,
+  //           date_trunc('week', date) AS week_start_date,
+  //           SUM(hours) AS total_hours
+  //       FROM
+  //           "WORK_LOG"
+  //       WHERE
+  //           employee_id = $1
+  //       GROUP BY
+  //           employee_id,
+  //           date_trunc('week', date)
+  //   )
+  //   SELECT
+  //       e.firstname,
+  //       e.lastname,
+  //       wh.week_start_date,
+  //       wh.total_hours
+  //   FROM
+  //       weekly_hours wh
+  //   JOIN
+  //       "EMPLOYEE" e ON wh.employee_id = e.employee_id
+  //   ORDER BY
+  //       wh.week_start_date;`,
+  //     ["2c8873af-be2a-4942-855e-93f2883b98c5"]
+  //   );
+  //   console.log(usls.rows);
+  //   const dbGetWorkLog = await postgresQuery(
+  //     `INSERT INTO "WORK_LOG" (employee_id, hours) VALUES ($1, $2) RETURNING "WORK_LOG".work_log_id;`, // daily hours logged
+  //     ["6a147f7d-56b2-4d4c-8192-58921f9a3a5b", 8]
+  //   );
+  //   console.log(dbGetWorkLog.rows);
+  const checkLocation = await postgresQuery(
+    `SELECT
+          to_char("createdAt", 'YYYY-MM') AS "month",
+          SUM("hours") AS "hours"
+      FROM "WORKS_FOR" wf
+      WHERE wf.postoffice_location_id = $1`,
+    ["6a147f7d-56b2-4d4c-8192-58921f9a3a5b"]
   );
-  console.log(dbGetWorkLog.rows);
+  console.log(checkLocation.rows);
 };
 
 createAdmin();

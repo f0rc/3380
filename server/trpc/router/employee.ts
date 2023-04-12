@@ -220,15 +220,59 @@ export const employeeRouter = router({
         message: "Employee updated",
       };
     }),
+  getemployeeNameHours: protectedProcedure.query(async ({ ctx }) => {
+    const { postgresQuery } = ctx;
+
+    const dbGetWeekHours = await postgresQuery(
+      // get all the employees info and their hours worked summed per week
+      `SELECT
+          employee_id,
+          date_trunc('week', date) AS week_start_date,
+          SUM(hours) AS total_hours
+          FROM
+              "WORK_LOG"
+          WHERE
+              employee_id = $1
+          GROUP BY
+              employee_id,
+              date_trunc('week', date)`,
+      [ctx.session.user.employee_id]
+    );
+    if (dbGetWeekHours.rows.length === 0)
+      return {
+        status: "fail",
+        message: "No hours found",
+      };
+
+    const employee = await postgresQuery(
+      `SELECT
+          E.firstname,
+          E.lastname
+          FROM "EMPLOYEE" AS E WHERE E.employee_id = $1`,
+      [ctx.session.user.employee_id]
+    );
+    if (employee.rows.length === 0) {
+      return {
+        status: "fail",
+        message: "No employee found",
+      };
+    }
+
+    return {
+      status: "success",
+      weekLog: dbGetWeekHours.rows as weekLog[],
+      employeeInfo: employee.rows[0] as employeeInfo,
+    };
+  }),
   // work log get all group hours per week
   workLogAdd: protectedProcedure
-    .input(z.object({ employeeID: z.string() }))
-    .query(async ({ ctx, input }) => {
+    .input(z.object({ employeeID: z.string(), hours: z.number() }))
+    .mutation(async ({ ctx, input }) => {
       const { postgresQuery } = ctx;
 
       const dbGetWorkLog = await postgresQuery(
-        `INSERT INTO "WORK_LOG" VALUES ("employee_id", "hours") RETURNING "WORK_LOG".work_log_id;`, // daily hours logged
-        [input.employeeID]
+        `INSERT INTO "WORK_LOG" (employee_id, hours) VALUES ($1, $2) RETURNING "WORK_LOG".work_log_id;`, // daily hours logged
+        [input.employeeID, input.hours]
       );
 
       return {
@@ -237,6 +281,16 @@ export const employeeRouter = router({
       };
     }),
 });
+
+export interface weekLog {
+  employee_id: string;
+  week_start_date: string;
+  total_hours: number;
+}
+export interface employeeInfo {
+  firstname: string;
+  lastname: string;
+}
 
 export interface manager {
   manager_id: string;
