@@ -265,15 +265,77 @@ const createAdmin = async () => {
   //     ["6a147f7d-56b2-4d4c-8192-58921f9a3a5b", 8]
   //   );
   //   console.log(dbGetWorkLog.rows);
-  const checkLocation = await postgresQuery(
-    `SELECT
-          to_char("createdAt", 'YYYY-MM') AS "month",
-          SUM("hours") AS "hours"
-      FROM "WORKS_FOR" wf
-      WHERE wf.postoffice_location_id = $1`,
-    ["6a147f7d-56b2-4d4c-8192-58921f9a3a5b"]
+  // const checkLocation = await postgresQuery(
+  //   `WITH monthly_work_hours AS (
+  //     SELECT
+  //         employee_id,
+  //         EXTRACT(MONTH FROM date) AS month,
+  //         EXTRACT(YEAR FROM date) AS year,
+  //         SUM(hours) AS total_hours
+  //     FROM
+  //         "WORK_LOG"
+  //         WHERE TRUE AND date >= '$1' AND date <= '$2'
+  //     GROUP BY
+  //         employee_id, month, year
+  //     )
+  //     SELECT
+  //         wf.employee_id,
+  //         mwh.month,
+  //         mwh.year,
+  //         mwh.total_hours
+  //     FROM
+  //         "WORKS_FOR" AS wf
+  //     JOIN
+  //         monthly_work_hours AS mwh
+  //     ON
+  //         wf.employee_id = mwh.employee_id
+  //     WHERE
+  //         wf.postoffice_location_id = $1;
+  // `,
+  //   ["91bb18d8-c3ef-437a-bbe1-f7be7a2a8791"]
+  // );
+  // console.log(checkLocation.rows);
+  //   const employeeCount = await postgresQuery(
+  //     `SELECT
+  //     "employee_id"
+  // FROM
+  //     "WORKS_FOR"
+  // WHERE
+  //     postoffice_location_id = $1;`,
+  //     ["91bb18d8-c3ef-437a-bbe1-f7be7a2a8791"]
+  //   );
+  //   console.log(employeeCount.rows);
+  // const workLogQuery = await postgresQuery(
+  //   `WITH employee_work_hours AS (
+  //     SELECT
+  //         wf.postoffice_location_id,
+  //         EXTRACT(MONTH FROM wl.date) AS month,
+  //         EXTRACT(YEAR FROM wl.date) AS year,
+  //         SUM(wl.hours) AS total_hours
+  //     FROM
+  //         "WORK_LOG" AS wl
+  //     JOIN
+  //         "WORKS_FOR" AS wf
+  //     ON
+  //         wl.employee_id = wf.employee_id
+  //     WHERE
+  //         TRUE AND wl.date >= $1 AND wl.date <= $2
+  //         GROUP BY
+  //         wf.postoffice_location_id, month, year
+  //         )
+  //         `,
+  //   ["2022-01-01", "2022-12-31", "aff239d9-0633-43a2-a9e6-c32ba5789b6d"]
+  // );
+  // console.log(workLogQuery.rows);
+  const getLocations = await postgresQuery(
+    `SELECT DISTINCT w.postoffice_location_id, p.locationname
+    FROM "WORKS_FOR" w
+    JOIN "POSTOFFICE_LOCATION" p
+    ON w.postoffice_location_id = p.postoffice_location_id;`,
+    []
   );
-  console.log(checkLocation.rows);
+
+  console.log(getLocations.rows);
 };
 
 createAdmin();
