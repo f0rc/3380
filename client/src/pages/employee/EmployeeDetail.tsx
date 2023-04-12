@@ -4,6 +4,7 @@ import { trpc } from "../../utils/trpc";
 import Modal from "react-modal";
 import { useForm } from "react-hook-form";
 import Spinner from "../../icons/Spinner";
+import { getRole } from "../../utils/roleinfo";
 
 const EmployeeDetail = () => {
   const [modalIsOpen, setModalIsOpen] = useState(false);
@@ -105,21 +106,6 @@ const EmployeeDetail = () => {
         employeeInfo.data?.employee.postoffice_location_id,
     });
   }, [employeeInfo.data]);
-
-  const getRole = (role: number) => {
-    switch (role) {
-      case 1:
-        return "Clerk";
-      case 2:
-        return "Driver";
-      case 3:
-        return "Manager";
-      case 4:
-        return "Admin";
-      default:
-        return "Unknown";
-    }
-  };
 
   const Currency = (amount: number) => {
     return amount.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, "$&,");

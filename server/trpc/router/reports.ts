@@ -228,13 +228,65 @@ export const reportRouter = router({
         packageReportTable: packageReportTable.rows as PackageTableData[],
       };
     }),
-  getEmployeeHoursReport: publicProcedure.input(
-    z.object({
-      startDate: z.date().optional(),
-      endDate: z.date().optional(),
-      employeeID: z.array(z.string()).optional(),
-    })
-  ),
+  getEmployeeHoursReportPerLocation: publicProcedure
+    .input(
+      z.object({
+        startDate: z.date().optional(),
+        endDate: z.date().optional(),
+        employeeID: z.array(z.string()).optional(),
+        postoffice_location_id: z.string().optional(),
+      })
+    )
+    .query(async ({ input }) => {
+      const { employeeID, endDate, postoffice_location_id, startDate } = input;
+
+      const queryBuilder = (data: typeof input) => {
+        const values = [];
+        let query = `SELECT
+          to_char("createdAt", 'YYYY-MM') AS "month",
+          SUM("hours") AS "hours"
+      FROM "WORKS_FOR" wf
+      WHERE wf.postoffice_location_id = $1`;
+        values.push(postoffice_location_id);
+
+        let index = 2;
+
+        if (data.startDate) {
+          query += ` AND "createdAt" >= $${index}`;
+          values.push(data.startDate);
+          index++;
+        }
+        if (data.endDate) {
+          query += ` AND "createdAt" <= $${index}`;
+          values.push(data.endDate);
+          index++;
+        }
+
+        if (data.postoffice_location_id) {
+          query += ` AND "postoffice_location_id" = $${index}`;
+          values.push(data.postoffice_location_id);
+          index++;
+        }
+
+        if (data.employeeID) {
+          data.employeeID.forEach((id) => {
+            query += ` AND "employee_id" = $${index}`;
+            values.push(id);
+            index++;
+          });
+        }
+
+        query += ` GROUP BY
+          month
+          ORDER BY
+          month;`;
+
+        return {
+          text: query,
+          values,
+        };
+      };
+    }),
 });
 
 export type PackageReportSchema = {
