@@ -21,6 +21,7 @@ import Profile from "./pages/Profile";
 import Signup from "./pages/Signup";
 import Dashboard from "./pages/Reports/Dashboard";
 import Money from "./pages/Reports/package/PackageTable";
+import WorkLog from "./pages/WorkLog";
 
 const baseRoutes = [
   { path: "/", index: true, element: <Home />, label: "Home", isNav: true },
@@ -49,6 +50,12 @@ const clerkRoutes = [
     path: "create-package",
     element: <CreatePackage />,
     label: "Create Package",
+    isNav: true,
+  },
+  {
+    path: "work-log",
+    element: <WorkLog />,
+    label: "Work Log",
     isNav: true,
   },
 ];
