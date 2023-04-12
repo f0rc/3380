@@ -1,8 +1,9 @@
 import { z } from "zod";
 import { protectedProcedure, publicProcedure, router } from "../../utils/trpc";
+import { TRPCError } from "@trpc/server";
 
 export const reportRouter = router({
-  getPackageReportChart: publicProcedure
+  getPackageReportChart: protectedProcedure
     .input(
       z.object({
         startDate: z.string().optional(),
@@ -228,66 +229,126 @@ export const reportRouter = router({
         packageReportTable: packageReportTable.rows as PackageTableData[],
       };
     }),
-  getEmployeeHoursReportPerLocation: publicProcedure
+  getLocationEmployeeReport: protectedProcedure
     .input(
       z.object({
-        startDate: z.date().optional(),
-        endDate: z.date().optional(),
+        startDate: z.string().optional(),
+        endDate: z.string().optional(),
         employeeID: z.array(z.string()).optional(),
         postoffice_location_id: z.string().optional(),
+        role: z.number().optional(),
       })
     )
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       const { employeeID, endDate, postoffice_location_id, startDate } = input;
+      const { postgresQuery } = ctx;
 
       const queryBuilder = (data: typeof input) => {
         const values = [];
-        let query = `SELECT
-          to_char("createdAt", 'YYYY-MM') AS "month",
-          SUM("hours") AS "hours"
-      FROM "WORKS_FOR" wf
-      WHERE wf.postoffice_location_id = $1`;
-        values.push(postoffice_location_id);
+        let query = `
+        WITH employee_work_hours AS (
+          SELECT
+              wf.postoffice_location_id,
+              EXTRACT(MONTH FROM wl.date) AS month,
+              EXTRACT(YEAR FROM wl.date) AS year,
+              SUM(wl.hours) AS total_hours
+          FROM
+              "WORK_LOG" AS wl
+          JOIN
+              "WORKS_FOR" AS wf
+          ON
+              wl.employee_id = wf.employee_id
+          WHERE
+              TRUE`;
 
-        let index = 2;
+        let index = 1;
 
         if (data.startDate) {
-          query += ` AND "createdAt" >= $${index}`;
+          query += ` AND wl.date >= $${index}`;
           values.push(data.startDate);
           index++;
         }
         if (data.endDate) {
-          query += ` AND "createdAt" <= $${index}`;
+          query += ` AND wl.date <= $${index}`;
           values.push(data.endDate);
           index++;
         }
 
+        query += `
+            GROUP BY
+                wf.postoffice_location_id, month, year
+        )
+
+        SELECT
+          plh.postoffice_location_id,
+          plh.locationname,
+          plh.address_street,
+          plh.address_city,
+          plh.address_state,
+          plh.address_zipcode,
+          ewh.month,
+          ewh.year,
+          ewh.total_hours
+          FROM
+          "POSTOFFICE_LOCATION" AS plh
+          JOIN
+          employee_work_hours AS ewh
+          ON
+          plh.postoffice_location_id = ewh.postoffice_location_id
+          
+          WHERE TRUE
+
+          `;
+
         if (data.postoffice_location_id) {
-          query += ` AND "postoffice_location_id" = $${index}`;
+          query += ` AND ewh.postoffice_location_id = $${index}`;
           values.push(data.postoffice_location_id);
           index++;
         }
 
-        if (data.employeeID) {
-          data.employeeID.forEach((id) => {
-            query += ` AND "employee_id" = $${index}`;
-            values.push(id);
-            index++;
-          });
-        }
-
-        query += ` GROUP BY
-          month
-          ORDER BY
-          month;`;
+        query += ` ORDER BY plh.postoffice_location_id, ewh.month, ewh.year;`;
 
         return {
           text: query,
           values,
         };
       };
+
+      const query = queryBuilder({
+        startDate,
+        endDate,
+        employeeID,
+        postoffice_location_id,
+      });
+
+      const employeeHoursReport = await postgresQuery(query.text, query.values);
+
+      if (employeeHoursReport.rows.length === 0) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "No data found",
+        });
+      }
+
+      return {
+        status: "success",
+        employeeHoursReport:
+          employeeHoursReport.rows as postOfficeLocationReport[],
+      };
     }),
 });
+
+export interface postOfficeLocationReport {
+  postoffice_location_id: string;
+  locationname: string;
+  address_street: string;
+  address_city: string;
+  address_state: string;
+  address_zipcode: number;
+  month: string;
+  year: string;
+  total_hours: string;
+}
 
 export type PackageReportSchema = {
   month: string;

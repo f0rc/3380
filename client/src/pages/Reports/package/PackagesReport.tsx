@@ -130,9 +130,6 @@ const PackagesReport = () => {
         enabled: false,
       }
     );
-
-  console.log("IS THIS WORKING?", isFetching);
-
   useEffect(() => {
     if (isSuccess) {
       setChartData(formatChartData(data.packageReport));
@@ -279,7 +276,7 @@ const PackagesReport = () => {
               />
             )}
           </div>
-          {/* <pre>{JSON.stringify(watch(), null, 2)}</pre> */}
+          {/* <pre>{JSON.stringify(data, null, 2)}</pre> */}
         </div>
       </div>
       {isFetching ? (

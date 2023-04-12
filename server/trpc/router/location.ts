@@ -271,6 +271,32 @@ export const locationRouter = router({
       locations: getLocationNameID.rows as getAllOfficeLocationsNameID[],
     };
   }),
+
+  getOfficeLocationsFromWorksFor: protectedProcedure.query(
+    async ({ input, ctx }) => {
+      const { postgresQuery } = ctx;
+
+      const getLocations = await postgresQuery(
+        `SELECT DISTINCT w.postoffice_location_id, p.locationname
+        FROM "WORKS_FOR" w
+        JOIN "POSTOFFICE_LOCATION" p
+        ON w.postoffice_location_id = p.postoffice_location_id;`,
+        []
+      );
+
+      if (getLocations.rows.length === 0) {
+        return {
+          status: "fail",
+          message: "No locations found",
+        };
+      }
+
+      return {
+        status: "success",
+        locations: getLocations.rows as getAllOfficeLocationsNameID[],
+      };
+    }
+  ),
 });
 
 // create a partial type of the getAllOfficeLocations interface to only include offline_location_id and locationname
