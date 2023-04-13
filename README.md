@@ -15,27 +15,30 @@
 
 
 # todo:
-employee report
- - hours per month
+employee report (DONE)
+ - hours per month per location
 
 clerk report
  - packages made by each clerk select up to 10
 
 
 
-products (FAST)
+products (FAST) (DONE)
 - add (done)
 - update inventory / delete items from locations
-products report
+products report 
 - items sold per month
 
-triggers
+triggers (PROG)
  - mail- pg notify + email code
  - show products low stock on manager ui
 
 MISC: 
 - add cost to packages
-- fix bugs TODOS
+- fix bugs{
+  - fix location update button also show table of employees at said location
+  - fix ui {home, packges(ONLY PACKAGES TO ME), create package (clerk + manager ONLY), work log (1,2,3), employee page(add table and add create employee button, LOCATIONS - add location button)}
+- }
 - remove console.log
 - make paper (THUS?)
 

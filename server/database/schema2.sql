@@ -181,30 +181,33 @@ CREATE TABLE "PRODUCT_INVENTORY" (
     CONSTRAINT "PRODUCT_INVENTORY_LOCATION_FK" FOREIGN KEY ("postoffice_location_id") REFERENCES "POSTOFFICE_LOCATION"("postoffice_location_id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE TABLE "PRODUCT_TRANSACTION" (
-    "product_transaction_id" SERIAL NOT NULL,
-    "product_id" TEXT NOT NULL,
+CREATE TABLE "ORDER" (
+    "order_id" SERIAL NOT NULL,
+    "customer_id" TEXT NOT NULL,
     "postoffice_location_id" TEXT NOT NULL,
-    "transaction_type" VARCHAR(20) NOT NULL CHECK ("transaction_type" IN('purchase', 'sale', 'transfer')),
-    "quantity" INTEGER NOT NULL,
-    "transaction_date" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "createdBy" TEXT NOT NULL,
+    "total_price" NUMERIC(10, 2) NOT NULL,
+    "order_date" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT "PRODUCT_TRANSACTION_PK" PRIMARY KEY ("product_transaction_id"),
-    CONSTRAINT "PRODUCT_TRANSACTION_PRODUCT_FK" FOREIGN KEY ("product_id") REFERENCES "PRODUCT"("product_id") ON DELETE CASCADE ON UPDATE CASCADE,
+    PRIMARY KEY ("order_id"),
+    FOREIGN KEY ("customer_id") REFERENCES "CUSTOMER"("customer_id") ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT "PRODUCT_TRANSACTION_LOCATION_FK" FOREIGN KEY ("postoffice_location_id") REFERENCES "POSTOFFICE_LOCATION"("postoffice_location_id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-
-CREATE TABLE "SALES_ORDER" (
-  "id" SERIAL PRIMARY KEY,
-  "postoffice_location_id" TEXT NOT NULL,
-  "customer_id" TEXT NOT NULL,
-  "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  "created_by" TEXT NOT NULL,
-  FOREIGN KEY ("postoffice_location_id") REFERENCES "POSTOFFICE_LOCATION"("postoffice_location_id"),
-  FOREIGN KEY ("customer_id") REFERENCES "CUSTOMER"("customer_id"),
-  FOREIGN KEY ("created_by") REFERENCES "EMPLOYEE"("employee_id")
+CREATE TABLE "ORDER_ITEMS" (
+    "order_item_id" SERIAL NOT NULL,
+    "order_id" INTEGER NOT NULL,
+    "product_id" TEXT NOT NULL,
+    "quantity" INTEGER NOT NULL,
+    "price" NUMERIC(10, 2) NOT NULL,
+    
+    "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    
+    CONSTRAINT "PRODUCT_TRANSACTION_PK" PRIMARY KEY ("order_item_id"),
+    CONSTRAINT "PRODUCT_TRANSACTION_PRODUCT_FK" FOREIGN KEY ("order_id") REFERENCES "ORDER"("order_id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "PRODUCT_ITEM_FK" FOREIGN KEY ("product_id") REFERENCES "PRODUCT"("product_id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 
@@ -358,6 +361,79 @@ AFTER INSERT ON "USER"
 FOR EACH ROW
 EXECUTE FUNCTION update_user_role();
 
+
+CREATE TABLE "EMAIL_NOTIFICATION" (
+    "email_notification_id" SERIAL NOT NULL,
+    "recipient" TEXT NOT NULL,
+    "subject" TEXT NOT NULL,
+    "body" TEXT NOT NULL,
+    "sent" BOOLEAN NOT NULL DEFAULT FALSE,
+    "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "EMAIL_NOTIFICATION_PK" PRIMARY KEY ("email_notification_id")
+);
+
+
+-- email trigger
+CREATE OR REPLACE FUNCTION email_after_insert()
+RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO email_notifications (recipient_email, subject, message)
+    VALUES (NEW.email, 'Order Confirmation', 'Thank you for your order. Your order ID is ' || NEW.package_id || '.');
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER email_after_insert_trigger
+AFTER INSERT ON "PACKAGE_LOCATION_HISTORY"
+FOR EACH ROW
+EXECUTE FUNCTION orders_after_insert();
+
+-- email trigger update
+CREATE OR REPLACE FUNCTION email_after_update()
+RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO email_notifications (recipient_email, subject, message)
+    VALUES (NEW.email, 'Order Update', 'Thank you for your order. Your order ID is ' || NEW.package_id || ' and its current status is '|| NEW.status || '.');
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER email_after_update_trigger
+AFTER UPDATE ON "PACKAGE_LOCATION_HISTORY"
+FOR EACH ROW
+EXECUTE FUNCTION orders_after_insert();
+
+
+CREATE TABLE "LOW_STOCK_ALERTS" (
+    "alert_id" SERIAL NOT NULL,
+    "product_inventory_id" INTEGER NOT NULL,
+    "postoffice_location_id" TEXT NOT NULL,
+    "alert_date" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "is_resolved" BOOLEAN NOT NULL DEFAULT FALSE,
+
+    CONSTRAINT "LOW_STOCK_ALERTS_PK" PRIMARY KEY ("alert_id"),
+    CONSTRAINT "LOW_STOCK_ALERTS_PRODUCT_INVENTORY_FK" FOREIGN KEY ("product_inventory_id") REFERENCES "PRODUCT_INVENTORY"("product_inventory_id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "LOW_STOCK_ALERTS_LOCATION_FK" FOREIGN KEY ("postoffice_location_id") REFERENCES "POSTOFFICE_LOCATION"("postoffice_location_id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE OR REPLACE FUNCTION check_low_stock() RETURNS TRIGGER AS $$
+BEGIN
+    IF (TG_OP = 'INSERT' OR TG_OP = 'UPDATE') AND NEW.quantity <= 10 THEN
+        INSERT INTO "LOW_STOCK_ALERTS" ("product_inventory_id", "postoffice_location_id")
+        VALUES (NEW.product_inventory_id, NEW.postoffice_location_id);
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER low_stock_trigger
+AFTER INSERT OR UPDATE ON "PRODUCT_INVENTORY"
+FOR EACH ROW
+EXECUTE FUNCTION check_low_stock();
 
 -- trigger to add a new entry into "WORKS_FOR" table when a new employee is added
 
