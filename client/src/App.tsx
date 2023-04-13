@@ -21,7 +21,7 @@ export function App() {
             import.meta.env.VITE_BACKEND_PORT
           }`,
           fetch(url, opts) {
-            console.log(import.meta.env.VITE_BACKEND_PORT);
+            // console.log(import.meta.env.VITE_BACKEND_PORT);
             return fetch(url, {
               ...opts,
               credentials: "include",
