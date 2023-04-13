@@ -7,6 +7,7 @@ import { router } from "../../utils/trpc";
 import { productRouter } from "./product";
 import { locationRouter } from "./location";
 import { reportRouter } from "./reports";
+import { dependentRouter } from "./dependent";
 
 // Add your routers here
 export const appRouter = router({
@@ -18,6 +19,7 @@ export const appRouter = router({
   product: productRouter,
   location: locationRouter,
   report: reportRouter,
+  dependent: dependentRouter,
 });
 
 export type AppRouter = typeof appRouter;

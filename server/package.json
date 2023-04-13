@@ -9,7 +9,10 @@
     "dbMigration": "export PGPASSWORD='test'; psql -f ./database/schema2.sql -h localhost -U test -p 6543 -d test",
     "dropSchema": "export PGPASSWORD='test'; psql -f ./database/drop.sql -h localhost -U test -p 6543 -d test",
     "db": "pnpm dropSchema && pnpm dbMigration && tsx ./database/seed.ts",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "dbMigrationNEW": "psql -f ./database/schema2.sql -h localhost -U test -p 6543 -d test",
+    "dropSchemaNEW":  "psql -f ./database/drop.sql -h localhost -U test -p 6543 -d test",
+    "db2": "npm run dropSchemaNEW && npm run dbMigrationNEW && tsx ./database/seed.ts"
   },
   "dependencies": {
     "@trpc/server": "^10.18.0",

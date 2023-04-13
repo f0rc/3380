@@ -143,16 +143,16 @@ CREATE TABLE "CLERK" (
     FOREIGN KEY ("employee_id") REFERENCES "EMPLOYEE"("employee_id")
 );
 
-CREATE TABLE "DEPENDANT" (
-    "dependant_id" TEXT NOT NULL,
-    "dependant_name" VARCHAR(255) NOT NULL,
-    "dependant_birthdate" DATE NOT NULL,
+CREATE TABLE "DEPENDENT" (
+    "dependent_id" TEXT NOT NULL,
+    "dependent_name" VARCHAR(255) NOT NULL,
+    "dependent_birthdate" DATE NOT NULL,
     "employee_id" TEXT NOT NULL,
     "relationship" VARCHAR(255) NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT "DEPENDANT_PK" PRIMARY KEY ("dependant_id"),
+    CONSTRAINT "DEPENDENT_PK" PRIMARY KEY ("dependent_id"),
     FOREIGN KEY ("employee_id") REFERENCES "EMPLOYEE"("employee_id")
 );
 

@@ -24,6 +24,9 @@ import WorkLog from "./pages/WorkLog";
 import ListProducts from "./pages/products/ListProducts";
 import { ProductDetail } from "./pages/products/ProductDetail";
 import { Products } from "./pages/products/Products";
+import { CreateDependent } from "./pages/dependent/CreateDependent";
+import Dependent from "./pages/dependent/Dependent";
+import DependentDetail from "./pages/dependent/DependentDetail";
 
 const baseRoutes = [
   { path: "/", index: true, element: <Home />, label: "Home", isNav: true },
@@ -65,6 +68,24 @@ const clerkRoutes = [
     path: "work-log",
     element: <WorkLog />,
     label: "Work Log",
+    isNav: true,
+  },
+  {
+    path: "create-dependent",
+    element: <CreateDependent />,
+    label: "Create Dependent",
+    isNav: true,
+  },
+  {
+    path: "dependent/:id",
+    element: <DependentDetail />,
+    label: "dependent detail",
+    isNav: true,
+  },
+  {
+    path: "dependent-list",
+    element: <Dependent />,
+    label: "Dependent List",
     isNav: true,
   },
 ];

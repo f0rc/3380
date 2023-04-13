@@ -82,7 +82,7 @@ export const CreateEmployee = () => {
 
               <div className="w-full md:w-1/2 px-3 mb-6 md:mb-0">
                 <label className="block uppercase tracking-wide text-gray-50 text-xs font-bold mb-2">
-                  First Name
+                  Last Name
                 </label>
                 <input
                   type="text"
