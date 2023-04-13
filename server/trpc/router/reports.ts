@@ -217,7 +217,7 @@ export const reportRouter = router({
         query2.values
       );
 
-      console.log("LMFAOOO", packageReportTable.rows);
+      // console.log("LMFAOOO", packageReportTable.rows);
 
       if (packageReportChart.rows.length === 0) {
         throw new Error("No data found");

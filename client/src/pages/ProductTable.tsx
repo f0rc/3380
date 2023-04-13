@@ -24,8 +24,9 @@ import {
   rankItem,
   compareItems,
 } from "@tanstack/match-sorter-utils";
+import { trpc } from "../utils/trpc";
+import { getProductWithQuantity } from "../../../server/trpc/router/product";
 import { useNavigate } from "react-router-dom";
-import { employeeList } from "../../../../../server/trpc/router/employee";
 
 declare module "@tanstack/table-core" {
   interface FilterFns {
@@ -64,59 +65,49 @@ const fuzzySort: SortingFn<any> = (rowA, rowB, columnId) => {
   return dir === 0 ? sortingFns.alphanumeric(rowA, rowB, columnId) : dir;
 };
 
-export default function EmployeeTableReport({
-  data,
-}: {
-  data: employeeList[];
-}) {
+export default function ProductTable() {
+  const tableData = trpc.product.getAllProductsManager.useQuery();
+
+  const [data, setData] = React.useState<getProductWithQuantity[]>([]);
+
+  useEffect(() => {
+    if (tableData.data) {
+      setData(tableData.data.products);
+    }
+  }, [tableData.data]);
+
   const rerender = React.useReducer(() => ({}), {})[1];
 
-  const handlePackageClick = (employee: any) => {
-    // console.log("NAV", employee);
-    navigate(`/employee/${employee.employee_id}`, {
-      state: { data: employee },
-    });
-  };
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   );
   const [globalFilter, setGlobalFilter] = React.useState("");
 
-  const columns = React.useMemo<ColumnDef<employeeList>[]>(
+  const columns = React.useMemo<ColumnDef<getProductWithQuantity>[]>(
     () => [
       {
-        accessorKey: "firstname",
-        header: () => <span>First Name</span>,
+        accessorKey: "product_id",
+        header: () => <span>Product</span>,
         footer: (props) => props.column.id,
       },
       {
-        accessorKey: "lastname",
-        header: "Last Name",
+        accessorKey: "product_name",
+        header: "NAME",
         footer: (props) => props.column.id,
       },
       {
-        accessorKey: "role",
-        header: "role",
+        accessorKey: "product_description",
+        header: "description",
         footer: (props) => props.column.id,
       },
       {
-        accessorKey: "hours",
-        header: "hours",
+        accessorKey: "price",
+        header: "price",
         footer: (props) => props.column.id,
       },
       {
-        accessorKey: "salary",
-        header: "salary",
-        footer: (props) => props.column.id,
-      },
-      {
-        accessorKey: "manager_lastname",
-        header: "Supervisor",
-        footer: (props) => props.column.id,
-      },
-      {
-        accessorKey: "locationname",
-        header: "Work Location",
+        accessorKey: "available_quantity",
+        header: "available_quantity",
         footer: (props) => props.column.id,
       },
     ],
@@ -208,7 +199,9 @@ export default function EmployeeTableReport({
                 {table.getRowModel().rows.map((row) => {
                   return (
                     <tr
-                      onClick={() => handlePackageClick(row.original)}
+                      onClick={() => {
+                        navigate(`/product/${row.original.product_id}`);
+                      }}
                       key={row.id}
                       className="
                   hover:bg-[#c0bcbc] hover:text-[#1D1D1C] cursor-pointer h-2 even:bg-[#3A3A38] bg-[#2F2F2E]"

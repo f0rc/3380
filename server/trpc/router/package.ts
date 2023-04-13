@@ -17,7 +17,7 @@ export const packageRouter = router({
         `SELECT "postoffice_location_id" FROM "WORKS_FOR" WHERE "employee_id" = $1`,
         [ctx.session.user.employee_id]
       );
-      console.log("clerkLocation", clerkLocation.rows[0]);
+      // console.log("clerkLocation", clerkLocation.rows[0]);
       if (
         clerkLocation.rowCount === 0 ||
         clerkLocation.rows[0].postoffice_location_id === null
@@ -97,8 +97,8 @@ export const packageRouter = router({
       const makePackage = await postgresQuery(
         `INSERT INTO "PACKAGE" ("package_id", "cost", "sender_id", "receiver_id", "weight", "type", "size", "createdBy", "updatedBy") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
         [
-          package_ID, // package_id
-          0, // cost
+          package_ID, // package_id // cost
+          steps.packageInfo.value.price,
           senderID, // senderID
           receiverID, // receiverID
           steps.packageInfo.value.packageWeight, // weight
@@ -172,7 +172,7 @@ export const packageRouter = router({
       [ctx.session.user.id]
     );
 
-    console.log("packageList", packageList.rows);
+    // console.log("packageList", packageList.rows);
 
     return {
       status: "success",
@@ -183,7 +183,7 @@ export const packageRouter = router({
   packageDetailsPublic: publicProcedure
     .input(z.object({ package_id: z.string() }))
     .query(async ({ ctx, input }) => {
-      console.log("PACKAGE ID", input.package_id);
+      // console.log("PACKAGE ID", input.package_id);
       const { postgresQuery } = ctx;
       const { package_id } = input;
 
@@ -195,10 +195,43 @@ export const packageRouter = router({
           ORDER BY plh."processedAt" DESC
           LIMIT 1
       )
-      SELECT p.*, lpl.*
+      SELECT p.*, lpl.*, pol."locationname"
       FROM "PACKAGE" p
       JOIN latest_package_location lpl ON p."package_id" = lpl."package_id"
+      JOIN "POSTOFFICE_LOCATION" pol ON lpl."postoffice_location_id" = pol."postoffice_location_id"
       WHERE p."package_id" = $1;`,
+        [package_id]
+      );
+
+      // console.log("HEEEEERREE", packageDetails.rows[0].status);
+
+      if (packageDetails.rowCount === 0) {
+        return {
+          status: "error",
+          code: 404,
+          message: "Package not found",
+        };
+      }
+      return {
+        status: "success",
+        code: 200,
+        packageDetails: packageDetails
+          .rows[0] as packageWithStatusDetailAddress,
+      };
+    }),
+
+  packageDetails: protectedProcedure
+    .input(z.object({ package_id: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const { postgresQuery } = ctx;
+      const { package_id } = input;
+
+      const packageDetails = await postgresQuery(
+        `SELECT plh.*, pol.*
+        FROM "PACKAGE_LOCATION_HISTORY" AS plh
+        JOIN "POSTOFFICE_LOCATION" AS pol ON plh.postoffice_location_id = pol.postoffice_location_id
+        WHERE package_id = $1
+        ORDER BY plh."processedAt" DESC;`,
         [package_id]
       );
 
@@ -212,7 +245,7 @@ export const packageRouter = router({
       return {
         status: "success",
         code: 200,
-        packageDetails: packageDetails.rows[0] as PackageSchema,
+        packageHistory: packageDetails.rows as packageHistory[],
       };
     }),
 });
@@ -238,34 +271,64 @@ export interface PackageSchemaWithStatus extends PackageSchema {
   status: string;
   processedAt: string;
 }
-//example output
 // {
-//   package_id: '21c57f4f-2c83-4d77-a7a4-39364a88abb4',
-//   sender_id: '116e3c4c-d5f3-494d-9531-2f5ba142d068',
-//   receiver_id: '5faba5e1-6066-4bad-ab6d-175079fdc26e',
-//   cost: '0',
-//   weight: '182',
-//   type: 'box',
-//   size: 'extra large',
-//   createdAt: 2023-03-19T10:21:41.560Z,
-//   createdBy: '6fa0e11c-adef-4f74-85df-a0dfa31b43d6',
-//   updatedAt: 2023-03-19T05:00:00.000Z,
-//   updatedBy: '6fa0e11c-adef-4f74-85df-a0dfa31b43d6',
-//   package_location_id: 19,
-//   location_id: '80202',
-//   intransitcounter: 3,
-//   status: 'fail'
+//   package_location_id: 1,
+//   package_id: '3712942b-d18b-4b0c-9d8a-74944e2d569f',
+//   postoffice_location_id: '9',
+//   intransitcounter: 0,
+//   status: 'accepted',
+//   processedAt: 2023-04-13T07:31:46.186Z,
+//   processedBy: '6cdf04bc-34d7-410b-b853-71672663d620',
+//   locationname: 'fuck off',
+//   address_street: '12308',
+//   address_city: 'laskjf',
+//   address_state: 'laksjf',
+//   address_zipcode: 1203978,
+//   postoffice_location_manager: 'cf505e9e-c56b-4b4e-9425-a09cb452c43f',
+//   createdAt: 2023-04-13T05:00:00.000Z,
+//   updatedAt: 2023-04-13T05:00:00.000Z
 // }
+// make a interface
+export interface packageHistory {
+  package_location_id: number;
+  package_id: string;
+  postoffice_location_id: string;
+  intransitcounter: number;
+  status: string;
+  processedAt: string;
+  processedBy: string;
+  locationname: string;
+  address_street: string;
+  address_city: string;
+  address_state: string;
+  address_zipcode: number;
+  postoffice_location_manager: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
-// CREATE TABLE "PACKAGE_LOCATION_HISTORY" (
-//   "package_location_id" SERIAL NOT NULL,
-//   "package_id" TEXT NOT NULL, --refer to Package
-//   "postoffice_location_id" TEXT NOT NULL,
-//   "intransitcounter" INTEGER NOT NULL DEFAULT 0,
-//   -- make a status
-//   "status" TEXT NOT NULL CHECK ("status" IN('accepted', 'transit', 'delivered','out-for-delivery', 'fail')),
-//   "processedAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-//   "processedBy" TEXT NOT NULL, --employee ID
-
-//   CONSTRAINT "package_location_id" PRIMARY KEY ("package_location_id")
-// );
+export interface packageWithStatusDetailAddress {
+  package_id: string;
+  sender_id: string;
+  receiver_id: string;
+  cost: string;
+  weight: string;
+  type: string;
+  size: string;
+  createdAt: string;
+  createdBy: string;
+  updatedAt: string;
+  updatedBy: string;
+  package_location_id: number;
+  postoffice_location_id: string;
+  intransitcounter: number;
+  status: string;
+  processedAt: string;
+  processedBy: string;
+  locationname: string;
+  address_street: string;
+  address_city: string;
+  address_state: string;
+  address_zipcode: number;
+  postoffice_location_manager: string;
+}

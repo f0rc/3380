@@ -1,12 +1,11 @@
 import { postgresQuery } from "./database/db";
 
 export interface PackageType {
-  locationHistoryID: number;
   package_location_id: number;
   package_id: string;
-  status: string;
-  location_id: number;
+  postoffice_location_id: string;
   intransitcounter: number;
+  status: string;
 }
 export interface PackageListType {
   package_id: string;
@@ -46,19 +45,25 @@ const getPackages = async () => {
 
 const updatePackage = async ({
   package_id,
-  location_id,
+  postoffice_location_id,
   status,
   intransitcounter,
 }: {
   package_id: string;
-  location_id: string;
+  postoffice_location_id: string;
   status: string;
   intransitcounter: number;
 }) => {
   try {
     const packages = await postgresQuery(
-      `INSERT INTO "PACKAGE_LOCATION_HISTORY" ("package_id", "status", "location_id", "intransitcounter") VALUES ($1, $2, $3, $4);`,
-      [package_id, status, location_id, intransitcounter]
+      `INSERT INTO "PACKAGE_LOCATION_HISTORY" ("package_id", "status", "postoffice_location_id", "intransitcounter", "processedBy") VALUES ($1, $2, $3, $4, $5);`,
+      [
+        package_id,
+        status,
+        postoffice_location_id,
+        intransitcounter,
+        "6cdf04bc-34d7-410b-b853-71672663d620",
+      ]
     );
 
     return packages.rows as PackageType[];
@@ -87,39 +92,52 @@ const canTransit = (inTransitCounter: number) => {
   }
 };
 
-const getRandomOfficeLocation = (zipcodeHistory: string[]): string => {
+const getOfficeList = async () => {
+  try {
+    const offices = await postgresQuery(
+      `SELECT "postoffice_location_id"
+      FROM "POSTOFFICE_LOCATION";`,
+      []
+    );
+
+    return offices.rows as Postoffice_location[];
+  } catch (e) {
+    console.log(e);
+  }
+};
+
+type Postoffice_location = {
+  postoffice_location_id: string;
+};
+
+const getRandomOfficeLocation = async (zipcodeHistory: string[], count = 0) => {
   // ##TODO: GET ACTUAL OFFICE LOCATIONS
-  const postofficelocations = [
-    "10001",
-    "60601",
-    "80202",
-    "94102",
-    "90001",
-    "120312",
-    "23423",
-    "901723",
-    "788456",
-    "5695745",
-  ];
+  const postofficelocations = await getOfficeList();
+  if (!postofficelocations) throw new Error("No office locations found");
   const randomLocation =
     postofficelocations[Math.floor(Math.random() * postofficelocations.length)];
-  if (zipcodeHistory.includes(randomLocation!)) {
-    return getRandomOfficeLocation(zipcodeHistory);
+
+  if (
+    zipcodeHistory.includes(randomLocation.postoffice_location_id) &&
+    count < 10
+  ) {
+    return getRandomOfficeLocation(zipcodeHistory, count + 1);
   }
 
-  return randomLocation as string;
+  if (count >= 10) throw new Error("No office locations found");
+
+  return randomLocation.postoffice_location_id as string;
 };
 
 async function simulatePackageDelivery(pkg: PackageListType) {
-  const postofficelocations = ["10001", "60601", "80202", "94102", "90001"];
-
-  const randomLocation =
-    postofficelocations[Math.floor(Math.random() * postofficelocations.length)];
-
   if (pkg.status[pkg.status.length - 1] === "delivered") {
     return;
   }
   const isDeliveryFailed = Math.random() < 0.01;
+
+  const randomLocation = await getRandomOfficeLocation(pkg.zipcodeHistory);
+
+  console.log("randomLocation", randomLocation);
 
   if (
     pkg.status[pkg.status.length - 1] === "transit" &&
@@ -128,7 +146,7 @@ async function simulatePackageDelivery(pkg: PackageListType) {
   ) {
     await updatePackage({
       package_id: pkg.package_id,
-      location_id: randomLocation!,
+      postoffice_location_id: randomLocation,
       status: "out-for-delivery",
       intransitcounter: pkg.inTransitCounter,
     });
@@ -142,7 +160,7 @@ async function simulatePackageDelivery(pkg: PackageListType) {
     if (canTransit(pkg.inTransitCounter)) {
       await updatePackage({
         package_id: pkg.package_id,
-        location_id: randomLocation!,
+        postoffice_location_id: randomLocation,
         status: "transit",
         intransitcounter: pkg.inTransitCounter + 1,
       });
@@ -152,7 +170,7 @@ async function simulatePackageDelivery(pkg: PackageListType) {
     } else {
       await updatePackage({
         package_id: pkg.package_id,
-        location_id: randomLocation!,
+        postoffice_location_id: randomLocation,
         status: "out-for-delivery",
         intransitcounter: pkg.inTransitCounter,
       });
@@ -163,7 +181,8 @@ async function simulatePackageDelivery(pkg: PackageListType) {
     if (isDeliveryFailed) {
       await updatePackage({
         package_id: pkg.package_id,
-        location_id: pkg.zipcodeHistory[pkg.zipcodeHistory.length - 1]!,
+        postoffice_location_id:
+          pkg.zipcodeHistory[pkg.zipcodeHistory.length - 1]!,
         status: "fail",
         intransitcounter: pkg.inTransitCounter,
       });
@@ -171,7 +190,8 @@ async function simulatePackageDelivery(pkg: PackageListType) {
     } else {
       await updatePackage({
         package_id: pkg.package_id,
-        location_id: pkg.zipcodeHistory[pkg.zipcodeHistory.length - 1]!,
+        postoffice_location_id:
+          pkg.zipcodeHistory[pkg.zipcodeHistory.length - 1]!,
         status: "delivered",
         intransitcounter: pkg.inTransitCounter,
       });
@@ -184,7 +204,7 @@ async function simulatePackageDelivery(pkg: PackageListType) {
   ) {
     await updatePackage({
       package_id: pkg.package_id,
-      location_id: randomLocation!,
+      postoffice_location_id: randomLocation,
       status: "transit",
       intransitcounter: pkg.inTransitCounter + 1,
     });
@@ -194,7 +214,7 @@ async function simulatePackageDelivery(pkg: PackageListType) {
   } else if (pkg.status[pkg.status.length - 1] === "accepted") {
     await updatePackage({
       package_id: pkg.package_id,
-      location_id: randomLocation!,
+      postoffice_location_id: randomLocation,
       status: "transit",
       intransitcounter: pkg.inTransitCounter + 1,
     });
@@ -212,15 +232,21 @@ const simulate = async () => {
   }
 
   const statusList = dbpkg.map((pkg) => pkg.status);
-  const zipcodelist = dbpkg.map((pkg) => pkg.location_id.toString());
+  const zipcodelist = dbpkg.map((pkg) => pkg.postoffice_location_id);
+
+  console.log(dbpkg, "package");
+  console.log(statusList, "status");
+  console.log(zipcodelist, "zipcode");
 
   const packageList = {
-    package_id: dbpkg[0]!.package_id,
-    id: dbpkg[0]!.package_location_id,
+    package_id: dbpkg[0].package_id,
+    id: dbpkg[0].package_location_id,
     status: statusList,
     zipcodeHistory: zipcodelist,
     inTransitCounter: dbpkg[dbpkg.length - 1]!.intransitcounter,
   };
+
+  console.log(packageList, "packageList");
 
   await simulatePackageDelivery(packageList);
 };
