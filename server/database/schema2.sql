@@ -362,52 +362,7 @@ FOR EACH ROW
 EXECUTE FUNCTION update_user_role();
 
 
-CREATE TABLE "EMAIL_NOTIFICATION" (
-    "email_notification_id" SERIAL NOT NULL,
-    "recipient" TEXT NOT NULL,
-    "subject" TEXT NOT NULL,
-    "body" TEXT NOT NULL,
-    "sent" BOOLEAN NOT NULL DEFAULT FALSE,
-    "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT "EMAIL_NOTIFICATION_PK" PRIMARY KEY ("email_notification_id")
-);
-
-
--- email trigger
-CREATE OR REPLACE FUNCTION email_after_insert()
-RETURNS TRIGGER AS $$
-BEGIN
-    INSERT INTO email_notifications (recipient_email, subject, message)
-    VALUES (NEW.email, 'Order Confirmation', 'Thank you for your order. Your order ID is ' || NEW.package_id || '.');
-
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER email_after_insert_trigger
-AFTER INSERT ON "PACKAGE_LOCATION_HISTORY"
-FOR EACH ROW
-EXECUTE FUNCTION orders_after_insert();
-
--- email trigger update
-CREATE OR REPLACE FUNCTION email_after_update()
-RETURNS TRIGGER AS $$
-BEGIN
-    INSERT INTO email_notifications (recipient_email, subject, message)
-    VALUES (NEW.email, 'Order Update', 'Thank you for your order. Your order ID is ' || NEW.package_id || ' and its current status is '|| NEW.status || '.');
-
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER email_after_update_trigger
-AFTER UPDATE ON "PACKAGE_LOCATION_HISTORY"
-FOR EACH ROW
-EXECUTE FUNCTION orders_after_insert();
-
-
+-- table to store the low stock alerts
 CREATE TABLE "LOW_STOCK_ALERTS" (
     "alert_id" SERIAL NOT NULL,
     "product_inventory_id" INTEGER NOT NULL,
@@ -419,7 +374,7 @@ CREATE TABLE "LOW_STOCK_ALERTS" (
     CONSTRAINT "LOW_STOCK_ALERTS_PRODUCT_INVENTORY_FK" FOREIGN KEY ("product_inventory_id") REFERENCES "PRODUCT_INVENTORY"("product_inventory_id") ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT "LOW_STOCK_ALERTS_LOCATION_FK" FOREIGN KEY ("postoffice_location_id") REFERENCES "POSTOFFICE_LOCATION"("postoffice_location_id") ON DELETE CASCADE ON UPDATE CASCADE
 );
-
+-- trigger to create low stock alerts
 CREATE OR REPLACE FUNCTION check_low_stock() RETURNS TRIGGER AS $$
 BEGIN
     IF (TG_OP = 'INSERT' OR TG_OP = 'UPDATE') AND NEW.quantity <= 10 THEN
@@ -434,6 +389,104 @@ CREATE TRIGGER low_stock_trigger
 AFTER INSERT OR UPDATE ON "PRODUCT_INVENTORY"
 FOR EACH ROW
 EXECUTE FUNCTION check_low_stock();
+
+-- trigger to resolve low stock alerts
+CREATE OR REPLACE FUNCTION resolve_low_stock_alerts() RETURNS TRIGGER AS $$
+BEGIN
+    IF (TG_OP = 'UPDATE') AND NEW.quantity > 10 THEN
+        UPDATE "LOW_STOCK_ALERTS" SET "is_resolved" = TRUE WHERE "product_inventory_id" = NEW.product_inventory_id AND "postoffice_location_id" = NEW.postoffice_location_id;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER resolve_low_stock_alerts_trigger
+AFTER UPDATE ON "PRODUCT_INVENTORY"
+FOR EACH ROW
+EXECUTE FUNCTION resolve_low_stock_alerts();
+
+CREATE TABLE "EMAIL_NOTIFICATION" (
+    "email_notification_id" SERIAL NOT NULL,
+    "recipient" TEXT NOT NULL,
+    "subject" TEXT NOT NULL,
+    "body" TEXT NOT NULL,
+    "sent" BOOLEAN NOT NULL DEFAULT FALSE,
+    "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "EMAIL_NOTIFICATION_PK" PRIMARY KEY ("email_notification_id")
+);
+
+
+-- -- email trigger
+-- CREATE OR REPLACE FUNCTION email_after_update()
+-- RETURNS TRIGGER AS $$
+-- DECLARE
+--     sender_email TEXT;
+--     receiver_email TEXT;
+-- BEGIN
+--     SELECT c.email
+--     INTO sender_email
+--     FROM "CUSTOMER" c
+--     JOIN "PACKAGE" p ON p.sender_id = c.customer_id
+--     WHERE p.package_id = NEW.package_id;
+
+--     SELECT c.email
+--     INTO receiver_email
+--     FROM "CUSTOMER" c
+--     JOIN "PACKAGE" p ON p.receiver_id = c.customer_id
+--     WHERE p.package_id = NEW.package_id;
+
+--     INSERT INTO "EMAIL_NOTIFICATION" (recipient, subject, body)
+--     VALUES (sender_email, 'Order Update', 'Thank you for your order. Your order ID is ' || NEW.package_id || ' and its current status is ' || NEW.status || '.');
+
+--     INSERT INTO "EMAIL_NOTIFICATION" (recipient, subject, body)
+--     VALUES (receiver_email, 'Order Update', 'Thank you for your order. Your order ID is ' || NEW.package_id || ' and its current status is ' || NEW.status || '.');
+
+--     RETURN NEW;
+-- END;
+-- $$ LANGUAGE plpgsql;
+
+-- CREATE TRIGGER email_after_update_trigger
+-- AFTER UPDATE ON "PACKAGE_LOCATION_HISTORY"
+-- FOR EACH ROW
+-- EXECUTE FUNCTION email_after_update();
+
+
+CREATE OR REPLACE FUNCTION email_after_insert()
+RETURNS TRIGGER AS $$
+DECLARE
+    sender_email TEXT;
+    receiver_email TEXT;
+BEGIN
+    SELECT c.email
+    INTO sender_email
+    FROM "CUSTOMER" c
+    JOIN "PACKAGE" p ON p.sender_id = c.customer_id
+    WHERE p.package_id = NEW.package_id;
+
+    SELECT c.email
+    INTO receiver_email
+    FROM "CUSTOMER" c
+    JOIN "PACKAGE" p ON p.receiver_id = c.customer_id
+    WHERE p.package_id = NEW.package_id;
+
+    INSERT INTO "EMAIL_NOTIFICATION" (recipient, subject, body)
+    VALUES (sender_email, 'Order Update', 'Thank you for your order. Your order ID is ' || NEW.package_id || ' and its current status is ' || NEW.status || '.');
+
+    INSERT INTO "EMAIL_NOTIFICATION" (recipient, subject, body)
+    VALUES (receiver_email, 'Order Update', 'Thank you for your order. Your order ID is ' || NEW.package_id || ' and its current status is ' || NEW.status || '.');
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER email_after_insert_trigger
+AFTER INSERT ON "PACKAGE_LOCATION_HISTORY"
+FOR EACH ROW
+EXECUTE FUNCTION email_after_insert();
+
+
 
 -- trigger to add a new entry into "WORKS_FOR" table when a new employee is added
 

@@ -16,7 +16,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const { data: session, isError } = trpc.session.getSession.useQuery();
 
   useEffect(() => {
-    console.log("calling sesstion use effect");
+    // console.log("calling sesstion use effect");
     setAuthenticated(session || null);
   }, [session]);
 

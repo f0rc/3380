@@ -36,11 +36,11 @@ export const AddProduct = () => {
   const [isUploading, setUploading] = useState(false);
 
   const onSubmit = handleSubmit(async (data) => {
-    console.log("data", data.product_image[0]);
+    // console.log("data", data.product_image[0]);
     setUploading(true);
     const imageRef = ref(storage, `images/${v4()}`);
     const snapshot = await uploadBytes(imageRef, data.product_image[0]);
-    console.log("snapshot", snapshot);
+    // console.log("snapshot", snapshot);
 
     data.product_image = snapshot.metadata.fullPath;
     setUploading(false);
@@ -192,7 +192,7 @@ export const AddProduct = () => {
           </form>
         </div>
       </div>
-      <pre>{JSON.stringify(watch(), null, 2)}</pre>
+      {/* <pre>{JSON.stringify(watch(), null, 2)}</pre> */}
     </div>
   );
 };

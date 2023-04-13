@@ -33,13 +33,13 @@ const LocationDetail = () => {
     navigate("/");
   }
 
-  console.log("STATE: ", state);
+  // console.log("STATE: ", state);
 
   const getLocationDetail = trpc.location.getLocationDetails.useQuery({
     postoffice_location_id: state.data,
   });
 
-  console.log("LOCATION DETAIL: ", getLocationDetail.data?.location);
+  // console.log("LOCATION DETAIL: ", getLocationDetail.data?.location);
 
   const getAllManagers = trpc.employee.getAllManagers.useQuery(undefined, {
     enabled: false,
@@ -52,17 +52,17 @@ const LocationDetail = () => {
   });
 
   useEffect(() => {
-    console.log("USE", getLocationDetail.data?.location?.manager_lastname);
+    // console.log("USE", getLocationDetail.data?.location?.manager_lastname);
   }, [getLocationDetail]);
 
   const setManager = trpc.location.setManager.useMutation({
     onSuccess: (data) => {
-      console.log("SUCCESS", data.message);
+      // console.log("SUCCESS", data.message);
       closeModal2();
       getLocationDetail.refetch();
     },
     onError: (error) => {
-      console.log("ERROR", error);
+      // console.log("ERROR", error);
     },
   });
 
@@ -71,7 +71,7 @@ const LocationDetail = () => {
       postoffice_location_id: state.data,
       manager_id: updateManager.manager_id,
     });
-    console.log(updateManager);
+    // console.log(updateManager);
   });
 
   return (

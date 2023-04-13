@@ -23,7 +23,7 @@ const createContextInner = async (opts: CreateContextOptions) => {
 export async function createContext(opts: CreateHTTPContextOptions) {
   const { req, res } = opts;
 
-  console.log("COOKIE", req.headers.cookie);
+  // console.log("COOKIE", req.headers.cookie);
 
   const session = await getServerAuthSession({ req, res });
   return createContextInner({
