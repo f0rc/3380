@@ -327,15 +327,36 @@ const createAdmin = async () => {
   //   ["2022-01-01", "2022-12-31", "aff239d9-0633-43a2-a9e6-c32ba5789b6d"]
   // );
   // console.log(workLogQuery.rows);
-  const getLocations = await postgresQuery(
-    `SELECT DISTINCT w.postoffice_location_id, p.locationname
-    FROM "WORKS_FOR" w
-    JOIN "POSTOFFICE_LOCATION" p
-    ON w.postoffice_location_id = p.postoffice_location_id;`,
-    []
+  // const getLocations = await postgresQuery(
+  //   `SELECT DISTINCT w.postoffice_location_id, p.locationname
+  //   FROM "WORKS_FOR" w
+  //   JOIN "POSTOFFICE_LOCATION" p
+  //   ON w.postoffice_location_id = p.postoffice_location_id;`,
+  //   []
+  // );
+  // console.log(getLocations.rows);
+
+  const getAllProductsAtLocation = await postgresQuery(
+    `SELECT 
+  P.product_id, 
+  P.product_name, 
+  P.product_description, 
+  P.price, 
+  P.product_image, 
+  PI.quantity AS available_quantity
+FROM 
+  "PRODUCT" P
+JOIN 
+  "PRODUCT_INVENTORY" PI ON P.product_id = PI.product_id
+WHERE 
+  PI.postoffice_location_id = $1
+ORDER BY 
+  P.product_name;
+  `,
+    ["91bb18d8-c3ef-437a-bbe1-f7be7a2a8791"]
   );
 
-  console.log(getLocations.rows);
+  console.log(getAllProductsAtLocation.rows);
 };
 
 createAdmin();
