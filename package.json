@@ -1,5 +1,5 @@
 {
-  "name": "@examples/minimal-react",
+  "name": "@postoffice/base",
   "private": true,
   "version": "10.18.0",
   "workspaces": [
@@ -28,6 +28,7 @@
   },
   "dependencies": {
     "dotenv": "^16.0.3",
+    "firebase": "^9.19.1",
     "superjson": "^1.12.2"
   }
 }

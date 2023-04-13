@@ -22,12 +22,12 @@ body{
 }
 
 .navItemActive {
-    @apply block py-2 pl-3 pr-4 rounded bg-transparent text-[#f5cb5c] p-0
+    @apply block py-2 pl-3 pr-4 rounded bg-transparent text-[#f5cb5c] p-0 text-base
 }
 /* text-[hsl(280,100%,70%)] */
 
 .navInactive{
-    @apply block py-2 pl-3 pr-4 rounded bg-transparent  p-0
+    @apply block py-2 pl-3 pr-4 rounded bg-transparent  p-0 text-base
 }
 
 .formButton {
