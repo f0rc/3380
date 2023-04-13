@@ -1,8 +1,13 @@
-import { useContext, useMemo } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import { AuthContext } from "../auth/SessionProvider";
 import { availableRoutes } from "../RoutesPage";
 import { trpc } from "../utils/trpc";
+import { lostStockNotification } from "../../../server/trpc/router/product";
+
+import toast, { Toaster } from "react-hot-toast";
+
+const notify = () => toast("Here is your toast.");
 
 export interface RouteType {
   path: string;
@@ -15,6 +20,53 @@ export interface RouteType {
 const Layout = () => {
   const navigatr = useNavigate();
   const { authenticated } = useContext(AuthContext);
+
+  const [notification, setNotification] = useState<
+    lostStockNotification[] | undefined
+  >(undefined);
+
+  const noti = trpc.product.lowStockNotification.useQuery(undefined, {
+    enabled: false,
+  });
+
+  useEffect(() => {
+    if (authenticated?.user?.role === 3) {
+      const mon = async () => {
+        // console.log("MOPNEY");
+        const data = await noti.refetch();
+        setNotification(data.data?.products);
+      };
+      mon();
+    }
+  }, [authenticated]);
+
+  const removeToast = () => {
+    toast.dismiss();
+  };
+
+  useEffect(() => {
+    if (notification) {
+      // console.log("NOTI", notification);
+      notification.forEach((noti) => {
+        const toastid = toast.error(
+          <a onClick={removeToast}>
+            <p>
+              Product{" "}
+              <Link to={`/product/${noti.product_id}`}>
+                {noti.product_name}
+              </Link>{" "}
+              is running out of stock. Only ${noti.product_inventory_id} left.
+            </p>
+          </a>,
+
+          {
+            duration: 99999999999,
+            position: "bottom-center",
+          }
+        );
+      });
+    }
+  }, [notification]);
 
   const renderNavItems = (routes: RouteType[]) => {
     return routes
@@ -38,10 +90,10 @@ const Layout = () => {
   const { mutateAsync } = trpc.auth.logout.useMutation({
     onSuccess: (data) => {
       window.location.reload();
-      console.log("logged out");
+      // console.log("logged out");
     },
     onError: (error) => {
-      console.log("error");
+      // console.log("error");
     },
   });
 
@@ -52,6 +104,7 @@ const Layout = () => {
 
   return (
     <>
+      <Toaster />
       <nav className="px-2 py-2.5 w-full border-b border-gray-600 sticky top-0 z-20 max-h-20 backdrop-blur-md">
         <div className="container flex flex-wrap items-center justify-between mx-auto">
           <a href="/" className="flex items-center">

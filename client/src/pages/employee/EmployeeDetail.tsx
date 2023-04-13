@@ -74,7 +74,7 @@ const EmployeeDetail = () => {
   });
 
   const onSubmit = handleSubmit(async (updateData) => {
-    console.log(updateData);
+    // console.log(updateData);
     await updateEmployee.mutateAsync({
       email: updateData.email,
       firstname: updateData.firstname,
@@ -202,10 +202,10 @@ const EmployeeDetail = () => {
                     <h1 className="text-lg font-bold">Hours Worked:</h1>
                     <p>{employeeInfo.data.employee.hours}</p>
                   </div>
-                  <div className="flex flex-col gap-2">
+                  {/* <div className="flex flex-col gap-2">
                     <h1 className="text-lg font-bold">Hired By:</h1>
                     <p>{employeeInfo.data.employee.createdBy}</p>
-                  </div>
+                  </div> */}
                 </div>
               </div>
             </div>
@@ -530,9 +530,7 @@ const EmployeeDetail = () => {
           </div>
         </Modal>
       </div>
-      <div>
-        <pre>{JSON.stringify(watch(), null, 2)}</pre>
-      </div>
+      <div>{/* <pre>{JSON.stringify(watch(), null, 2)}</pre> */}</div>
     </div>
   );
 };
