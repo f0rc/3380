@@ -38,6 +38,8 @@ import {
   rankItem,
   compareItems,
 } from "@tanstack/match-sorter-utils";
+import Spinner from "../../../icons/Spinner";
+import EmployeeTableReport from "./EmployeeTable";
 
 declare module "@tanstack/table-core" {
   interface FilterFns {
@@ -119,12 +121,18 @@ const EmployeeReport = () => {
       }
     );
 
+  const employeeReport = trpc.employee.getAllEmployee.useQuery(undefined, {
+    onSuccess: (data) => {
+      // console.log("MONEY");
+    },
+  });
+
   const locationInfo = trpc.location.getOfficeLocationsFromWorksFor.useQuery();
 
   useEffect(() => {
     if (isSuccess) {
       setChartData(formatChartData(data.employeeHoursReport));
-      console.log("HEHE", chartData);
+      // console.log("HEHE", chartData);
     }
   }, [data, isSuccess]);
 
@@ -139,8 +147,8 @@ const EmployeeReport = () => {
     );
     const values = chatData.map((item) => Number(item.total_hours));
 
-    console.log("labels", labels);
-    console.log("values", values);
+    // console.log("labels", labels);
+    // console.log("values", values);
     return {
       labels,
       datasets: [
@@ -155,9 +163,9 @@ const EmployeeReport = () => {
     };
   };
   const onSubmit = handleSubmit(async (data) => {
-    console.log("refetching");
+    // console.log("refetching");
     await refetch();
-    console.log(data);
+    // console.log(data);
   });
   // TABLE:
 
@@ -165,7 +173,7 @@ const EmployeeReport = () => {
   //   return <div>Error</div>;
   // }
 
-  console.log(typeof watch("role"));
+  // console.log(typeof watch("role"));
 
   return (
     <div className="">
@@ -266,11 +274,17 @@ const EmployeeReport = () => {
               />
             )}
           </div>
-          <div>
-            <pre>{JSON.stringify(data, null, 2)}</pre>
-          </div>
+          <div>{/* <pre>{JSON.stringify(data, null, 2)}</pre> */}</div>
         </div>
       </div>
+      {employeeReport.isFetching ? (
+        <Spinner />
+      ) : (
+        chartData &&
+        employeeReport.data?.employees && (
+          <EmployeeTableReport data={employeeReport.data?.employees} />
+        )
+      )}
     </div>
   );
 };

@@ -66,7 +66,7 @@ const WorkLog = () => {
   });
 
   const handleSortColumn = (column: "week_start_date" | "total_hours") => {
-    console.log(column);
+    // console.log(column);
     if (column === sort.column) {
       // setSortOrder(sortOrder === "asc" ? "desc" : "asc");
       setSort((prev) => ({

@@ -29,7 +29,7 @@ const Signup = () => {
 
   const { mutateAsync, isLoading } = trpc.auth.signUp.useMutation({
     onSuccess: (data) => {
-      console.log(data);
+      // console.log(data);
     },
 
     onError: (error) => {
@@ -56,7 +56,7 @@ const Signup = () => {
         window.location.reload();
       }
     } catch (err) {
-      console.log(err);
+      // console.log(err);
     }
   });
 
