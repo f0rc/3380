@@ -1,6 +1,59 @@
 import { faker } from "@faker-js/faker";
 import { postgresQuery } from "./db";
 
+function generateOneWordBuildingName() {
+  const buildingPrefixes = [
+    "Aqua",
+    "Terra",
+    "Sky",
+    "Crystal",
+    "Solar",
+    "Luna",
+    "Astro",
+    "Cosmo",
+    "Eco",
+    "Geo",
+    "Magna",
+    "Meteora",
+    "Nimbus",
+    "Oceana",
+    "Plex",
+    "Regalia",
+    "Strata",
+    "Tribeca",
+    "Vista",
+    "Zephyr",
+  ];
+
+  const buildingSuffixes = [
+    "Tower",
+    "Plaza",
+    "Center",
+    "Point",
+    "Heights",
+    "Lofts",
+    "Court",
+    "Place",
+    "Square",
+    "Terrace",
+    "Gardens",
+    "Residences",
+    "Haven",
+    "Mansion",
+    "Crest",
+    "Palace",
+    "Village",
+    "Row",
+    "Station",
+    "Crossing",
+  ];
+
+  const prefix = faker.helpers.arrayElement(buildingPrefixes);
+  const suffix = faker.helpers.arrayElement(buildingSuffixes);
+
+  return prefix + suffix;
+}
+
 const createFakeLocations = async (numberOfLocations = 20) => {
   for (let i = 0; i < numberOfLocations; i++) {
     const date = faker.date.past().toLocaleDateString(); // createdAt
@@ -20,7 +73,7 @@ const createFakeLocations = async (numberOfLocations = 20) => {
           ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8);`,
         [
           faker.datatype.uuid(),
-          faker.company.name(),
+          generateOneWordBuildingName(),
           faker.address.streetAddress(),
           faker.address.city(),
           "TX",
@@ -48,11 +101,10 @@ const createFakeManagers = async (numberOfManagers = 10) => {
   const locationIDs = locations.rows.map(
     (location) => location.postoffice_location_id
   );
-  for (let i = 0; i < numberOfManagers; i++) {
+  locations.rows.forEach(async (location) => {
     const date = faker.date.past(); // createdAt
     try {
       const empUUID = faker.datatype.uuid();
-      console.log(`Creating manager ${i + 1}...`);
       const manager = await postgresQuery(
         `INSERT INTO "EMPLOYEE" ("employee_id", "email","firstname", "lastname", "birthdate", "role", "salary", "manager_id", "address_street", "address_city", "address_state", "address_zipcode", "startdate" , "createdBy", "updatedBy", "createdAt", "updatedAt") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)`,
         [
@@ -78,7 +130,8 @@ const createFakeManagers = async (numberOfManagers = 10) => {
         ]
       );
 
-      const workLocation = faker.helpers.arrayElement(locationIDs);
+      const workLocation = location.postoffice_location_id;
+
       const dbCreateWorksFor = await postgresQuery(
         `INSERT INTO "WORKS_FOR" ("employee_id", "postoffice_location_id") VALUES ($1, $2)`,
         [empUUID, workLocation]
@@ -89,9 +142,9 @@ const createFakeManagers = async (numberOfManagers = 10) => {
         [empUUID, workLocation]
       );
     } catch (error) {
-      console.log(`Error creating manager ${i + 1}:`, error);
+      console.log(`Error creating manager:`, error);
     }
-  }
+  });
 };
 
 const createFakeEmployees = async (numberOfManagers = 10) => {
@@ -105,50 +158,50 @@ const createFakeEmployees = async (numberOfManagers = 10) => {
 
   const roles = [1, 2];
 
-  for (let i = 0; i < numberOfManagers; i++) {
-    const date = faker.date.past(); // createdAt
-    try {
-      const managerID = faker.helpers.arrayElement(managerIDs);
-      const empUUID = faker.datatype.uuid();
+  managerIDs.forEach(async (managerID) => {
+    for (let i = 0; i < Math.floor(Math.random() * numberOfManagers); i++) {
+      const date = faker.date.past(); // createdAt
+      try {
+        const empUUID = faker.datatype.uuid();
 
-      console.log(`Creating manager ${i + 1}...`);
-      const manager = await postgresQuery(
-        `INSERT INTO "EMPLOYEE" ("employee_id", "email","firstname", "lastname", "birthdate", "role", "salary", "manager_id", "address_street", "address_city", "address_state", "address_zipcode", "startdate" , "createdBy", "updatedBy", "createdAt", "updatedAt") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)`,
-        [
-          empUUID, //##TODO: make this a uuid in the db automatically
-          faker.internet.email(),
-          faker.name.firstName(),
-          faker.name.lastName(),
-          faker.date.birthdate(),
-          faker.helpers.arrayElement(roles),
-          faker.datatype.number({ min: 10000, max: 100000 }),
-          managerID,
-          // input.locationID,
+        const manager = await postgresQuery(
+          `INSERT INTO "EMPLOYEE" ("employee_id", "email","firstname", "lastname", "birthdate", "role", "salary", "manager_id", "address_street", "address_city", "address_state", "address_zipcode", "startdate" , "createdBy", "updatedBy", "createdAt", "updatedAt") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)`,
+          [
+            empUUID, //##TODO: make this a uuid in the db automatically
+            faker.internet.email(),
+            faker.name.firstName(),
+            faker.name.lastName(),
+            faker.date.birthdate(),
+            faker.helpers.arrayElement(roles),
+            faker.datatype.number({ min: 10000, max: 100000 }),
+            managerID,
+            // input.locationID,
 
-          faker.address.streetAddress(),
-          faker.address.city(),
-          "TX",
-          faker.address.zipCodeByState("TX").split("-")[0],
-          date,
-          managerID,
-          managerID,
-          date,
-          date,
-        ]
-      );
+            faker.address.streetAddress(),
+            faker.address.city(),
+            "TX",
+            faker.address.zipCodeByState("TX").split("-")[0],
+            date,
+            managerID,
+            managerID,
+            date,
+            date,
+          ]
+        );
 
-      const getManagerlocations = await postgresQuery(
-        `SELECT "postoffice_location_id" FROM "WORKS_FOR" WHERE "employee_id" = $1`,
-        [managerID]
-      );
-      const dbCreateWorksFor = await postgresQuery(
-        `INSERT INTO "WORKS_FOR" ("employee_id", "postoffice_location_id") VALUES ($1, $2)`,
-        [empUUID, getManagerlocations.rows[0].postoffice_location_id]
-      );
-    } catch (error) {
-      console.log(`Error creating manager ${i + 1}:`, error);
+        const getManagerlocations = await postgresQuery(
+          `SELECT "postoffice_location_id" FROM "WORKS_FOR" WHERE "employee_id" = $1`,
+          [managerID]
+        );
+        const dbCreateWorksFor = await postgresQuery(
+          `INSERT INTO "WORKS_FOR" ("employee_id", "postoffice_location_id") VALUES ($1, $2)`,
+          [empUUID, getManagerlocations.rows[0].postoffice_location_id]
+        );
+      } catch (error) {
+        console.log(`Error creating manager`, error);
+      }
     }
-  }
+  });
 };
 
 const createFakeCustomers = async (numberOfCustomers = 10) => {
@@ -287,7 +340,7 @@ const main = async () => {
   await createFakeEmployees(30);
   await createFakeCustomers(100);
   await createFakePackages(1000);
-  await createFakeLogHours(10000);
+  await createFakeLogHours(1000);
 };
 
 main();

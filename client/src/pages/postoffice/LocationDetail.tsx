@@ -220,7 +220,7 @@ const LocationDetail = () => {
                     </>
                   </div>
                   <div>
-                    <pre>{JSON.stringify(watch(), null, 2)}</pre>
+                    {/* <pre>{JSON.stringify(watch(), null, 2)}</pre> */}
                   </div>
                   <div className="flex items-center space-x-4">
                     <button

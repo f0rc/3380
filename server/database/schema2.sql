@@ -333,9 +333,12 @@ EXECUTE FUNCTION insert_employee();
 
 -- put userid into customer table when a new customer is added
 CREATE OR REPLACE FUNCTION insert_Customer() RETURNS TRIGGER AS $$
+DECLARE
+    user_id_money TEXT;
 BEGIN
     IF EXISTS (SELECT 1 FROM "USER" WHERE "email" = NEW."email") THEN
-        UPDATE "CUSTOMER" SET "user_id" = NEW."customer_id" WHERE "email" = NEW."email";
+        SELECT "user_id" INTO user_id_money FROM "USER" WHERE "email" = NEW."email";
+        UPDATE "CUSTOMER" SET "user_id" = user_id_money WHERE "email" = NEW."email";
     END IF;
     RETURN NEW;
 END;

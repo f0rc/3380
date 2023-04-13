@@ -1,10 +1,11 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import React from "react";
+import React, { useContext } from "react";
 import { useForm } from "react-hook-form";
 
 import { z } from "zod";
 import { trpc } from "../../utils/trpc";
 import { useNavigate } from "react-router-dom";
+import { AuthContext } from "../../auth/SessionProvider";
 
 export const CreateEmployee = () => {
   const navigate = useNavigate();
@@ -35,6 +36,8 @@ export const CreateEmployee = () => {
       navigate("/employee-list");
     },
   });
+
+  const { authenticated } = useContext(AuthContext);
 
   const onSubmit = handleSubmit(async (data) => {
     // console.log("data", data);
@@ -274,15 +277,18 @@ export const CreateEmployee = () => {
                 <label className="block uppercase tracking-wide text-gray-50 text-xs font-bold mb-2">
                   Role
                 </label>
-                <input
-                  type="number"
-                  id="role"
-                  placeholder="role"
+                <select
                   {...register("role", { valueAsNumber: true })}
                   className={`'appearance-none block w-full bg-transparent border  rounded py-3 px-4 mb-3 leading-tight focus:outline-none foc' ${
                     errors.role ? "border-red-500" : ""
                   }`}
-                />
+                >
+                  <option value={1}>Clerk</option>
+                  <option value={2}>Driver</option>
+                  {authenticated?.user?.role === 4 && (
+                    <option value={3}>Manager</option>
+                  )}
+                </select>
                 {errors.role && (
                   <p className="text-red-500 text-xs italic">
                     Plsease fill out this field
@@ -299,7 +305,7 @@ export const CreateEmployee = () => {
           </form>
         </div>
       </div>
-      <pre>{JSON.stringify(watch(), null, 2)}</pre>
+      {/* <pre>{JSON.stringify(watch(), null, 2)}</pre> */}
     </div>
   );
 };
