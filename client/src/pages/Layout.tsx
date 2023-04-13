@@ -1,39 +1,53 @@
 import { useContext, useMemo } from "react";
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import { AuthContext } from "../auth/SessionProvider";
+import { availableRoutes } from "../RoutesPage";
 import { trpc } from "../utils/trpc";
+
+export interface RouteType {
+  path: string;
+  index?: boolean;
+  element: React.ReactNode;
+  label: string;
+  isNav?: boolean;
+}
 
 const Layout = () => {
   const navigatr = useNavigate();
   const { authenticated } = useContext(AuthContext);
 
-  const extendedNav = useMemo(() => {
-    if (authenticated) {
-      return true;
-    }
-    return false;
-  }, [authenticated]);
+  const renderNavItems = (routes: RouteType[]) => {
+    return routes
+      .filter((route) => route.isNav)
+      .map((route) => (
+        <li key={route.path}>
+          <NavLink
+            to={route.path}
+            className={({ isActive }) =>
+              isActive ? "navItemActive" : "navInactive"
+            }
+          >
+            {route.label}
+          </NavLink>
+        </li>
+      ));
+  };
 
   // handle login logout
 
   const { mutateAsync } = trpc.auth.logout.useMutation({
     onSuccess: (data) => {
-      console.log("logged out", data);
+      window.location.reload();
+      console.log("logged out");
     },
     onError: (error) => {
-      console.log("error", error);
+      console.log("error");
     },
   });
 
   const handleLogout = async () => {
     localStorage.removeItem("auth-session-id");
-    const result = await mutateAsync();
-    if (result.status == "success") {
-      navigatr("/login");
-      window.location.reload();
-    } else {
-      console.log("error", result);
-    }
+    await mutateAsync();
   };
 
   return (
@@ -70,56 +84,8 @@ const Layout = () => {
           >
             <ul className="flex flex-col rounded-lg md:flex-row space-x-8 mt-0 text-lg font-medium">
               {/* public nav items */}
-              <li>
-                <NavLink
-                  to="/"
-                  reloadDocument={true}
-                  className={({ isActive }) =>
-                    isActive ? "navItemActive" : "navInactive"
-                  }
-                >
-                  Home
-                </NavLink>
-              </li>
-              <li>
-                <NavLink
-                  to="/package-list"
-                  reloadDocument={true}
-                  className={({ isActive }) =>
-                    isActive ? "navItemActive" : "navInactive"
-                  }
-                >
-                  Packages
-                </NavLink>
-              </li>
-              {/* Clerk nav items */}
 
-              {extendedNav ? (
-                <>
-                  <li>
-                    <NavLink
-                      to="/create-package"
-                      reloadDocument={true}
-                      className={({ isActive }) =>
-                        isActive ? "navItemActive" : "navInactive"
-                      }
-                    >
-                      Create Package
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink
-                      to="/create-employee"
-                      reloadDocument={true}
-                      className={({ isActive }) =>
-                        isActive ? "navItemActive" : "navInactive"
-                      }
-                    >
-                      Create Employee
-                    </NavLink>
-                  </li>
-                </>
-              ) : null}
+              <>{renderNavItems(availableRoutes(authenticated))}</>
             </ul>
           </div>
         </div>

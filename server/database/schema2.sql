@@ -9,7 +9,7 @@ CREATE TABLE "EMPLOYEE" (
 
     "role" INTEGER DEFAULT 0 NOT NULL CHECK ("role" <= 4 AND "role" >= 0),
     "salary" INTEGER NOT NULL CHECK ("salary" >= 0),
-    "postoffice_location_id" TEXT NOT NULL, --refer to Post_Office_Loactions
+    "manager_id" TEXT CHECK ("manager_id" != "employee_id"),
 
     "address_street" TEXT NOT NULL,
     "address_city" TEXT NOT NULL,
@@ -17,7 +17,7 @@ CREATE TABLE "EMPLOYEE" (
     "address_zipcode" INTEGER NOT NULL,
     "startdate" DATE NOT NULL,
 
-    "createAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "createdBy" TEXT NOT NULL,
     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedBy" TEXT NOT NULL,
@@ -49,11 +49,12 @@ CREATE TABLE "CUSTOMER" (
 CREATE TABLE "PACKAGE_LOCATION_HISTORY" (
     "package_location_id" SERIAL NOT NULL,
     "package_id" TEXT NOT NULL, --refer to Package
-    "location_id" TEXT NOT NULL,
+    "postoffice_location_id" TEXT NOT NULL,
     "intransitcounter" INTEGER NOT NULL DEFAULT 0,
     -- make a status
     "status" TEXT NOT NULL CHECK ("status" IN('accepted', 'transit', 'delivered','out-for-delivery', 'fail')),
     "processedAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "processedBy" TEXT NOT NULL, --employee ID
 
     CONSTRAINT "package_location_id" PRIMARY KEY ("package_location_id")
 );
@@ -85,15 +86,11 @@ CREATE TABLE "POSTOFFICE_LOCATION" (
     "address_city" TEXT NOT NULL,
     "address_state" TEXT NOT NULL,
     "address_zipcode" INTEGER NOT NULL,
-    "phonenumber" INTEGER NOT NULL,
-    "email" TEXT NOT NULL,
-    "postoffice_location_manager" TEXT NOT NULL,    --uses Fkey
+    "postoffice_location_manager" TEXT,    --uses Fkey
 
 
     "createdAt" DATE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "createdBy" TEXT NOT NULL, --employee ID
     "updatedAt" DATE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedBy" TEXT NOT NULL, --employee ID
     
 
     CONSTRAINT "POSTOFFICE_LOCATION_PK" PRIMARY KEY ("postoffice_location_id"),
@@ -101,33 +98,24 @@ CREATE TABLE "POSTOFFICE_LOCATION" (
 );
 
 CREATE TABLE "WORKS_FOR" (
-    "works_for_id" SERIAL NOT NULL,
-    "employee_id" TEXT NOT NULL, --Pkey 
+    "works_for_id" SERIAL NOT NULL, --Pkey
+    "employee_id" TEXT NOT NULL UNIQUE,
+    "postoffice_location_id" TEXT,
+    "hours" INTEGER DEFAULT 0 NOT NULL,
+
+    CONSTRAINT "WORKS_FOR_PK" PRIMARY KEY ("works_for_id")
+);
+
+CREATE TABLE "WORK_LOG" (
+    "work_log_id" SERIAL NOT NULL, --Pkey
+    "employee_id" TEXT NOT NULL,
     "hours" INTEGER NOT NULL,
+    "date" DATE NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT "WORKS_FOR_PK" PRIMARY KEY ("works_for_id"),
-    CONSTRAINT "WORKS_FOR_EMPLOYEE_FK" FOREIGN KEY ("employee_id") REFERENCES "EMPLOYEE"("employee_id") ON DELETE CASCADE ON UPDATE CASCADE
+    CONSTRAINT "WORK_LOG_PK" PRIMARY KEY ("work_log_id")
 );
 
-CREATE TABLE "Company"(
-    "companyID" TEXT NOT NULL,
-    "ceo_fistName" VARCHAR(30) NOT NULL,
-    "ceo_lastname" VARCHAR(30) NOT NULL,
-    "email" TEXT NOT NULL,
-    "ceo_phoneNumber" INTEGER NOT NULL,
-    "companyName" TEXT NOT NULL,
-    "address_street" TEXT NOT NULL,
-    "address_street_2" TEXT,
-    "address_city" TEXT NOT NULL,
-    "address_state" TEXT NOT NULL,
-    "address_zipcode" INTEGER NOT NULL,
-    "revenue" INTEGER NOT NULL,
-    "profit" INTEGER NOT NULL,
-    "createdAt" DATE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" DATE NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT "company_pkey" PRIMARY KEY ("companyID")
-);
 CREATE TABLE "TRUCK" (
     "truck_id" TEXT NOT NULL PRIMARY KEY,
     "truck_type" VARCHAR(20) NOT NULL CHECK ("truck_type" IN('llv','van', 'semitruck')),
@@ -168,24 +156,58 @@ CREATE TABLE "DEPENDANT" (
     FOREIGN KEY ("employee_id") REFERENCES "EMPLOYEE"("employee_id")
 );
 
-CREATE TABLE "Product" (
-    "productID" TEXT NOT NULL,
-    "itemName" TEXT NOT NULL,
-    "cost" INT NOT NULL, --cost to buy
-    "msrp" INT NOT NULL, --cost to sell MSRP = Manufacturer Suggested Retail Price
+CREATE TABLE "PRODUCT" (
+    "product_id" TEXT NOT NULL,
+    "product_name" VARCHAR(255) NOT NULL,
+    "product_description" TEXT,
+    "price" DECIMAL(10, 2) NOT NULL,
+    "product_image" TEXT NOT NULL,
+    "createdBy" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    PRIMARY KEY ("productID")
+    CONSTRAINT "PRODUCT_PK" PRIMARY KEY ("product_id")
 );
 
-CREATE TABLE "Order" (
-    "orderID" TEXT NOT NULL,
-    "productID" TEXT NOT NULL,
-    "qty" SMALLINT NOT NULL,
-    "dateOfPurchase" DATE NOT NULL DEFAULT CURRENT_DATE, 
-    "updatedBy" TEXT NOT NULL, 
+CREATE TABLE "PRODUCT_INVENTORY" (
+    "product_inventory_id" SERIAL NOT NULL,
+    "product_id" TEXT NOT NULL,
+    "postoffice_location_id" TEXT NOT NULL,
+    "quantity" INTEGER NOT NULL DEFAULT 0,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    PRIMARY KEY ("orderID"),
-    FOREIGN KEY ("productID") REFERENCES "Product"("productID")
+    CONSTRAINT "PRODUCT_INVENTORY_PK" PRIMARY KEY ("product_inventory_id"),
+    CONSTRAINT "PRODUCT_INVENTORY_PRODUCT_FK" FOREIGN KEY ("product_id") REFERENCES "PRODUCT"("product_id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "PRODUCT_INVENTORY_LOCATION_FK" FOREIGN KEY ("postoffice_location_id") REFERENCES "POSTOFFICE_LOCATION"("postoffice_location_id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE "ORDER" (
+    "order_id" SERIAL NOT NULL,
+    "customer_id" TEXT NOT NULL,
+    "postoffice_location_id" TEXT NOT NULL,
+    "total_price" NUMERIC(10, 2) NOT NULL,
+    "order_date" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    PRIMARY KEY ("order_id"),
+    FOREIGN KEY ("customer_id") REFERENCES "CUSTOMER"("customer_id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "PRODUCT_TRANSACTION_LOCATION_FK" FOREIGN KEY ("postoffice_location_id") REFERENCES "POSTOFFICE_LOCATION"("postoffice_location_id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE "ORDER_ITEMS" (
+    "order_item_id" SERIAL NOT NULL,
+    "order_id" INTEGER NOT NULL,
+    "product_id" TEXT NOT NULL,
+    "quantity" INTEGER NOT NULL,
+    "price" NUMERIC(10, 2) NOT NULL,
+    
+    "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    
+    CONSTRAINT "PRODUCT_TRANSACTION_PK" PRIMARY KEY ("order_item_id"),
+    CONSTRAINT "PRODUCT_TRANSACTION_PRODUCT_FK" FOREIGN KEY ("order_id") REFERENCES "ORDER"("order_id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "PRODUCT_ITEM_FK" FOREIGN KEY ("product_id") REFERENCES "PRODUCT"("product_id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 
@@ -291,7 +313,7 @@ FOR EACH ROW
 EXECUTE FUNCTION insert_user();
 
 
--- after the inser of employee, check a users table with email of the employee if it exists then update the employee table
+-- put userid into employee table when a new employee is added
 CREATE OR REPLACE FUNCTION insert_employee() RETURNS TRIGGER AS $$
 DECLARE
     emp_user_id TEXT;
@@ -309,7 +331,7 @@ AFTER INSERT ON "EMPLOYEE"
 FOR EACH ROW
 EXECUTE FUNCTION insert_employee();
 
-
+-- put userid into customer table when a new customer is added
 CREATE OR REPLACE FUNCTION insert_Customer() RETURNS TRIGGER AS $$
 BEGIN
     IF EXISTS (SELECT 1 FROM "USER" WHERE "email" = NEW."email") THEN
@@ -324,56 +346,153 @@ AFTER INSERT ON "CUSTOMER"
 FOR EACH ROW
 EXECUTE FUNCTION insert_Customer();
 
-
-CREATE OR REPLACE FUNCTION insert_LOCATION_HISTORY() RETURNS TRIGGER AS $$
-DECLARE
-    emp_location_id TEXT;
+-- update "USER" table when a new "USER" is added with the same role as the "EMPLOYEE" table if the "EMPLOYEE" table has a matching email
+CREATE OR REPLACE FUNCTION update_user_role() RETURNS TRIGGER AS $$
 BEGIN
-    SELECT "postoffice_location_id" FROM "EMPLOYEE" WHERE "EMPLOYEE"."user_id" = NEW."createdBy" INTO emp_location_id;
-    -- insert into package location history after insert on package
-    INSERT INTO "PACKAGE_LOCATION_HISTORY" ("package_id","location_id", "status")
-    VALUES (NEW."package_id", emp_location_id, 'accepted');
+    IF EXISTS (SELECT 1 FROM "EMPLOYEE" WHERE "email" = NEW."email") THEN
+        UPDATE "USER" SET "role" = (SELECT "role" FROM "EMPLOYEE" WHERE "email" = NEW."email") WHERE "email" = NEW."email";
+    END IF;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER insert_LOCTION_HISTORY_trigger
-AFTER INSERT ON "PACKAGE"
+CREATE TRIGGER update_user_role_trigger
+AFTER INSERT ON "USER"
 FOR EACH ROW
-EXECUTE FUNCTION insert_LOCATION_HISTORY();
+EXECUTE FUNCTION update_user_role();
 
 
-CREATE TRIGGER adding_Profit ON orders
-AFTER INSERT ON purchases
-FOR EACH ROW
+CREATE TABLE "EMAIL_NOTIFICATION" (
+    "email_notification_id" SERIAL NOT NULL,
+    "recipient" TEXT NOT NULL,
+    "subject" TEXT NOT NULL,
+    "body" TEXT NOT NULL,
+    "sent" BOOLEAN NOT NULL DEFAULT FALSE,
+    "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "EMAIL_NOTIFICATION_PK" PRIMARY KEY ("email_notification_id")
+);
+
+
+-- email trigger
+CREATE OR REPLACE FUNCTION email_after_insert()
+RETURNS TRIGGER AS $$
 BEGIN
-    Update Company
-    CONSTRAINT "company_profit" PRIMARY KEY ("profit"),
-    CONSTRAINT "company_ProductID" PRIMARY KEY("ProductID");
-    CONSTRAINT "Product_Cost" PRIMARY KEY("Cost");
+    INSERT INTO email_notifications (recipient_email, subject, message)
+    VALUES (NEW.email, 'Order Confirmation', 'Thank you for your order. Your order ID is ' || NEW.package_id || '.');
 
-    SELECT company_profit, company_ProductID
-    FROM Company,Product
-    SET company_profit = company_profit+Product_Cost
-    WHERE company.id = NEW.company_id;
-    END IF;
+    RETURN NEW;
 END;
+$$ LANGUAGE plpgsql;
 
-CREATE TRIGGER receipt_Sender ON orders
+CREATE TRIGGER email_after_insert_trigger
+AFTER INSERT ON "PACKAGE_LOCATION_HISTORY"
 FOR EACH ROW
+EXECUTE FUNCTION orders_after_insert();
+
+-- email trigger update
+CREATE OR REPLACE FUNCTION email_after_update()
+RETURNS TRIGGER AS $$
 BEGIN
-    CONSTRAINT "customer_email" PRIMARY KEY ("email"),
-    "order_id" INT;
-    "order_total" DECIMAL(10,2);
-    "order_date" DATE;
+    INSERT INTO email_notifications (recipient_email, subject, message)
+    VALUES (NEW.email, 'Order Update', 'Thank you for your order. Your order ID is ' || NEW.package_id || ' and its current status is '|| NEW.status || '.');
 
-    SELECT customer_email, order_id, total_amount, order_date
-    FROM customer
-    WHERE order_id = NEW.order_id;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
 
-    IF customer_email IS NOT NULL THEN
-        SELECT CONCAT('Order Receipt for Order #', order_id, '\n\n',
-                      'Order Date: ', order_date, '\n',
-                      'Total Amount: $', order_total) AS receipt;
+CREATE TRIGGER email_after_update_trigger
+AFTER UPDATE ON "PACKAGE_LOCATION_HISTORY"
+FOR EACH ROW
+EXECUTE FUNCTION orders_after_insert();
+
+
+CREATE TABLE "LOW_STOCK_ALERTS" (
+    "alert_id" SERIAL NOT NULL,
+    "product_inventory_id" INTEGER NOT NULL,
+    "postoffice_location_id" TEXT NOT NULL,
+    "alert_date" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "is_resolved" BOOLEAN NOT NULL DEFAULT FALSE,
+
+    CONSTRAINT "LOW_STOCK_ALERTS_PK" PRIMARY KEY ("alert_id"),
+    CONSTRAINT "LOW_STOCK_ALERTS_PRODUCT_INVENTORY_FK" FOREIGN KEY ("product_inventory_id") REFERENCES "PRODUCT_INVENTORY"("product_inventory_id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "LOW_STOCK_ALERTS_LOCATION_FK" FOREIGN KEY ("postoffice_location_id") REFERENCES "POSTOFFICE_LOCATION"("postoffice_location_id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE OR REPLACE FUNCTION check_low_stock() RETURNS TRIGGER AS $$
+BEGIN
+    IF (TG_OP = 'INSERT' OR TG_OP = 'UPDATE') AND NEW.quantity <= 10 THEN
+        INSERT INTO "LOW_STOCK_ALERTS" ("product_inventory_id", "postoffice_location_id")
+        VALUES (NEW.product_inventory_id, NEW.postoffice_location_id);
     END IF;
-END; 
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER low_stock_trigger
+AFTER INSERT OR UPDATE ON "PRODUCT_INVENTORY"
+FOR EACH ROW
+EXECUTE FUNCTION check_low_stock();
+
+-- trigger to add a new entry into "WORKS_FOR" table when a new employee is added
+
+
+
+-- does not work
+-- CREATE TRIGGER adding_Profit ON orders
+-- AFTER INSERT ON purchases
+-- FOR EACH ROW
+-- BEGIN
+--     Update Company
+--     CONSTRAINT "company_profit" PRIMARY KEY ("profit"),
+--     CONSTRAINT "company_ProductID" PRIMARY KEY("ProductID");
+--     CONSTRAINT "Product_Cost" PRIMARY KEY("Cost");
+
+--     SELECT company_profit, company_ProductID
+--     FROM Company,Product
+--     SET company_profit = company_profit+Product_Cost
+--     WHERE company.id = NEW.company_id;
+--     END IF;
+-- END;
+
+-- CREATE TRIGGER receipt_Sender ON orders
+-- FOR EACH ROW
+-- BEGIN
+--     CONSTRAINT "customer_email" PRIMARY KEY ("email"),
+--     "order_id" INT;
+--     "order_total" DECIMAL(10,2);
+--     "order_date" DATE;
+
+--     SELECT customer_email, order_id, total_amount, order_date
+--     FROM customer
+--     WHERE order_id = NEW.order_id;
+
+--     IF customer_email IS NOT NULL THEN
+--         SELECT CONCAT('Order Receipt for Order #', order_id, '\n\n',
+--                       'Order Date: ', order_date, '\n',
+--                       'Total Amount: $', order_total) AS receipt;
+--     END IF;
+-- END; 
+
+
+-- need to fix this
+-- CREATE TABLE "Company"(
+--     "companyID" TEXT NOT NULL,
+--     "ceo_fistName" VARCHAR(30) NOT NULL,
+--     "ceo_lastname" VARCHAR(30) NOT NULL,
+--     "email" TEXT NOT NULL,
+--     "ceo_phoneNumber" INTEGER NOT NULL,
+--     "companyName" TEXT NOT NULL,
+--     "address_street" TEXT NOT NULL,
+--     "address_street_2" TEXT,
+--     "address_city" TEXT NOT NULL,
+--     "address_state" TEXT NOT NULL,
+--     "address_zipcode" INTEGER NOT NULL,
+--     "revenue" INTEGER NOT NULL,
+--     "profit" INTEGER NOT NULL,
+--     "createdAt" DATE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+--     "updatedAt" DATE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+--     CONSTRAINT "company_pkey" PRIMARY KEY ("companyID")
+-- );

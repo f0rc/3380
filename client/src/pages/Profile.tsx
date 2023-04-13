@@ -1,6 +1,10 @@
-import React from "react";
+import React, { useContext } from "react";
+import { AuthContext } from "../auth/SessionProvider";
 
 function Profile() {
+  // const { authenticated } = useContext(AuthContext);
+
+  // console.log("authenticated", authenticated);
   return (
     <div className="overflow-none flex h-screen justify-center">
       <div className="flex h-full w-full flex-col md:max-w-5xl border-x">
