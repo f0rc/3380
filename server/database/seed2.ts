@@ -148,7 +148,7 @@ const createDriver = async () => {
       "driver", //firstname
       "DRIVER", //last name
       "12 / 20 / 1990", //birthdate
-      1, // role
+      2, // role
       "1000000", //salary
       "123 kitty drive", //address sttreet
       "fakeCity", // address city
@@ -237,7 +237,7 @@ const createCustomer = async () => {
       customerUUID, //##TODO: make this a uuid in the db automatically /1
       "customer", //2
       "CUSTOMER", //3
-      2, //4
+      0, //4
       "123456789", //5
       "123 kitty drive", //6
       "fakeCity", //7
