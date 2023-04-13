@@ -14,6 +14,7 @@ export const serverSchema = z.object({
   PGPASSWORD: z.string(),
   PGDATABASE: z.string(),
   PGPORT: z.string(),
+  TWILIO_AUTH_TOKEN: z.string(),
 });
 
 /** @typedef {z.input<typeof serverSchema>} MergedInput */

@@ -8,7 +8,7 @@ export const Products = () => {
 
   const [location, setLocation] = React.useState("");
   useEffect(() => {
-    console.log(location);
+    // console.log(location);
   }, [location]);
 
   return (

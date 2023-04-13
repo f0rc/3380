@@ -37,7 +37,7 @@ const Dashboard = () => {
                 >
                   <option value="packages">Packages</option>
                   <option value="employees">Employees</option>
-                  <option value="products">Products</option>
+                  {/* <option value="products">Products</option> */}
                 </select>
               </div>
             </div>
