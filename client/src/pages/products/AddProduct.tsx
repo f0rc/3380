@@ -8,8 +8,10 @@ import { trpc } from "../../utils/trpc";
 import { storage } from "../../utils/firebase";
 import { v4 } from "uuid";
 import Spinner from "../../icons/Spinner";
+import { useNavigate } from "react-router-dom";
 
 export const AddProduct = () => {
+  const navigo = useNavigate();
   const {
     register,
     handleSubmit,
@@ -28,7 +30,7 @@ export const AddProduct = () => {
 
   const { mutateAsync, isLoading } = trpc.product.create.useMutation({
     onSuccess: (data) => {
-      console.log(data.product.product_id);
+      navigo("/product/" + data.product.product_id);
     },
   });
   const [isUploading, setUploading] = useState(false);

@@ -2,8 +2,6 @@ import React from "react";
 import ProductsReport from "./ProductsReport";
 import PackagesReport from "./package/PackagesReport";
 import EmployeeReport from "./Employee/EmployeeReport";
-import Money from "./package/PackageTable";
-
 const Dashboard = () => {
   const [reportType, setReportType] = React.useState("packages");
 

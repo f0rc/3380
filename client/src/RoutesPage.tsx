@@ -20,8 +20,10 @@ import { AddProduct } from "./pages/products/AddProduct";
 import Profile from "./pages/Profile";
 import Signup from "./pages/Signup";
 import Dashboard from "./pages/Reports/Dashboard";
-import Money from "./pages/Reports/package/PackageTable";
 import WorkLog from "./pages/WorkLog";
+import ListProducts from "./pages/products/ListProducts";
+import { ProductDetail } from "./pages/products/ProductDetail";
+import { Products } from "./pages/products/Products";
 
 const baseRoutes = [
   { path: "/", index: true, element: <Home />, label: "Home", isNav: true },
@@ -32,6 +34,13 @@ const baseRoutes = [
     path: "/package/:id",
     element: <PackageDetail />,
     label: "Package",
+    isNav: false,
+  },
+  { path: "store", element: <Products />, label: "Store", isNav: true },
+  {
+    path: "/product/:id",
+    element: <ProductDetail />,
+    label: "Product",
     isNav: false,
   },
 ];
