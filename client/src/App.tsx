@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { httpBatchLink } from "@trpc/client";
+import { httpBatchLink, loggerLink } from "@trpc/client";
 import { useState } from "react";
 import { trpc } from "./utils/trpc";
 import superjson from "superjson";
@@ -12,9 +12,16 @@ export function App() {
     trpc.createClient({
       transformer: superjson,
       links: [
+        loggerLink({
+          enabled: () => false,
+        }),
+
         httpBatchLink({
-          url: `${import.meta.env.VITE_BACKEND_URL}`,
+          url: `${import.meta.env.VITE_BACKEND_URL}:${
+            import.meta.env.VITE_BACKEND_PORT
+          }`,
           fetch(url, opts) {
+            // console.log(import.meta.env.VITE_BACKEND_PORT);
             return fetch(url, {
               ...opts,
               credentials: "include",

@@ -23,7 +23,26 @@ export const getServerAuthSession = async (ctx: {
 
 export const getDatabaseSession = async (sessionToken: string) => {
   const data = await postgresQuery(
-    `SELECT "SESSION"."token","SESSION"."expires", "USER"."user_id", "USER"."email", "USER"."role" FROM "SESSION", "USER" WHERE "token" = $1 AND "USER"."user_id" = "SESSION"."user_id" LIMIT 1`,
+    `SELECT 
+        "SESSION"."token", 
+        "SESSION"."expires", 
+        "USER"."user_id", 
+        "USER"."email", 
+        "USER"."role", 
+        "CUSTOMER"."customer_id", 
+        "EMPLOYEE"."employee_id"
+    FROM 
+        "SESSION"
+    JOIN 
+        "USER" ON "USER"."user_id" = "SESSION"."user_id"
+    LEFT JOIN 
+        "CUSTOMER" ON "CUSTOMER"."user_id" = "USER"."user_id"
+    LEFT JOIN 
+        "EMPLOYEE" ON "EMPLOYEE"."user_id" = "USER"."user_id"
+    WHERE 
+        "token" = $1
+    LIMIT 1
+    `,
     [sessionToken]
   );
   if (data.rowCount === 0) {
@@ -49,6 +68,8 @@ export const mapDBSessionToSession = (dbSession: any): Session => {
       id: dbSession.user_id,
       email: dbSession.email,
       role: dbSession.role,
+      customer_id: dbSession.customer_id,
+      employee_id: dbSession.employee_id,
     },
   };
 };
