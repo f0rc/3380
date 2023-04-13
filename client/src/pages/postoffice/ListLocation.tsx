@@ -7,7 +7,7 @@ const ListLocations = () => {
   const { data, isLoading, isError } =
     trpc.location.getAllOfficeLocations.useQuery(undefined, {
       onSuccess: (data) => {
-        console.log("MONEY");
+        // console.log("MONEY");
       },
     });
 
@@ -61,7 +61,7 @@ const ListLocations = () => {
       | "manager_lastname"
       | "employee_count"
   ) => {
-    console.log(column);
+    // console.log(column);
     if (column === sort.column) {
       // setSortOrder(sortOrder === "asc" ? "desc" : "asc");
       setSort((prev) => ({
@@ -77,11 +77,11 @@ const ListLocations = () => {
     const foundLocation = data?.locations.find(
       (location) => location.postoffice_location_id === locationId
     );
-    console.log("INDEX", foundLocation?.locationname);
+    // console.log("INDEX", foundLocation?.locationname);
     navigate(`/location/${locationId}`, {
       state: { data: foundLocation?.postoffice_location_id },
     });
-    console.log(data);
+    // console.log(data);
   };
 
   if (isLoading) {
@@ -94,6 +94,23 @@ const ListLocations = () => {
   return (
     <div className="">
       <div className="min-h-[80hv] mt-20">
+        <div className="flex justify-center">
+          <div className="w-3/4">
+            <div className="flex justify-between">
+              <div className="text-3xl font-bold text-[#e5e5e5]">
+                Post Office Locations
+              </div>
+              <div className="flex items-center">
+                <button
+                  className="bg-[#1D1D1C] text-[#e5e5e5] font-bold py-2 px-4 rounded-full"
+                  onClick={() => navigate("/add-location")}
+                >
+                  Create Location
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
         <div className="flex justify-center align-middle">
           <table className="table-auto w-3/4 bg-[#1D1D1C] shadow-md overflow-hidden text-[#e5e5e5] border border-[#41413E]">
             <thead className="text-lg">
@@ -163,7 +180,7 @@ const ListLocations = () => {
 
             <tbody className="text-gray-100 text-center text-[1.2rem]">
               {data?.locations.map((pkg, index) => {
-                console.log(index);
+                // console.log(index);
                 return (
                   <tr
                     key={pkg.postoffice_location_id}

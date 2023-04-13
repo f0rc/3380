@@ -25,7 +25,7 @@ import {
   compareItems,
 } from "@tanstack/match-sorter-utils";
 import { useNavigate } from "react-router-dom";
-import { employeeList } from "../../../../../server/trpc/router/employee";
+import { employeeList } from "../../../../server/trpc/router/employee";
 
 declare module "@tanstack/table-core" {
   interface FilterFns {
@@ -64,11 +64,7 @@ const fuzzySort: SortingFn<any> = (rowA, rowB, columnId) => {
   return dir === 0 ? sortingFns.alphanumeric(rowA, rowB, columnId) : dir;
 };
 
-export default function EmployeeTableReport({
-  data,
-}: {
-  data: employeeList[];
-}) {
+export default function EmployeeTable({ data }: { data: employeeList[] }) {
   const rerender = React.useReducer(() => ({}), {})[1];
 
   const handlePackageClick = (employee: any) => {

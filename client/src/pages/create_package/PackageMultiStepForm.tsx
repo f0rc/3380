@@ -43,10 +43,8 @@ export const PackageInfoForm = (
     );
   }, [isDirty, setForm]);
 
-  const submitForm = (
-    data: typeof defaultFormState.steps.packageInfo.value
-  ) => {
-    console.log("submmiting", data);
+  const submitForm = (data: any) => {
+    // console.log("submmiting", data);
     setForm(
       produce((form) => {
         form.steps.packageInfo = {
@@ -70,7 +68,7 @@ export const PackageInfoForm = (
             <div className="gap-4 flex flex-row space-x-3">
               <select
                 className="inputFieldRegister"
-                {...register("packageType")}
+                {...register("packageType", { required: "This is required" })}
               >
                 <option value="" disabled>
                   Select Option
@@ -109,6 +107,7 @@ export const PackageInfoForm = (
               className="inputFieldRegister"
               {...register("packageWeight", {
                 valueAsNumber: true,
+                required: "This is required",
               })}
             />
             {errors.packageWeight && (

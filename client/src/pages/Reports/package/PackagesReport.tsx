@@ -133,7 +133,7 @@ const PackagesReport = () => {
   useEffect(() => {
     if (isSuccess) {
       setChartData(formatChartData(data.packageReport));
-      console.log("HEHE", chartData);
+      // console.log("HEHE", chartData);
     }
   }, [data, isSuccess]);
 
@@ -143,8 +143,8 @@ const PackagesReport = () => {
     const labels = chatData.map((item) => item.month);
     const values = chatData.map((item) => item.package_count);
 
-    console.log("labels", labels);
-    console.log("values", values);
+    // console.log("labels", labels);
+    // console.log("values", values);
     return {
       labels,
       datasets: [
@@ -159,9 +159,9 @@ const PackagesReport = () => {
     };
   };
   const onSubmit = handleSubmit(async (data) => {
-    console.log("refetching");
+    // console.log("refetching");
     await refetch();
-    console.log(data);
+    // console.log(data);
   });
 
   // TABLE:

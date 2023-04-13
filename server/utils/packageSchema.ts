@@ -19,6 +19,7 @@ export const packageInfoSchema = z.object({
     })
     .default("small"),
   packageWeight: z.number().min(0).max(1000).default(0),
+  price: z.number().min(0).default(0),
 });
 
 export const personInfoSchema = z.object({

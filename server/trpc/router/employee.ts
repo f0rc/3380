@@ -103,7 +103,7 @@ export const employeeRouter = router({
       []
     );
 
-    console.log(dbGetEmployee.rows);
+    // console.log(dbGetEmployee.rows);
 
     return {
       status: "success",
@@ -138,7 +138,7 @@ export const employeeRouter = router({
         [input.employeeID]
       );
 
-      console.log(dbGetEmployee.rows);
+      // console.log(dbGetEmployee.rows);
 
       return {
         status: "success",

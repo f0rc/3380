@@ -1,8 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { trpc } from "../../utils/trpc";
 import { getProductWithQuantity } from "../../../../server/trpc/router/product";
 import { getDownloadURL, ref } from "firebase/storage";
 import { storage } from "../../utils/firebase";
+import { useNavigate } from "react-router-dom";
+import { AuthContext } from "../../auth/SessionProvider";
 
 interface CartItem extends getProductWithQuantity {
   quantity: number;
@@ -116,6 +118,7 @@ const ListProducts = (props: propsType) => {
     await refetch();
     setCart([]);
   };
+  const { authenticated } = useContext(AuthContext);
 
   const [productImageUrl, setProductImageUrl] = React.useState<
     Map<string, string>
@@ -150,8 +153,10 @@ const ListProducts = (props: propsType) => {
     return true;
   };
 
+  const navigate = useNavigate();
+
   return (
-    // make a two column layout
+    // <div className="flex flex-col justify-center items-center align-middle w-full h-screen">
     <div className="flex flex-row  h-[75vh]">
       {/* left column */}
       <div className="flex justify-center items-center  align-middle w-3/4  border-gray-500">
@@ -162,10 +167,17 @@ const ListProducts = (props: propsType) => {
             <div className="flex flex-wrap gap-4 justify-center">
               {data?.products.map((product) => (
                 <div
-                  className="flex flex-col w-1/4 p-4"
+                  className="flex flex-col w-1/4 p-4 hover:shadow-lg rounded-md border cursor-pointer "
                   key={product.product_id}
                 >
-                  <div className="flex-1 flex-col justify-center items-center align-middle flex">
+                  <div
+                    className="flex-1 flex-col justify-center items-center align-middle flex"
+                    onClick={() =>
+                      navigate(`/product/${product.product_id}`, {
+                        state: { locationId: props.locationId },
+                      })
+                    }
+                  >
                     <img
                       src={productImageUrl.get(product.product_id)}
                       alt={product.product_name}
@@ -213,94 +225,108 @@ const ListProducts = (props: propsType) => {
         </div>
       </div>
       {/* right column */}
-      <div className="flex w-1/4 justify-between">
-        <div className="flex-1">
-          <h1 className="text-2xl font-bold">Cart</h1>
-          <ul className="m-4">
-            {cart.map((product) => (
-              <li key={product.product_id}>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <img
-                      src={productImageUrl.get(product.product_id)}
-                      alt={product.product_name}
-                      className="w-10 h-10 mr-4"
-                    />
-                    <div>
-                      <h2 className="text-lg font-bold">
-                        {product.product_name}
-                      </h2>
-                      <p className="text-sm text-gray-500">${product.price}</p>
+
+      {authenticated ? (
+        <div className="flex w-1/4 justify-between">
+          <div className="flex-1">
+            <h1 className="text-2xl font-bold">Cart</h1>
+            <ul className="m-4">
+              {cart.map((product) => (
+                <li key={product.product_id}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <img
+                        src={productImageUrl.get(product.product_id)}
+                        alt={product.product_name}
+                        className="w-10 h-10 mr-4"
+                      />
+                      <div>
+                        <h2 className="text-lg font-bold">
+                          {product.product_name}
+                        </h2>
+                        <p className="text-sm text-gray-500">
+                          ${product.price}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center">
+                      <button
+                        className={
+                          `px-4 py-2 text-sm font-bold text-white bg-blue-500 rounded-md` +
+                          ` ${
+                            product.quantity === 1
+                              ? "opacity-50"
+                              : false || product.available_quantity === 0
+                              ? "opacity-50"
+                              : false
+                          }`
+                        }
+                        onClick={() => removeFromCart(product)}
+                      >
+                        -
+                      </button>
+                      <span className="px-4 py-2 text-sm font-bold text-white bg-blue-500 rounded-md">
+                        {product.quantity}
+                      </span>
+                      <button
+                        className={
+                          `px-4 py-2 text-sm font-bold text-white bg-blue-500 rounded-md` +
+                          ` ${
+                            (canAddTOCart(product) ? false : "opacity-50") ||
+                            product.available_quantity === 0
+                              ? "opacity-50"
+                              : false
+                          }`
+                        }
+                        onClick={() => addToCart(product)}
+                        disabled={
+                          (canAddToCart(product) ? false : true) ||
+                          product.available_quantity === 0
+                        }
+                      >
+                        +
+                      </button>
                     </div>
                   </div>
-                  <div className="flex items-center">
-                    <button
-                      className={
-                        `px-4 py-2 text-sm font-bold text-white bg-blue-500 rounded-md` +
-                        ` ${
-                          product.quantity === 1
-                            ? "opacity-50"
-                            : false || product.available_quantity === 0
-                            ? "opacity-50"
-                            : false
-                        }`
-                      }
-                      onClick={() => removeFromCart(product)}
-                    >
-                      -
-                    </button>
-                    <span className="px-4 py-2 text-sm font-bold text-white bg-blue-500 rounded-md">
-                      {product.quantity}
-                    </span>
-                    <button
-                      className={
-                        `px-4 py-2 text-sm font-bold text-white bg-blue-500 rounded-md` +
-                        ` ${
-                          (canAddTOCart(product) ? false : "opacity-50") ||
-                          product.available_quantity === 0
-                            ? "opacity-50"
-                            : false
-                        }`
-                      }
-                      onClick={() => addToCart(product)}
-                      disabled={
-                        (canAddToCart(product) ? false : true) ||
-                        product.available_quantity === 0
-                      }
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ul>
+                </li>
+              ))}
+            </ul>
 
-          <div className="flex justify-end mt-4">
-            <div>
-              <h2 className="text-lg font-bold">Total</h2>
-              <p className="text-sm text-gray-500">
-                $
-                {cart.reduce(
-                  (total, product) => total + product.price * product.quantity,
-                  0
-                )}
-              </p>
+            <div className="flex justify-end mt-4">
+              <div>
+                <h2 className="text-lg font-bold">Total</h2>
+                <p className="text-sm text-gray-500">
+                  $
+                  {cart.reduce(
+                    (total, product) =>
+                      total + product.price * product.quantity,
+                    0
+                  )}
+                </p>
+              </div>
+              <button
+                className={
+                  `px-4 py-2 text-sm font-bold text-white bg-blue-500 rounded-md` +
+                  ` ${cart.length === 0 ? "opacity-50" : ""}`
+                }
+                onClick={handleCheckout}
+                disabled={cart.length === 0}
+              >
+                Checkout
+              </button>
             </div>
-            <button
-              className={
-                `px-4 py-2 text-sm font-bold text-white bg-blue-500 rounded-md` +
-                ` ${cart.length === 0 ? "opacity-50" : ""}`
-              }
-              onClick={handleCheckout}
-              disabled={cart.length === 0}
-            >
-              Checkout
-            </button>
           </div>
         </div>
-      </div>
+      ) : (
+        <div className="flex w-1/4 justify-between">
+          <div className="flex-1">
+            <h1 className="text-2xl font-bold">Cart</h1>
+            Please Sign up or Log In to view your cart
+          </div>
+        </div>
+      )}
     </div>
+    // </div>
   );
 };
 
