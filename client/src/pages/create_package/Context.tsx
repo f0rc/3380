@@ -1,4 +1,10 @@
-import React, { createContext, useCallback, useContext, useState } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 import { defaultFormState, formSchemaType } from "./formSchema";
 import { produce } from "immer";
 import { Tab } from "@headlessui/react";
@@ -82,13 +88,49 @@ const CreateMultiStepForm = () => {
   const { mutateAsync, isLoading, data } =
     trpc.package.createPackage.useMutation({
       onSuccess: (data) => {
-        console.log("success");
+        // console.log("success");
         const packageDetails = data?.package;
         navigate(`/package/${data?.package.package_id}`, {
           state: { data: packageDetails },
         });
       },
     });
+
+  const calculatePrice = () => {
+    const { packageSize, packageType, packageWeight } =
+      form.steps.packageInfo.value;
+    if (packageSize && packageType && packageWeight) {
+      if (packageType === "envelope") {
+        if (packageSize === "small") {
+          return 5 * packageWeight;
+        } else if (packageSize === "medium") {
+          return 10 * packageWeight;
+        } else {
+          return 15 * packageWeight;
+        }
+      } else if (packageType === "box") {
+        if (packageSize === "small") {
+          return 20 * packageWeight;
+        } else if (packageSize === "medium") {
+          return 30 * packageWeight;
+        } else {
+          return 50 * packageWeight;
+        }
+      } else {
+        return 30 * packageWeight;
+      }
+    } else {
+      return 0;
+    }
+  };
+
+  useEffect(() => {
+    setForm(
+      produce((form) => {
+        form.steps.packageInfo.value.price = calculatePrice();
+      })
+    );
+  }, [form.steps.packageInfo.value, setForm]);
 
   async function submitForm() {
     await mutateAsync(form);
@@ -146,13 +188,19 @@ const CreateMultiStepForm = () => {
                       isLoading={isLoading}
                     />
                   </Tab.Panel>
+
+                  <div className="text-center w-full">
+                    <p className="p-10 text-center">
+                      COST: $ {form.steps.packageInfo.value.price}
+                    </p>
+                  </div>
                 </Tab.Panels>
               </div>
             </div>
           </div>
         </Tab.Group>
       </div>
-      <pre>{JSON.stringify(form, null, 2)}</pre>
+      {/* <pre>{JSON.stringify(form, null, 2)}</pre> */}
     </>
   );
 };

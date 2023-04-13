@@ -24,7 +24,7 @@ import WorkLog from "./pages/WorkLog";
 import ListProducts from "./pages/products/ListProducts";
 import { ProductDetail } from "./pages/products/ProductDetail";
 import { Products } from "./pages/products/Products";
-
+import ProductTable from "./pages/ProductTable";
 const baseRoutes = [
   { path: "/", index: true, element: <Home />, label: "Home", isNav: true },
   { path: "signup", element: <Signup />, label: "Signup", isNav: false },
@@ -49,16 +49,23 @@ const loggedRoutes = [
   {
     path: "package-list",
     element: <PackageList />,
-    label: "Packages",
+    label: "My Packages",
     isNav: true,
   },
 ];
-// const driverRoutes = []; // todo
+const driverRoutes = [
+  {
+    path: "work-log",
+    element: <WorkLog />,
+    label: "Work Log",
+    isNav: true,
+  },
+];
 const clerkRoutes = [
   {
     path: "create-package",
     element: <CreatePackage />,
-    label: "Create Package",
+    label: "Manage Packages",
     isNav: true,
   },
   {
@@ -73,7 +80,7 @@ const managerRoutes = [
     path: "create-employee",
     element: <CreateEmployee />,
     label: "Create Employee",
-    isNav: true,
+    isNav: false,
   },
   {
     path: "employee/:id",
@@ -84,13 +91,22 @@ const managerRoutes = [
   {
     path: "employee-list",
     element: <Employee />,
-    label: "Employee List",
+    label: "Manage Employee",
     isNav: true,
   },
   {
     path: "add-product",
     element: <AddProduct />,
-    label: "Add Product",
+    label: "Manage Products",
+    isNav: false,
+  },
+];
+
+const managerOnlyRoutes = [
+  {
+    path: "product-list",
+    element: <ProductTable />,
+    label: "Manage Products",
     isNav: true,
   },
 ];
@@ -99,13 +115,13 @@ const ceoRoutes = [
     path: "add-location",
     element: <AddLocation />,
     label: "Add Location",
-    isNav: true,
+    isNav: false,
   },
   {
     path: "locations",
     element: <ListLocations />,
     label: "Locations",
-    isNav: false,
+    isNav: true,
   },
   {
     path: "location/:id",
@@ -128,9 +144,15 @@ export function availableRoutes(auth: Session | null) {
     case 1:
       return [...baseRoutes, ...loggedRoutes, ...clerkRoutes];
     case 2:
-      return [...baseRoutes, ...loggedRoutes]; // TODO DRIVER ROLES
+      return [...baseRoutes, ...loggedRoutes, ...driverRoutes]; // TODO DRIVER ROLES
     case 3:
-      return [...baseRoutes, ...loggedRoutes, ...clerkRoutes, ...managerRoutes];
+      return [
+        ...baseRoutes,
+        ...loggedRoutes,
+        ...clerkRoutes,
+        ...managerRoutes,
+        ...managerOnlyRoutes,
+      ];
     case 4:
       return [
         ...baseRoutes,

@@ -37,7 +37,7 @@ export const CreateEmployee = () => {
   });
 
   const onSubmit = handleSubmit(async (data) => {
-    console.log("data", data);
+    // console.log("data", data);
     await mutateAsync(data);
   });
 

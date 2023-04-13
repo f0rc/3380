@@ -25,11 +25,11 @@ const Login = () => {
 
   const { mutateAsync, isLoading } = trpc.auth.signin.useMutation({
     onSuccess: (data) => {
-      console.log(data);
+      // console.log(data);
     },
 
     onError: (error) => {
-      console.log(error);
+      // console.log(error);
       reset({
         email: watch("email"),
         password: "",
@@ -52,10 +52,10 @@ const Login = () => {
         navigate("/");
         window.location.reload();
       } else {
-        console.log("error", result);
+        // console.log("error", result);
       }
     } catch (err) {
-      console.log(err);
+      // console.log(err);
     }
   });
 

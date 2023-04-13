@@ -1,22 +1,26 @@
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { trpc } from "../../utils/trpc";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { getDownloadURL, listAll, ref } from "firebase/storage";
 import { storage } from "../../utils/firebase";
 import Spinner from "../../icons/Spinner";
 import { useForm } from "react-hook-form";
 import Modal from "react-modal";
 import SkeletonImg from "../../icons/SkeletonImg";
+import { AuthContext } from "../../auth/SessionProvider";
 
 export const ProductDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+
+  const { state } = useLocation();
 
   if (!id) return <div>Product not found</div>;
 
   const { data, isLoading, isError, isSuccess, refetch } =
     trpc.product.getOneProduct.useQuery({
       product_id: id,
+      locationId: state?.locationId,
     });
   const [imageUrl, setImageUrl] = React.useState<string | null>(null);
 
@@ -64,6 +68,8 @@ export const ProductDetail = () => {
     },
   });
 
+  const { authenticated } = useContext(AuthContext);
+
   const updateProduct = trpc.product.update.useMutation({
     onSuccess: () => {
       setModalIsOpen(false);
@@ -72,7 +78,7 @@ export const ProductDetail = () => {
   });
 
   const onSubmit = handleSubmit(async (updateData) => {
-    console.log(updateData);
+    // console.log(updateData);
     await updateProduct.mutateAsync({
       product_id: id,
       product_name: updateData.product_name,
@@ -148,23 +154,25 @@ export const ProductDetail = () => {
                     <p>{data.product.available_quantity}</p>
                   </div>
                 </div>
-                <div className="flex justify-center mt-10">
-                  {modalLoading ? (
-                    <Spinner />
-                  ) : (
-                    <button
-                      onClick={openModal}
-                      className="block text-white focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center border border-calm-yellow hover:bg-zinc-900"
-                      type="button"
-                    >
-                      Update Product
-                    </button>
-                  )}
-                </div>
+                {authenticated?.user?.role === 3 && (
+                  <div className="flex justify-center mt-10">
+                    {modalLoading ? (
+                      <Spinner />
+                    ) : (
+                      <button
+                        onClick={openModal}
+                        className="block text-white focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center border border-calm-yellow hover:bg-zinc-900"
+                        type="button"
+                      >
+                        Update Product
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
-            <pre>{JSON.stringify(data, null, 2)}</pre>
+            {/* <pre>{JSON.stringify(data, null, 2)}</pre> */}
           </div>
         ) : (
           <Spinner />
@@ -310,7 +318,7 @@ export const ProductDetail = () => {
                     </svg>
                     DELETE
                   </button>
-                  <pre>{JSON.stringify(watch(), null, 2)}</pre>
+                  {/* <pre>{JSON.stringify(watch(), null, 2)}</pre> */}
                 </div>
               </form>
             </div>

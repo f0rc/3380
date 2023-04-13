@@ -150,9 +150,11 @@ export const productRouter = router({
     }),
 
   getOneProduct: publicProcedure
-    .input(z.object({ product_id: z.string() }))
+    .input(
+      z.object({ product_id: z.string(), locationId: z.string().optional() })
+    )
     .query(async ({ input, ctx }) => {
-      const { product_id } = input;
+      const { product_id, locationId } = input;
 
       const managerLocation = await postgresQuery(
         `SELECT "postoffice_location_id" FROM "WORKS_FOR" WHERE "employee_id" = $1`,
@@ -175,7 +177,10 @@ export const productRouter = router({
             PI.postoffice_location_id = $1 AND
             P.product_id = $2
         LIMIT 1;`,
-        [managerLocation.rows[0].postoffice_location_id, product_id]
+        [
+          locationId ?? managerLocation.rows[0].postoffice_location_id,
+          product_id,
+        ]
       );
 
       if (product.rows.length === 0) {
@@ -222,6 +227,37 @@ export const productRouter = router({
         products: getAllProductsAtLocation.rows as getProductWithQuantity[],
       };
     }),
+  getAllProductsManager: protectedProcedure.query(async ({ input, ctx }) => {
+    const getManagerLocation = await postgresQuery(
+      `SELECT "postoffice_location_id" FROM "WORKS_FOR" WHERE "employee_id" = $1`,
+      [ctx.session?.user?.employee_id]
+    );
+
+    const getAllProductsAtLocation = await postgresQuery(
+      `SELECT 
+          P.product_id, 
+          P.product_name, 
+          P.product_description, 
+          P.price, 
+          P.product_image, 
+          PI.quantity AS available_quantity
+        FROM 
+          "PRODUCT" P
+        JOIN 
+          "PRODUCT_INVENTORY" PI ON P.product_id = PI.product_id
+        WHERE 
+          PI.postoffice_location_id = $1
+        ORDER BY 
+          P.product_name;
+          `,
+      [getManagerLocation.rows[0].postoffice_location_id]
+    );
+
+    return {
+      status: "success",
+      products: getAllProductsAtLocation.rows as getProductWithQuantity[],
+    };
+  }),
 
   createOrder: protectedProcedure
     .input(
@@ -279,6 +315,40 @@ export const productRouter = router({
         },
       };
     }),
+
+  lowStockNotification: protectedProcedure.query(async ({ ctx }) => {
+    const managerLocation = await postgresQuery(
+      `SELECT "postoffice_location_id" FROM "WORKS_FOR" WHERE "employee_id" = $1`,
+      [ctx.session?.user?.employee_id]
+    );
+
+    const lowStockProducts = await postgresQuery(
+      `SELECT 
+      L.alert_id, 
+      L.product_inventory_id, 
+      L.postoffice_location_id, 
+      L.alert_date, 
+      L.is_resolved,
+      P.product_name,
+      P.product_id
+      FROM 
+          "LOW_STOCK_ALERTS" AS L
+      JOIN 
+          "PRODUCT_INVENTORY" AS PI ON L.product_inventory_id = PI.product_inventory_id
+      JOIN 
+          "PRODUCT" AS P ON PI.product_id = P.product_id
+      WHERE
+          L.postoffice_location_id = $1 AND L.is_resolved = false
+      ORDER BY
+      L.alert_date DESC;`,
+      [managerLocation.rows[0].postoffice_location_id]
+    );
+
+    return {
+      status: "success",
+      products: lowStockProducts.rows as lostStockNotification[],
+    };
+  }),
 });
 
 export interface getProductWithQuantity {
@@ -288,4 +358,14 @@ export interface getProductWithQuantity {
   price: number;
   product_image: string;
   available_quantity: number;
+}
+
+export interface lostStockNotification {
+  alert_id: string;
+  product_inventory_id: string;
+  postoffice_location_id: string;
+  alert_date: string;
+  is_resolved: boolean;
+  product_name: string;
+  product_id: string;
 }

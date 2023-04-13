@@ -335,44 +335,134 @@ const createAdmin = async () => {
   //   []
   // );
   // console.log(getLocations.rows);
+  //   const getAllProductsAtLocation = await postgresQuery(
+  //     `SELECT
+  //   P.product_id,
+  //   P.product_name,
+  //   P.product_description,
+  //   P.price,
+  //   P.product_image,
+  //   PI.quantity AS available_quantity
+  // FROM
+  //   "PRODUCT" P
+  // JOIN
+  //   "PRODUCT_INVENTORY" PI ON P.product_id = PI.product_id
+  // WHERE
+  //   PI.postoffice_location_id = $1
+  // ORDER BY
+  //   P.product_name;
+  //   `,
+  //     ["91bb18d8-c3ef-437a-bbe1-f7be7a2a8791"]
+  //   );
+  //   console.log(getAllProductsAtLocation.rows);
+  // const lowStockProducts = await postgresQuery(
+  //   `SELECT
+  //       L.alert_id,
+  //       L.product_inventory_id,
+  //       L.postoffice_location_id,
+  //       L.alert_date,
+  //       L.is_resolved,
+  //       P.product_name
+  //     FROM
+  //     "LOW_STOCK_ALERTS" L
+  //     JOIN "PRODUCT_INVENTORY" PI ON L.product_inventory_id = PI.product_inventory_id
+  //     JOIN "PRODUCT" P ON PI.product_id = P.product_id
+  //     WHERE
+  //     L.postoffice_location_id = $1 AND is_resolved = false
+  //     ORDER BY
+  //     L.alert_date DESC;
+  //     `,
+  //   ["33ca229b-6737-4a9d-877b-e00187999343"]
+  // );
+  // console.log(lowStockProducts.rows);
+  // const money = await postgresQuery(
+  //   `SELECT p.*, plh.*
+  //   FROM "PACKAGE" p
+  //   INNER JOIN (
+  //   SELECT package_id, MAX("processedAt") AS latest_date
+  //   FROM "PACKAGE_LOCATION_HISTORY"
+  //   GROUP BY package_id
+  //   ) plh2 ON p.package_id = plh2.package_id
+  //   INNER JOIN "PACKAGE_LOCATION_HISTORY" plh
+  //   ON plh.package_id = plh2.package_id
+  //   AND plh."processedAt" = plh2.latest_date
+  //   WHERE p."sender_id" IN (
+  //     SELECT "customer_id"
+  //     FROM "CUSTOMER"
+  //     WHERE "user_id" = $1
+  // ) OR p."receiver_id" IN (
+  //     SELECT "customer_id"
+  //     FROM "CUSTOMER"
+  //     WHERE "user_id" = $1
+  // )
+  //   `,
+  //   ["ffa19bd7-1e04-49aa-b025-3e7c0185892d"]
+  // );
+  // console.log(money.rows);
+  // const pkgID = randomUUID();
+  // const makePackage = await postgresQuery(
+  //   `INSERT INTO "PACKAGE" ("package_id", "cost", "sender_id", "receiver_id", "weight", "type", "size", "createdBy", "updatedBy") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+  //   [
+  //     pkgID, // package_id
+  //     12, // cost
+  //     "f2c74d34-ec08-46a9-9dea-ece5b83025dd", // senderID
+  //     "f2c74d34-ec08-46a9-9dea-ece5b83025dd", // receiverID
+  //     10, // weight
+  //     "box", // type
+  //     "small", // size
+  //     "bca8ca1f-d32c-4324-bd59-c41befa6a651", // employeeID // createdBy
+  //     "bca8ca1f-d32c-4324-bd59-c41befa6a651", // employeeID // updatedBy
+  //   ]
+  // );
+  // const makePackageLocationHistory = await postgresQuery(
+  //   `INSERT INTO "PACKAGE_LOCATION_HISTORY" ("package_id", "postoffice_location_id", "status",
+  //     "processedBy") VALUES ($1, $2, $3, $4)`,
+  //   [
+  //     pkgID, // package_id
+  //     "8fb1ab0d-65fd-4ad0-8ea6-f79b594637e9", // postoffice_location_id // clerk location
+  //     "accepted",
+  //     "bca8ca1f-d32c-4324-bd59-c41befa6a651", // employeeID // createdBy
+  //   ]
+  // );
+  // console.log(makePackageLocationHistory.rows);
+  // const packageDetails = await postgresQuery(
+  //   `WITH latest_package_location AS (
+  //     SELECT plh.*
+  //     FROM "PACKAGE_LOCATION_HISTORY" plh
+  //     WHERE plh."package_id" = $1
+  //     ORDER BY plh."processedAt" DESC
+  //     LIMIT 1
+  // )
+  // SELECT p.*, lpl.*, pol."locationname"
+  // FROM "PACKAGE" p
+  // JOIN latest_package_location lpl ON p."package_id" = lpl."package_id"
+  // JOIN "POSTOFFICE_LOCATION" pol ON lpl."postoffice_location_id" = pol."postoffice_location_id"
+  // WHERE p."package_id" = $1;`,
+  //   ["7895cb88-c083-4941-85a9-0d6db68f6903"]
+  // );
+  // console.log(packageDetails.rows);
 
   const getAllProductsAtLocation = await postgresQuery(
     `SELECT 
-  P.product_id, 
-  P.product_name, 
-  P.product_description, 
-  P.price, 
-  P.product_image, 
-  PI.quantity AS available_quantity
-FROM 
-  "PRODUCT" P
-JOIN 
-  "PRODUCT_INVENTORY" PI ON P.product_id = PI.product_id
-WHERE 
-  PI.postoffice_location_id = $1
-ORDER BY 
-  P.product_name;
-  `,
-    ["91bb18d8-c3ef-437a-bbe1-f7be7a2a8791"]
+      P.product_id, 
+      P.product_name, 
+      P.product_description, 
+      P.price, 
+      P.product_image, 
+      PI.quantity AS available_quantity
+    FROM 
+      "PRODUCT" P
+    JOIN 
+      "PRODUCT_INVENTORY" PI ON P.product_id = PI.product_id
+    WHERE 
+      PI.postoffice_location_id = $1
+    ORDER BY 
+      P.product_name;
+      `,
+    ["ae1a6005-6715-4fbc-804f-88e624c01c40"]
   );
 
   console.log(getAllProductsAtLocation.rows);
 };
 
 createAdmin();
-
-// CREATE TABLE "POSTOFFICE_LOCATION" (
-//   "postoffice_location_id" TEXT NOT NULL, --Pkey
-//   "locationname" TEXT NOT NULL,
-//   "address_street" TEXT NOT NULL,
-//   "address_city" TEXT NOT NULL,
-//   "address_state" TEXT NOT NULL,
-//   "address_zipcode" INTEGER NOT NULL,
-//   "postoffice_location_manager" TEXT,    --uses Fkey
-
-//   "createdAt" DATE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-//   "updatedAt" DATE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-//   CONSTRAINT "POSTOFFICE_LOCATION_PK" PRIMARY KEY ("postoffice_location_id"),
-//   CONSTRAINT "POSTOFFICE_LOCATION_MANAGER_FK" FOREIGN KEY ("postoffice_location_manager") REFERENCES "EMPLOYEE"("employee_id") ON DELETE CASCADE ON UPDATE CASCADE
-// );

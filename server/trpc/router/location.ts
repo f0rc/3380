@@ -62,7 +62,7 @@ export const locationRouter = router({
       };
     }),
 
-  getAllOfficeLocations: protectedProcedure.query(async ({ ctx }) => {
+  getAllOfficeLocations: publicProcedure.query(async ({ ctx }) => {
     const { postgresQuery } = ctx;
 
     const getLocations = await postgresQuery(
@@ -112,7 +112,7 @@ export const locationRouter = router({
       );
 
       if (getPreviousManager.rows.length !== 0) {
-        console.log("previous manager found");
+        // console.log("previous manager found");
         const removeManager = await postgresQuery(
           `UPDATE "POSTOFFICE_LOCATION" SET "postoffice_location_manager" = NULL WHERE "postoffice_location_id" = $1 RETURNING *;`,
           [getPreviousManager.rows[0].postoffice_location_id]
@@ -251,7 +251,7 @@ export const locationRouter = router({
       };
     }),
 
-  getOffliceLocationNameID: protectedProcedure.query(async ({ ctx }) => {
+  getOffliceLocationNameID: publicProcedure.query(async ({ ctx }) => {
     const { postgresQuery } = ctx;
 
     const getLocationNameID = await postgresQuery(
@@ -272,7 +272,7 @@ export const locationRouter = router({
     };
   }),
 
-  getOfficeLocationsFromWorksFor: protectedProcedure.query(
+  getOfficeLocationsFromWorksFor: publicProcedure.query(
     async ({ input, ctx }) => {
       const { postgresQuery } = ctx;
 
