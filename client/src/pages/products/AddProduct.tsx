@@ -9,6 +9,7 @@ import { storage } from "../../utils/firebase";
 import { v4 } from "uuid";
 import Spinner from "../../icons/Spinner";
 import { useNavigate } from "react-router-dom";
+import Modal from "react-modal";
 
 export const AddProduct = () => {
   const navigo = useNavigate();
@@ -33,6 +34,7 @@ export const AddProduct = () => {
       navigo("/product/" + data.product.product_id);
     },
   });
+
   const [isUploading, setUploading] = useState(false);
 
   const onSubmit = handleSubmit(async (data) => {
@@ -192,6 +194,7 @@ export const AddProduct = () => {
           </form>
         </div>
       </div>
+
       {/* <pre>{JSON.stringify(watch(), null, 2)}</pre> */}
     </div>
   );

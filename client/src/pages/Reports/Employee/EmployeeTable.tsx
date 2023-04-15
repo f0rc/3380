@@ -82,6 +82,8 @@ export default function EmployeeTableReport({
   );
   const [globalFilter, setGlobalFilter] = React.useState("");
 
+  console.log(data);
+
   const columns = React.useMemo<ColumnDef<employeeList>[]>(
     () => [
       {

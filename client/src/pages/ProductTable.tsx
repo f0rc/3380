@@ -26,7 +26,7 @@ import {
 } from "@tanstack/match-sorter-utils";
 import { trpc } from "../utils/trpc";
 import { getProductWithQuantity } from "../../../server/trpc/router/product";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 declare module "@tanstack/table-core" {
   interface FilterFns {
@@ -140,8 +140,11 @@ export default function ProductTable() {
   return (
     <div className="flex justify-center">
       <div className="max-w-5xl">
-        <div className="flex justify-center items-center">
+        <div className="flex flex-col justify-center items-center">
           <div className="p-2 w-full overflow-scroll">
+            <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded m-5">
+              <Link to="/add-product">Add Product</Link>
+            </button>
             <div>
               <DebouncedInput
                 value={globalFilter ?? ""}
