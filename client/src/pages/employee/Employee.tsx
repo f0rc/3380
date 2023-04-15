@@ -28,6 +28,16 @@ const Employee = () => {
           <div className="mt-10 flex flex-col px-10 gap-12">
             <div className="flex flex-col gap-6">
               <h1 className="text-2xl font-bold mb-3">Employee Overview</h1>
+              <div className="flex flex-col gap-2">
+                <button
+                  className="bg-calm-yellow text-black px-4 py-2 rounded-md w-fit"
+                  onClick={() => {
+                    navigate("/create-employee");
+                  }}
+                >
+                  Add Employee
+                </button>
+              </div>
               <div className="flex justify-start align-middle">
                 <EmployeeTable data={data.employees} />
               </div>

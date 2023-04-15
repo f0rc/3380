@@ -152,13 +152,13 @@ const LocationDetail = () => {
           <div className="relative p-4 w-full max-w-2xl h-full md:h-auto">
             <div className="relative p-4 rounded-lg bg-[#232322] sm:p-5 border border-[#41413E] shadow-2xl">
               <div className="flex justify-between items-center pb-4 mb-4 rounded-t border-b sm:mb-5 dark:border-gray-600">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                <h3 className="text-lg font-semibold  text-white">
                   Update Employee
                 </h3>
                 <button
                   type="button"
                   onClick={closeModal2}
-                  className="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 ml-auto inline-flex items-center dark:hover:bg-gray-600 dark:hover:text-white"
+                  className="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 ml-auto inline-flex items-center"
                   data-modal-toggle="updateProductModal"
                 >
                   <svg
@@ -182,7 +182,7 @@ const LocationDetail = () => {
                   <div>
                     <label
                       htmlFor="category"
-                      className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                      className="block mb-2 text-sm font-medium"
                     >
                       Manager
                     </label>
@@ -220,7 +220,7 @@ const LocationDetail = () => {
                     </>
                   </div>
                   <div>
-                    <pre>{JSON.stringify(watch(), null, 2)}</pre>
+                    {/* <pre>{JSON.stringify(watch(), null, 2)}</pre> */}
                   </div>
                   <div className="flex items-center space-x-4">
                     <button

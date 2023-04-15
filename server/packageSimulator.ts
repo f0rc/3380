@@ -37,6 +37,10 @@ const getPackages = async () => {
       []
     );
 
+    if (packages.rows.length === 0 || !packages.rows) {
+      return [];
+    }
+
     return packages.rows as PackageType[];
   } catch (e) {
     console.log(e);
@@ -110,23 +114,44 @@ type Postoffice_location = {
   postoffice_location_id: string;
 };
 
-const getRandomOfficeLocation = async (zipcodeHistory: string[], count = 0) => {
-  // ##TODO: GET ACTUAL OFFICE LOCATIONS
-  const postofficelocations = await getOfficeList();
-  if (!postofficelocations) throw new Error("No office locations found");
-  const randomLocation =
-    postofficelocations[Math.floor(Math.random() * postofficelocations.length)];
+// TypeScript function to get a random office location that is not in the zipcodeHistory array
+const getRandomOfficeLocation = async (
+  zipcodeHistory: string[],
+  count = 0
+): Promise<string | undefined> => {
+  try {
+    // Fetch the list of office locations
+    const postOfficeLocations = await getOfficeList();
 
-  if (
-    zipcodeHistory.includes(randomLocation.postoffice_location_id) &&
-    count < 10
-  ) {
-    return getRandomOfficeLocation(zipcodeHistory, count + 1);
+    if (!postOfficeLocations) {
+      throw new Error("No office locations found");
+    }
+
+    // Select a random office location
+    const randomLocation =
+      postOfficeLocations[
+        Math.floor(Math.random() * postOfficeLocations.length)
+      ];
+
+    // Check if the random location is already in the history and the retry count is less than 10
+    if (
+      zipcodeHistory.includes(randomLocation.postoffice_location_id) &&
+      count < 10
+    ) {
+      return getRandomOfficeLocation(zipcodeHistory, count + 1);
+    }
+
+    // If the retry count is 10 or more, throw an error
+    if (count >= 10) {
+      throw new Error("No office locations found");
+    }
+
+    // Return the random location ID as a string
+    return randomLocation.postoffice_location_id as string;
+  } catch (e) {
+    console.log(e);
+    return undefined;
   }
-
-  if (count >= 10) throw new Error("No office locations found");
-
-  return randomLocation.postoffice_location_id as string;
 };
 
 async function simulatePackageDelivery(pkg: PackageListType) {
@@ -136,6 +161,9 @@ async function simulatePackageDelivery(pkg: PackageListType) {
   const isDeliveryFailed = Math.random() < 0.01;
 
   const randomLocation = await getRandomOfficeLocation(pkg.zipcodeHistory);
+  if (!randomLocation) {
+    return;
+  }
 
   console.log("randomLocation", randomLocation);
 
@@ -252,3 +280,4 @@ const simulate = async () => {
 };
 
 simulate();
+setInterval(simulate, 1000);

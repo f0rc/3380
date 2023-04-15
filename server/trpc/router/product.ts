@@ -275,10 +275,15 @@ export const productRouter = router({
     .mutation(async ({ input, ctx }) => {
       const { products, postoffice_location_id } = input;
 
+      const getCustomerId = await postgresQuery(
+        `SELECT "customer_id" FROM "CUSTOMER" WHERE "user_id" = $1`,
+        [ctx.session?.user?.id]
+      );
+
       const order = await postgresQuery(
         `INSERT INTO "ORDER" ("customer_id", "postoffice_location_id", "total_price") VALUES ($1, $2, $3) RETURNING "ORDER"."order_id"`,
         [
-          ctx.session?.user?.customer_id,
+          getCustomerId.rows[0].customer_id,
           postoffice_location_id,
           input.products.reduce(
             (acc, product) => acc + product.quantity * product.price,
@@ -329,6 +334,7 @@ export const productRouter = router({
       L.postoffice_location_id, 
       L.alert_date, 
       L.is_resolved,
+      PI.quantity,
       P.product_name,
       P.product_id
       FROM 
@@ -349,6 +355,115 @@ export const productRouter = router({
       products: lowStockProducts.rows as lostStockNotification[],
     };
   }),
+
+  getCustomnerInfo: protectedProcedure.query(async ({ input, ctx }) => {
+    const customerInfo = await postgresQuery(
+      `SELECT
+        "customer_id",
+        "firstname",
+        "lastname",
+        "email",
+        "phoneNumber",
+        "address_street",
+        "address_city",
+        "address_state",
+        "address_zipcode"
+
+      FROM
+        "CUSTOMER"
+      WHERE
+        "user_id" = $1`,
+      [ctx.session?.user?.id]
+    );
+
+    if (customerInfo.rows.length === 0) {
+      return {
+        status: "success",
+        customer: null,
+        message: "Customer not found",
+      };
+    }
+
+    return {
+      status: "success",
+      customer: customerInfo.rows[0] as customerInfo,
+    };
+  }),
+
+  updateCustomerInfo: protectedProcedure
+    .input(
+      z.object({
+        firstname: z.string().optional(),
+        lastname: z.string().optional(),
+        email: z.string().optional(),
+        phonenumber: z.string().optional(),
+        address_street: z.string().optional(),
+        address_city: z.string().optional(),
+        address_state: z.string().optional(),
+        address_zipcode: z.string().optional(),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const {
+        firstname,
+        lastname,
+        email,
+        phonenumber,
+        address_street,
+        address_city,
+        address_state,
+        address_zipcode,
+      } = input;
+
+      const customerInfo = await postgresQuery(
+        `SELECT
+          "customer_id"
+        FROM
+          "CUSTOMER"
+        WHERE
+          "user_id" = $1`,
+        [ctx.session?.user?.id]
+      );
+
+      if (customerInfo.rows.length === 0) {
+        await postgresQuery(
+          `INSERT INTO "CUSTOMER" ("customer_id", "firstname", "lastname", "email", "phoneNumber", "address_street", "address_city", "address_state", "address_zipcode", "updatedBy", "createdBy") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+          [
+            randomUUID(),
+            firstname,
+            lastname,
+            email,
+            phonenumber,
+            address_street,
+            address_city,
+            address_state,
+            address_zipcode,
+            ctx.session?.user?.id,
+            ctx.session?.user?.id,
+          ]
+        );
+      } else {
+        const updateCustomerInfo = await postgresQuery(
+          `UPDATE "CUSTOMER" SET "firstname" = $1, "lastname" = $2, "email" = $3, "phoneNumber" = $4, "address_street" = $5, "address_city" = $6, "address_state" = $7, "address_zipcode" = $8 WHERE "customer_id" = $9`,
+          [
+            firstname,
+            lastname,
+            email,
+            phonenumber,
+            address_street,
+            address_city,
+            address_state,
+            address_zipcode,
+            customerInfo.rows[0].customer_id,
+          ]
+        );
+      }
+
+      return {
+        status: "success",
+        message: "Customer info updated successfully",
+      };
+    }),
 });
 
 export interface getProductWithQuantity {
@@ -363,9 +478,22 @@ export interface getProductWithQuantity {
 export interface lostStockNotification {
   alert_id: string;
   product_inventory_id: string;
+  quantity: number;
   postoffice_location_id: string;
   alert_date: string;
   is_resolved: boolean;
   product_name: string;
   product_id: string;
+}
+
+export interface customerInfo {
+  customer_id: string;
+  firstname: string;
+  lastname: string;
+  email: string;
+  phonenumber: string;
+  address_street: string;
+  address_city: string;
+  address_state: string;
+  address_zipcode: string;
 }

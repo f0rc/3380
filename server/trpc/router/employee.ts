@@ -77,37 +77,45 @@ export const employeeRouter = router({
   getAllEmployee: protectedProcedure.query(async ({ ctx, input }) => {
     const { postgresQuery } = ctx;
 
-    const dbGetEmployee = await postgresQuery(
-      // get all the employees that have a lower role than the current user
+    const getEmployeeInfo = await postgresQuery(
       `SELECT
-        E.employee_id,
-        E.firstname,
-        E.lastname,
-        E.role,
-        E.salary,
-        E.manager_id,
-        M.lastname AS manager_lastname,
-        PL.locationname,
-        PL.address_street,
-        PL.address_city,
-        PL.address_state,
-        PL.address_zipcode,
-        WF.hours
-      FROM
-          "EMPLOYEE" AS E
-          LEFT JOIN "WORKS_FOR" AS WF ON E.employee_id = WF.employee_id
-          LEFT JOIN "POSTOFFICE_LOCATION" AS PL ON WF.postoffice_location_id = PL.postoffice_location_id
-          LEFT JOIN "EMPLOYEE" AS M ON E.manager_id = M.employee_id
-      ORDER BY
-          E.employee_id;`,
+      E.employee_id,
+      E.firstname,
+      E.lastname,
+      E.email,
+      E.birthdate,
+      E.role,
+      E.salary,
+      E.manager_id,
+      E.address_street,
+      E.address_city,
+      E.address_state,
+      E.address_zipcode,
+      E.startdate,
+      E."createdAt",
+      E."createdBy",
+      E."updatedAt",
+      E."updatedBy",
+      PL.locationname AS "work_location",
+      SUM(WL.hours) AS "hours"
+  FROM
+      "EMPLOYEE" AS E
+  JOIN "WORKS_FOR" AS WF ON E.employee_id = WF.employee_id
+  JOIN "POSTOFFICE_LOCATION" AS PL ON WF.postoffice_location_id = PL.postoffice_location_id
+  JOIN "WORK_LOG" AS WL ON E.employee_id = WL.employee_id
+  GROUP BY
+      E.employee_id,
+      PL.locationname;`,
       []
     );
+
+    console.log(getEmployeeInfo.rows);
 
     // console.log(dbGetEmployee.rows);
 
     return {
       status: "success",
-      employees: dbGetEmployee.rows as employeeList[],
+      employees: getEmployeeInfo.rows as employeeList[],
     };
   }),
   getEmployee: protectedProcedure
@@ -125,16 +133,15 @@ export const employeeRouter = router({
         PL.address_city AS postoffice_address_city,
         PL.address_state AS postoffice_address_state,
         PL.address_zipcode AS postoffice_address_zipcode,
-        WF.hours
+        SUM(WL.hours) AS "hours"
       FROM
           "EMPLOYEE" AS E
           LEFT JOIN "WORKS_FOR" AS WF ON E.employee_id = WF.employee_id
+          LEFT JOIN "WORK_LOG" AS WL ON E.employee_id = WL.employee_id
           LEFT JOIN "POSTOFFICE_LOCATION" AS PL ON WF.postoffice_location_id = PL.postoffice_location_id
           LEFT JOIN "EMPLOYEE" AS M ON E.manager_id = M.employee_id
       WHERE
-          E.employee_id = $1
-      ORDER BY
-          E.employee_id;`,
+          E.employee_id = $1;`,
         [input.employeeID]
       );
 
