@@ -44,6 +44,8 @@ const Layout = () => {
     toast.dismiss();
   };
 
+  console.log("NOTI", notification);
+
   useEffect(() => {
     if (notification) {
       // console.log("NOTI", notification);
@@ -52,10 +54,12 @@ const Layout = () => {
           <a onClick={removeToast}>
             <p>
               Product{" "}
-              <Link to={`/product/${noti.product_id}`}>
-                {noti.product_name}
-              </Link>{" "}
-              is running out of stock. Only ${noti.product_inventory_id} left.
+              <span className="hover:bg-amber-300">
+                <Link to={`/product/${noti.product_id}`}>
+                  {noti.product_name}
+                </Link>{" "}
+              </span>
+              is running out of stock. Only {noti.quantity} left.
             </p>
           </a>,
 

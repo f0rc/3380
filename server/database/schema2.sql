@@ -333,9 +333,12 @@ EXECUTE FUNCTION insert_employee();
 
 -- put userid into customer table when a new customer is added
 CREATE OR REPLACE FUNCTION insert_Customer() RETURNS TRIGGER AS $$
+DECLARE
+    user_id_money TEXT;
 BEGIN
     IF EXISTS (SELECT 1 FROM "USER" WHERE "email" = NEW."email") THEN
-        UPDATE "CUSTOMER" SET "user_id" = NEW."customer_id" WHERE "email" = NEW."email";
+        SELECT "user_id" INTO user_id_money FROM "USER" WHERE "email" = NEW."email";
+        UPDATE "CUSTOMER" SET "user_id" = user_id_money WHERE "email" = NEW."email";
     END IF;
     RETURN NEW;
 END;
@@ -456,26 +459,26 @@ CREATE TABLE "EMAIL_NOTIFICATION" (
 CREATE OR REPLACE FUNCTION email_after_insert()
 RETURNS TRIGGER AS $$
 DECLARE
-    sender_email TEXT;
-    receiver_email TEXT;
+    sender_phone TEXT;
+    receiver_phone TEXT;
 BEGIN
-    SELECT c.email
-    INTO sender_email
+    SELECT c."phoneNumber"
+    INTO sender_phone
     FROM "CUSTOMER" c
     JOIN "PACKAGE" p ON p.sender_id = c.customer_id
     WHERE p.package_id = NEW.package_id;
 
-    SELECT c.email
-    INTO receiver_email
+    SELECT c."phoneNumber"
+    INTO receiver_phone
     FROM "CUSTOMER" c
     JOIN "PACKAGE" p ON p.receiver_id = c.customer_id
     WHERE p.package_id = NEW.package_id;
 
     INSERT INTO "EMAIL_NOTIFICATION" (recipient, subject, body)
-    VALUES (sender_email, 'Order Update', 'Thank you for your order. Your order ID is ' || NEW.package_id || ' and its current status is ' || NEW.status || '.');
+    VALUES (sender_phone, 'Order Update', 'Thank you for your order. Your order ID is ' || NEW.package_id || ' and its current status is ' || NEW.status || '.');
 
     INSERT INTO "EMAIL_NOTIFICATION" (recipient, subject, body)
-    VALUES (receiver_email, 'Order Update', 'Thank you for your order. Your order ID is ' || NEW.package_id || ' and its current status is ' || NEW.status || '.');
+    VALUES (receiver_phone, 'Order Update', 'Thank you for your order. Your order ID is ' || NEW.package_id || ' and its current status is ' || NEW.status || '.');
 
     RETURN NEW;
 END;
@@ -485,6 +488,9 @@ CREATE TRIGGER email_after_insert_trigger
 AFTER INSERT ON "PACKAGE_LOCATION_HISTORY"
 FOR EACH ROW
 EXECUTE FUNCTION email_after_insert();
+
+
+
 
 
 
