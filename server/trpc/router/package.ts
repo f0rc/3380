@@ -235,6 +235,8 @@ export const packageRouter = router({
         [package_id]
       );
 
+      // console.log("packageDetails", packageDetails.rows[0].createdAt);
+
       if (packageDetails.rowCount === 0) {
         return {
           status: "error",

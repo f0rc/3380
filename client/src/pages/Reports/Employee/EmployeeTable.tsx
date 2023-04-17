@@ -26,6 +26,7 @@ import {
 } from "@tanstack/match-sorter-utils";
 import { useNavigate } from "react-router-dom";
 import { employeeList } from "../../../../../server/trpc/router/employee";
+import { postOfficeLocationReport } from "../../../../../server/trpc/router/reports";
 
 declare module "@tanstack/table-core" {
   interface FilterFns {
@@ -67,7 +68,7 @@ const fuzzySort: SortingFn<any> = (rowA, rowB, columnId) => {
 export default function EmployeeTableReport({
   data,
 }: {
-  data: employeeList[];
+  data: postOfficeLocationReport[];
 }) {
   const rerender = React.useReducer(() => ({}), {})[1];
 
@@ -87,38 +88,28 @@ export default function EmployeeTableReport({
   const columns = React.useMemo<ColumnDef<employeeList>[]>(
     () => [
       {
-        accessorKey: "firstname",
-        header: () => <span>First Name</span>,
-        footer: (props) => props.column.id,
-      },
-      {
-        accessorKey: "lastname",
-        header: "Last Name",
-        footer: (props) => props.column.id,
-      },
-      {
-        accessorKey: "role",
-        header: "role",
-        footer: (props) => props.column.id,
-      },
-      {
-        accessorKey: "hours",
-        header: "hours",
-        footer: (props) => props.column.id,
-      },
-      {
-        accessorKey: "salary",
-        header: "salary",
-        footer: (props) => props.column.id,
-      },
-      {
-        accessorKey: "manager_lastname",
-        header: "Supervisor",
-        footer: (props) => props.column.id,
-      },
-      {
         accessorKey: "locationname",
-        header: "Work Location",
+        header: () => <span>Location Name</span>,
+        footer: (props) => props.column.id,
+      },
+      {
+        accessorKey: "address_street",
+        header: "Street",
+        footer: (props) => props.column.id,
+      },
+      {
+        accessorKey: "total_hours",
+        header: "Hours of All Employees",
+        footer: (props) => props.column.id,
+      },
+      {
+        accessorKey: "year",
+        header: "year",
+        footer: (props) => props.column.id,
+      },
+      {
+        accessorKey: "month",
+        header: "month",
         footer: (props) => props.column.id,
       },
     ],

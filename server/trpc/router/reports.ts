@@ -223,6 +223,11 @@ export const reportRouter = router({
         throw new Error("No data found");
       }
 
+      packageReportTable.rows.forEach((item) => {
+        const date = new Date(item.createdAt).toLocaleDateString();
+        item.createdAt = date;
+      });
+
       return {
         status: "success",
         packageReport: packageReportChart.rows as PackageReportSchema[],
@@ -366,7 +371,7 @@ export type PackageTableData = {
   size: string;
   type: string;
   status: string;
-  createdat: Date;
+  createdat: string;
   subRows?: PackageTableData[];
 };
 

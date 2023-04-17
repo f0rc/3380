@@ -76,6 +76,15 @@ const PackageDetail = () => {
               </div>
 
               <div className="grow gap-2 items-center">
+                <h1 className="text-xl font-bold pb-3">Processed At</h1>
+                <p className="">
+                  {new Date(
+                    data?.packageDetails?.createdAt!
+                  ).toLocaleDateString()}
+                </p>
+              </div>
+
+              <div className="grow gap-2 items-center">
                 <h1 className="text-xl font-bold pb-3">Status</h1>
                 <p
                   className={`"text-lg py-2 px-3 rounded-full text-white text-center w-fit " + ${getStatusColor(
@@ -110,6 +119,7 @@ const PackageDetail = () => {
                         </div>
                         <p>{item.status}</p>
                         <p className="text-end">{item.intransitcounter + 1}</p>
+                        {new Date(item.processedAt).toLocaleDateString()}
                       </div>
                       {/* <pre>{JSON.stringify(detailPackage, null, 2)}</pre> */}
                     </div>
