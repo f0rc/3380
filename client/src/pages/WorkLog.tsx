@@ -52,9 +52,11 @@ const WorkLog = () => {
     const sortColumn = column as "week_start_date" | "total_hours";
 
     if (sortColumn === "week_start_date") {
+      const dateA = new Date(a.week_start_date ?? "");
+      const dateB = new Date(b.week_start_date ?? "");
       return sortOrder === "asc"
-        ? a.week_start_date.localeCompare(b.week_start_date ?? "")
-        : b.week_start_date.localeCompare(a.week_start_date ?? "");
+        ? dateA.getTime() - dateB.getTime()
+        : dateB.getTime() - dateA.getTime();
     }
     if (sortColumn === "total_hours") {
       return sortOrder === "asc"
@@ -64,6 +66,10 @@ const WorkLog = () => {
 
     return 0;
   });
+
+  useEffect(() => {
+    setSort({ column: "week_start_date", direction: "desc" });
+  }, []);
 
   const handleSortColumn = (column: "week_start_date" | "total_hours") => {
     // console.log(column);
