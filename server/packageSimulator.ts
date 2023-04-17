@@ -255,7 +255,7 @@ async function simulatePackageDelivery(pkg: PackageListType) {
 const simulate = async () => {
   const dbpkg = await getPackages();
 
-  if (!dbpkg) {
+  if (!dbpkg || dbpkg.length === 0) {
     return;
   }
 
@@ -279,5 +279,9 @@ const simulate = async () => {
   await simulatePackageDelivery(packageList);
 };
 
-simulate();
-setInterval(simulate, 1000);
+try {
+  simulate();
+  setInterval(simulate, 1000);
+} catch (e) {
+  console.log(e);
+}

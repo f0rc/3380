@@ -143,6 +143,8 @@ const PackagesReport = () => {
     const labels = chatData.map((item) => item.month);
     const values = chatData.map((item) => item.package_count);
 
+    // console.log(chartData);
+
     // console.log("labels", labels);
     // console.log("values", values);
     return {
