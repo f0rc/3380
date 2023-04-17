@@ -71,6 +71,7 @@ export default function Money({ data }: { data: PackageTableData[] }) {
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   );
+
   const [globalFilter, setGlobalFilter] = React.useState("");
 
   const columns = React.useMemo<ColumnDef<PackageTableData>[]>(
@@ -115,20 +116,14 @@ export default function Money({ data }: { data: PackageTableData[] }) {
         header: "Status",
         footer: (props) => props.column.id,
       },
+      {
+        accessorKey: "createdAt",
+        header: "Created At",
+        footer: (props) => props.column.id,
+      },
     ],
     []
   );
-
-  // const [data, setData] = React.useState<PackageFakeData[]>(() =>
-  //   makeData(1000)
-  // );
-
-  // format all the data[i].lastupdated to date with only month day and year
-  // data.forEach((item) => {
-  //   item.lastupdated = new Date(item.lastupdated).toLocaleDateString();
-  // });
-
-  // const refreshData = () => setData((old) => makeData(1000));
 
   const table = useReactTable({
     data,
@@ -137,10 +132,8 @@ export default function Money({ data }: { data: PackageTableData[] }) {
       fuzzy: fuzzyFilter,
     },
     state: {
-      columnFilters,
       globalFilter,
     },
-    onColumnFiltersChange: setColumnFilters,
     onGlobalFilterChange: setGlobalFilter,
     globalFilterFn: fuzzyFilter,
     getCoreRowModel: getCoreRowModel(),
@@ -234,13 +227,6 @@ export default function Money({ data }: { data: PackageTableData[] }) {
       <div className="h-2" />
       <div className="flex flex-row justify-center">
         <div className="flex items-center gap-2">
-          {/* <button
-            className="border rounded p-1 border-calm-yellow"
-            onClick={() => table.setPageIndex(0)}
-            disabled={!table.getCanPreviousPage()}
-          >
-            {"<<"}
-          </button> */}
           <button
             className="border rounded p-1 border-calm-yellow"
             onClick={() => table.previousPage()}
@@ -255,13 +241,6 @@ export default function Money({ data }: { data: PackageTableData[] }) {
           >
             {">"}
           </button>
-          {/* <button
-            className="border rounded p-1 border-calm-yellow"
-            onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-            disabled={!table.getCanNextPage()}
-          >
-            {">>"}
-          </button> */}
           <span className="flex items-center gap-1">
             <div>Page</div>
             <strong>
@@ -301,88 +280,8 @@ export default function Money({ data }: { data: PackageTableData[] }) {
         <div>
           <button onClick={() => rerender()}>Force Rerender</button>
         </div>
-        {/* <div>
-          <button onClick={() => refreshData()}>Refresh Data</button>
-        </div> */}
       </div>
     </div>
-  );
-}
-
-function Filter({
-  column,
-  table,
-}: {
-  column: Column<any, unknown>;
-  table: Table<any>;
-}) {
-  const firstValue = table
-    .getPreFilteredRowModel()
-    .flatRows[0]?.getValue(column.id);
-
-  const columnFilterValue = column.getFilterValue();
-
-  const sortedUniqueValues = React.useMemo(
-    () =>
-      typeof firstValue === "number"
-        ? []
-        : Array.from(column.getFacetedUniqueValues().keys()).sort(),
-    [column.getFacetedUniqueValues()]
-  );
-
-  return typeof firstValue === "number" ? (
-    <div>
-      <div className="flex space-x-2">
-        <DebouncedInput
-          type="number"
-          min={Number(column.getFacetedMinMaxValues()?.[0] ?? "")}
-          max={Number(column.getFacetedMinMaxValues()?.[1] ?? "")}
-          value={(columnFilterValue as [number, number])?.[0] ?? ""}
-          onChange={(value) =>
-            column.setFilterValue((old: [number, number]) => [value, old?.[1]])
-          }
-          placeholder={`Min ${
-            column.getFacetedMinMaxValues()?.[0]
-              ? `(${column.getFacetedMinMaxValues()?.[0]})`
-              : ""
-          }`}
-          className="w-24 border shadow rounded"
-        />
-        <DebouncedInput
-          type="number"
-          min={Number(column.getFacetedMinMaxValues()?.[0] ?? "")}
-          max={Number(column.getFacetedMinMaxValues()?.[1] ?? "")}
-          value={(columnFilterValue as [number, number])?.[1] ?? ""}
-          onChange={(value) =>
-            column.setFilterValue((old: [number, number]) => [old?.[0], value])
-          }
-          placeholder={`Max ${
-            column.getFacetedMinMaxValues()?.[1]
-              ? `(${column.getFacetedMinMaxValues()?.[1]})`
-              : ""
-          }`}
-          className="w-24 border shadow rounded"
-        />
-      </div>
-      <div className="h-1" />
-    </div>
-  ) : (
-    <>
-      <datalist id={column.id + "list"}>
-        {sortedUniqueValues.slice(0, 5000).map((value: any) => (
-          <option value={value} key={value} />
-        ))}
-      </datalist>
-      <DebouncedInput
-        type="text"
-        value={(columnFilterValue ?? "") as string}
-        onChange={(value) => column.setFilterValue(value)}
-        placeholder={`Search... (${column.getFacetedUniqueValues().size})`}
-        className="w-36 border shadow rounded"
-        list={column.id + "list"}
-      />
-      <div className="h-1" />
-    </>
   );
 }
 

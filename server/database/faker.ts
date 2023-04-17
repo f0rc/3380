@@ -263,6 +263,7 @@ const createFakePackages = async (numberOfPackages = 100) => {
       const senderID = faker.helpers.arrayElement(customerIDs);
       const employee = faker.helpers.arrayElement(employeeIDs);
       const pkgId = faker.datatype.uuid();
+
       console.log(`Creating package ${i + 1}...`);
       const date = faker.date.past(); // createdAt
       const makePackage = await postgresQuery(
@@ -293,12 +294,13 @@ const createFakePackages = async (numberOfPackages = 100) => {
 
       const makePackageLocationHistory = await postgresQuery(
         `INSERT INTO "PACKAGE_LOCATION_HISTORY" ("package_id", "postoffice_location_id", "status", 
-        "processedBy") VALUES ($1, $2, $3, $4)`,
+        "processedBy", "processedAt") VALUES ($1, $2, $3, $4, $5)`,
         [
           pkgId, // package_id
           clerkLocation, // postoffice_location_id // clerk location
           "accepted",
           employee, // employeeID // createdBy
+          date,
         ]
       );
     } catch (error) {
@@ -335,12 +337,12 @@ const createFakeLogHours = async (numberOfHours = 100) => {
 };
 
 const main = async () => {
-  await createFakeLocations(10);
-  await createFakeManagers(15);
-  await createFakeEmployees(30);
-  await createFakeCustomers(100);
-  await createFakePackages(100);
-  await createFakeLogHours(1000);
+  await createFakeLocations(2);
+  // await createFakeManagers(5);
+  // await createFakeEmployees(10);
+  // await createFakeCustomers(10);
+  // await createFakePackages(20);
+  // await createFakeLogHours(100);
 };
 
 main();

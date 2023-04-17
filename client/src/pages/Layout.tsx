@@ -44,8 +44,6 @@ const Layout = () => {
     toast.dismiss();
   };
 
-  console.log("NOTI", notification);
-
   useEffect(() => {
     if (notification) {
       // console.log("NOTI", notification);

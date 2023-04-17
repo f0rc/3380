@@ -108,7 +108,7 @@ const EmployeeReport = () => {
     resolver: zodResolver(employeeReportInput),
   });
 
-  const { data, isLoading, isError, refetch, isSuccess } =
+  const { data, isLoading, isError, refetch, isSuccess, isFetching } =
     trpc.report.getLocationEmployeeReport.useQuery(
       {
         endDate: watch("endDate"),
@@ -121,11 +121,11 @@ const EmployeeReport = () => {
       }
     );
 
-  const employeeReport = trpc.employee.getAllEmployee.useQuery(undefined, {
-    onSuccess: (data) => {
-      // console.log("MONEY");
-    },
-  });
+  // const employeeReport = trpc.employee.getAllEmployee.useQuery(undefined, {
+  //   onSuccess: (data) => {
+  //     // console.log("MONEY");
+  //   },
+  // });
 
   const locationInfo = trpc.location.getOfficeLocationsFromWorksFor.useQuery();
 
@@ -277,12 +277,12 @@ const EmployeeReport = () => {
           <div>{/* <pre>{JSON.stringify(data, null, 2)}</pre> */}</div>
         </div>
       </div>
-      {employeeReport.isFetching ? (
+      {isFetching ? (
         <Spinner />
       ) : (
         chartData &&
-        employeeReport.data?.employees && (
-          <EmployeeTableReport data={employeeReport.data?.employees} />
+        data?.employeeHoursReport && (
+          <EmployeeTableReport data={data?.employeeHoursReport} />
         )
       )}
     </div>
