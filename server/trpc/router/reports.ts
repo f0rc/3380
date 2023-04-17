@@ -341,6 +341,110 @@ export const reportRouter = router({
           employeeHoursReport.rows as postOfficeLocationReport[],
       };
     }),
+
+  getPackageReport: protectedProcedure
+    .input(
+      z.object({
+        startDate: z.string().optional(),
+        endDate: z.string().optional(),
+        postoffice_location_id: z.string().optional(),
+      })
+    )
+    .query(async ({ input, ctx }) => {
+      const { endDate, postoffice_location_id, startDate } = input;
+      const { postgresQuery } = ctx;
+
+      const queryBuilder = (data: typeof input) => {
+        const values = [];
+        let index = 1;
+        let query = `
+        WITH monthly_sales AS (
+          SELECT
+              oi.product_id,
+              EXTRACT(MONTH FROM o.order_date) AS month,
+              EXTRACT(YEAR FROM o.order_date) AS year,
+              o.postoffice_location_id,
+              SUM(oi.quantity) AS total_sold,
+              COUNT(DISTINCT o.order_id) AS orders_count
+          FROM
+              "ORDER_ITEMS" AS oi
+          JOIN
+              "ORDER" AS o
+          ON
+              oi.order_id = o.order_id
+          JOIN
+              "POSTOFFICE_LOCATION" AS pl
+          ON
+              o.postoffice_location_id = pl.postoffice_location_id
+          WHERE
+              TRUE `;
+
+        if (postoffice_location_id) {
+          query += ` AND pl.postoffice_location_id = $1`;
+          values.push(postoffice_location_id);
+          index++;
+        }
+
+        if (startDate) {
+          query += ` AND o.order_date >= $${index}`;
+          values.push(startDate);
+          index++;
+        }
+
+        if (endDate) {
+          query += ` AND o.order_date <= $${index}`;
+          values.push(endDate);
+          index++;
+        }
+
+        query += `GROUP BY
+            oi.product_id, month, year, o.postoffice_location_id
+        )
+    
+        SELECT
+          ms.product_id,
+          p.product_name,
+          ms.month,
+          ms.year,
+          ms.postoffice_location_id,
+          pl.locationname,
+          pl.address_street,
+          pl.address_city,
+          pl.address_state,
+          pl.address_zipcode,
+          ms.total_sold,
+          ms.orders_count
+        FROM
+          monthly_sales AS ms
+        JOIN
+          "PRODUCT" AS p
+        ON
+          ms.product_id = p.product_id
+        JOIN
+          "POSTOFFICE_LOCATION" AS pl
+        ON
+          ms.postoffice_location_id = pl.postoffice_location_id
+        ORDER BY
+          ms.year, ms.month, ms.product_id;`;
+
+        return {
+          text: query,
+          values,
+        };
+      };
+
+      const report = await postgresQuery(
+        queryBuilder({ startDate, endDate, postoffice_location_id }).text,
+        queryBuilder({ startDate, endDate, postoffice_location_id }).values
+      );
+
+      console.log(report.rows);
+
+      return {
+        status: "success",
+        report: report.rows as PackageReportSchema[],
+      };
+    }),
 });
 
 export interface postOfficeLocationReport {
@@ -375,16 +479,32 @@ export type PackageTableData = {
   subRows?: PackageTableData[];
 };
 
+export type ProductReportSchema = {
+  product_id: string;
+  product_name: string;
+  month: string;
+  year: string;
+  postoffice_location_id: string;
+  locationname: string;
+  address_street: string;
+  address_city: string;
+  address_state: string;
+  address_zipcode: number;
+  total_sold: string;
+  orders_count: string;
+};
+
 // {
-//   package_id: '018e5e2b-4439-4f82-b016-27710fb9be42',
-//   sender_id: 'df2b3709-7fb7-4c95-a4a6-59bed3f81775',
-//   sender_email: 'Ardella_Conroy@gmail.com',
-//   receiver_id: 'fb017dfb-7bcc-4664-ac48-36701f3723d2',
-//   receiver_email: 'Lowell.Fritsch@gmail.com',
-//   cost: '1093',
-//   weight: '19.01',
-//   size: 'large',
-//   type: 'envelope',
-//   status: 'accepted',
-//   createdAt: 2022-12-12T06:00:00.000Z
+//   product_id: 'f1463992-b2bb-472f-a995-da105421832b',
+//   product_name: 'Duck Tape',
+//   month: '4',
+//   year: '2023',
+//   postoffice_location_id: '61e57254-20db-4443-90a0-864505c17cbf',
+//   locationname: 'UH Building',
+//   address_street: '13 jane st',
+//   address_city: 'houston',
+//   address_state: 'tx',
+//   address_zipcode: 77777,
+//   total_sold: '5',
+//   orders_count: '1'
 // }
