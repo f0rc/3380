@@ -100,9 +100,9 @@ export const employeeRouter = router({
       SUM(WL.hours) AS "hours"
   FROM
       "EMPLOYEE" AS E
-  JOIN "WORKS_FOR" AS WF ON E.employee_id = WF.employee_id
-  JOIN "POSTOFFICE_LOCATION" AS PL ON WF.postoffice_location_id = PL.postoffice_location_id
-  JOIN "WORK_LOG" AS WL ON E.employee_id = WL.employee_id
+  LEFT JOIN "WORKS_FOR" AS WF ON E.employee_id = WF.employee_id
+  LEFT JOIN "POSTOFFICE_LOCATION" AS PL ON WF.postoffice_location_id = PL.postoffice_location_id
+  LEFT JOIN "WORK_LOG" AS WL ON E.employee_id = WL.employee_id
   GROUP BY
       E.employee_id,
       PL.locationname;`,
@@ -122,6 +122,8 @@ export const employeeRouter = router({
     .input(z.object({ employeeID: z.string() }))
     .query(async ({ ctx, input }) => {
       const { postgresQuery } = ctx;
+
+      console.log(input);
 
       const dbGetEmployee = await postgresQuery(
         `SELECT
