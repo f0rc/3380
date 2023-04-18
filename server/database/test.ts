@@ -51,7 +51,56 @@ const createAdmin = async () => {
   // console.log(getOrders.rows);
 
   const orderReport = await postgresQuery(
-    `
+    `WITH monthly_sales AS (
+      SELECT
+          oi.product_id,
+          EXTRACT(MONTH FROM o.order_date) AS month,
+          EXTRACT(YEAR FROM o.order_date) AS year,
+          o.postoffice_location_id,
+          COUNT(DISTINCT o.order_id) AS orders_count,
+          SUM(oi.quantity) AS total_sold
+      FROM
+          "ORDER_ITEMS" AS oi
+      JOIN
+          "ORDER" AS o
+      ON
+          oi.order_id = o.order_id
+      JOIN
+          "POSTOFFICE_LOCATION" AS pl
+      ON
+          o.postoffice_location_id = pl.postoffice_location_id
+      WHERE
+          TRUE AND pl.postoffice_location_id = $1
+
+          GROUP BY
+              oi.product_id, month, year, o.postoffice_location_id
+          )
+      
+          SELECT
+            ms.product_id,
+            p.product_name,
+            ms.month,
+            ms.year,
+            ms.postoffice_location_id,
+            pl.locationname,
+            pl.address_street,
+            pl.address_city,
+            pl.address_state,
+            pl.address_zipcode,
+            ms.orders_count,
+            ms.total_sold
+          FROM
+            monthly_sales AS ms
+          JOIN
+            "PRODUCT" AS p
+          ON
+            ms.product_id = p.product_id
+          JOIN
+            "POSTOFFICE_LOCATION" AS pl
+          ON
+            ms.postoffice_location_id = pl.postoffice_location_id
+          ORDER BY
+            ms.year, ms.month, ms.product_id;
       
       `,
     ["61e57254-20db-4443-90a0-864505c17cbf"]

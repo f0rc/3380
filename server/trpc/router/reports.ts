@@ -445,6 +445,86 @@ export const reportRouter = router({
         report: report.rows as PackageReportSchema[],
       };
     }),
+
+  getProductReport: protectedProcedure
+    .input(
+      z.object({
+        startDate: z.string().optional(),
+        endDate: z.string().optional(),
+        postoffice_location_id: z.string().optional(),
+      })
+    )
+    .query(async ({ input, ctx }) => {
+      const queryBuilder = (data: typeof input) => {
+        const values = [];
+        let index = 1;
+
+        let query = `
+          WITH monthly_sales AS (
+            SELECT
+                oi.product_id,
+                EXTRACT(MONTH FROM o.order_date) AS month,
+                EXTRACT(YEAR FROM o.order_date) AS year,
+                o.postoffice_location_id,
+                COUNT(DISTINCT o.order_id) AS orders_count,
+                SUM(oi.quantity) AS total_sold
+            FROM
+                "ORDER_ITEMS" AS oi
+            JOIN
+                "ORDER" AS o
+            ON
+                oi.order_id = o.order_id
+            JOIN
+                "POSTOFFICE_LOCATION" AS pl
+            ON
+                o.postoffice_location_id = pl.postoffice_location_id
+            WHERE
+                TRUE`;
+
+        if (data.postoffice_location_id) {
+          query += ` AND pl.postoffice_location_id = $${index}`;
+          values.push(data.postoffice_location_id);
+          index++;
+        }
+
+        query += `
+            GROUP BY
+              oi.product_id, month, year, o.postoffice_location_id
+          )
+      
+          SELECT
+            ms.product_id,
+            p.product_name,
+            ms.month,
+            ms.year,
+            ms.postoffice_location_id,
+            pl.locationname,
+            pl.address_street,
+            pl.address_city,
+            pl.address_state,
+            pl.address_zipcode,
+            ms.orders_count,
+            ms.total_sold
+          FROM
+            monthly_sales AS ms
+          JOIN
+            "PRODUCT" AS p
+          ON
+            ms.product_id = p.product_id
+          JOIN
+            "POSTOFFICE_LOCATION" AS pl
+          ON
+            ms.postoffice_location_id = pl.postoffice_location_id
+          ORDER BY
+            ms.year, ms.month, ms.product_id;
+          `;
+
+        return {
+          text: query,
+          values,
+        };
+      };
+    }),
 });
 
 export interface postOfficeLocationReport {
