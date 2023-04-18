@@ -122,14 +122,14 @@ const Layout = () => {
                 }}
                 className="focus:ring-4 focus:outline-none font-lg rounded-lg text-sm px-5 py-2.5 text-center mr-0 hover:bg-[#cfdbd5] hover:text-black  border-b border-[#dfe22c] ring-[#dfe22c]"
               >
-                logout
+                Log Out
               </button>
             ) : (
               <Link
                 to="/login"
                 className="focus:ring-4 focus:outline-none font-lg rounded-lg text-sm px-5 py-2 text-center mr-0  hover:bg-[#cfdbd5] hover:text-black border-b border-[#dfe22c] ring-[#dfe22c]"
               >
-                login
+                Log In or Sign Up
               </Link>
             )}
           </div>
