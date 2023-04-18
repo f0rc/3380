@@ -338,11 +338,11 @@ const createFakeLogHours = async (numberOfHours = 100) => {
 
 const main = async () => {
   await createFakeLocations(2);
-  // await createFakeManagers(5);
-  // await createFakeEmployees(10);
-  // await createFakeCustomers(10);
-  // await createFakePackages(20);
-  // await createFakeLogHours(100);
+  await createFakeManagers(5);
+  await createFakeEmployees(10);
+  await createFakeCustomers(10);
+  await createFakePackages(20);
+  await createFakeLogHours(100);
 };
 
 main();
