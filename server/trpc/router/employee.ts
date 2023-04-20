@@ -136,14 +136,23 @@ export const employeeRouter = router({
         PL.address_state AS postoffice_address_state,
         PL.address_zipcode AS postoffice_address_zipcode,
         SUM(WL.hours) AS "hours"
-      FROM
-          "EMPLOYEE" AS E
-          LEFT JOIN "WORKS_FOR" AS WF ON E.employee_id = WF.employee_id
-          LEFT JOIN "WORK_LOG" AS WL ON E.employee_id = WL.employee_id
-          LEFT JOIN "POSTOFFICE_LOCATION" AS PL ON WF.postoffice_location_id = PL.postoffice_location_id
-          LEFT JOIN "EMPLOYEE" AS M ON E.manager_id = M.employee_id
-      WHERE
-          E.employee_id = $1;`,
+    FROM
+        "EMPLOYEE" AS E
+        LEFT JOIN "WORKS_FOR" AS WF ON E.employee_id = WF.employee_id
+        LEFT JOIN "WORK_LOG" AS WL ON E.employee_id = WL.employee_id
+        LEFT JOIN "POSTOFFICE_LOCATION" AS PL ON WF.postoffice_location_id = PL.postoffice_location_id
+        LEFT JOIN "EMPLOYEE" AS M ON E.manager_id = M.employee_id
+    WHERE
+        E.employee_id = $1
+    GROUP BY
+        E.employee_id,
+        M.lastname,
+        PL.postoffice_location_id,
+        PL.locationname,
+        PL.address_street,
+        PL.address_city,
+        PL.address_state,
+        PL.address_zipcode;`,
         [input.employeeID]
       );
 

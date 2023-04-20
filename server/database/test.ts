@@ -49,7 +49,6 @@ const createAdmin = async () => {
   //   ["61e57254-20db-4443-90a0-864505c17cbf"]
   // );
   // console.log(getOrders.rows);
-
   const orderReport = await postgresQuery(
     `WITH monthly_sales AS (
       SELECT
@@ -71,11 +70,9 @@ const createAdmin = async () => {
           o.postoffice_location_id = pl.postoffice_location_id
       WHERE
           TRUE AND pl.postoffice_location_id = $1
-
           GROUP BY
               oi.product_id, month, year, o.postoffice_location_id
           )
-      
           SELECT
             ms.product_id,
             p.product_name,
@@ -101,12 +98,41 @@ const createAdmin = async () => {
             ms.postoffice_location_id = pl.postoffice_location_id
           ORDER BY
             ms.year, ms.month, ms.product_id;
-      
       `,
-    ["61e57254-20db-4443-90a0-864505c17cbf"]
+    ["a939a17f-3e6f-442d-aa8b-708e44765002"]
   );
-
   console.log(orderReport.rows);
+  //   const dbGetEmployee = await postgresQuery(
+  //     `SELECT
+  //     E.*,
+  //     M.lastname AS manager_lastname,
+  //     PL.postoffice_location_id,
+  //     PL.locationname AS postoffice_locationname,
+  //     PL.address_street AS postoffice_address_street,
+  //     PL.address_city AS postoffice_address_city,
+  //     PL.address_state AS postoffice_address_state,
+  //     PL.address_zipcode AS postoffice_address_zipcode,
+  //     SUM(WL.hours) AS "hours"
+  // FROM
+  //     "EMPLOYEE" AS E
+  //     LEFT JOIN "WORKS_FOR" AS WF ON E.employee_id = WF.employee_id
+  //     LEFT JOIN "WORK_LOG" AS WL ON E.employee_id = WL.employee_id
+  //     LEFT JOIN "POSTOFFICE_LOCATION" AS PL ON WF.postoffice_location_id = PL.postoffice_location_id
+  //     LEFT JOIN "EMPLOYEE" AS M ON E.manager_id = M.employee_id
+  // WHERE
+  //     E.employee_id = $1
+  // GROUP BY
+  //     E.employee_id,
+  //     M.lastname,
+  //     PL.postoffice_location_id,
+  //     PL.locationname,
+  //     PL.address_street,
+  //     PL.address_city,
+  //     PL.address_state,
+  //     PL.address_zipcode;`,
+  //     ["39ff8ce3-d988-4e3f-bbb3-de144bd1aa7a"]
+  //   );
+  // console.log(dbGetEmployee.rows[0]);
 };
 
 createAdmin();
