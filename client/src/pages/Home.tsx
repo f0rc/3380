@@ -21,7 +21,7 @@ const Home = () => {
   };
 
   useEffect(() => {
-    console.log("DATA", packageDetails);
+    // console.log("DATA", packageDetails);
     if (packageDetails?.status === "success") {
       navigator(`package/${packageId}`, {
         state: { data: packageDetails?.packageDetails },

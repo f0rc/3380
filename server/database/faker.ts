@@ -1,5 +1,6 @@
 import { faker } from "@faker-js/faker";
 import { postgresQuery } from "./db";
+import { randomUUID } from "crypto";
 
 function generateOneWordBuildingName() {
   const buildingPrefixes = [
@@ -311,7 +312,7 @@ const createFakePackages = async (numberOfPackages = 100) => {
 
 const createFakeLogHours = async (numberOfHours = 100) => {
   const getEmployees = await postgresQuery(
-    `SELECT "employee_id" FROM "WORKS_FOR"`,
+    `SELECT "employee_id" FROM "EMPLOYEE" WHERE "role" = 3`,
     []
   );
 
@@ -336,12 +337,46 @@ const createFakeLogHours = async (numberOfHours = 100) => {
   }
 };
 
+const productsList = [
+  {
+    name: "Duck Tape",
+    image: "images/5ed90d5e-456d-4844-9c61-da5b98788d33",
+    discription: "Very Cool Duck Tape",
+    price: 10.99,
+  },
+  {
+    name: "Cardboard Box",
+    image: "images/5048933fc84ed718f592e4df088aac8",
+    price: 25.99,
+  },
+  {
+    name: "Envelope",
+    image: "images/149fbd2c960a71c0f36f7cfa1b8f40ab",
+    price: 5.99,
+  },
+  {
+    name: "Bubble Wrap",
+    image: "images/59c2e60b9cdf64bcac32c01fd5eb131a",
+    price: 15.99,
+  },
+  {
+    name: "Manila Envelope",
+    image: "images/fa84bd01-ad25-4a81-89bf-c057eb8e221b",
+    price: 10.99,
+  },
+  {
+    name: "Packing Sticker",
+    image: "images/1ab1b493-76cf-4447-965e-79e97c4fd3de",
+    price: 5.99,
+  },
+];
+
 const main = async () => {
-  await createFakeLocations(10);
-  await createFakeManagers(5);
-  await createFakeEmployees(10);
-  await createFakeCustomers(10);
-  await createFakeLogHours(20);
+  await createFakeLocations(6);
+  await createFakeManagers(3);
+  await createFakeEmployees(20);
+  await createFakeCustomers(50);
+  await createFakeLogHours(500);
   await createFakePackages(20);
 };
 

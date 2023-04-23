@@ -438,7 +438,7 @@ export const reportRouter = router({
         queryBuilder({ startDate, endDate, postoffice_location_id }).values
       );
 
-      console.log(report.rows);
+      // console.log(report.rows);
 
       return {
         status: "success",
@@ -480,10 +480,10 @@ export const reportRouter = router({
             ON
                 o.postoffice_location_id = pl.postoffice_location_id
             WHERE
-                TRUE`;
+                1=1`;
 
         if (data.postoffice_location_id) {
-          query += ` AND pl.postoffice_location_id = $${index}`;
+          query += ` AND o.postoffice_location_id = $${index}`;
           values.push(data.postoffice_location_id);
           index++;
         }
@@ -530,8 +530,9 @@ export const reportRouter = router({
             "POSTOFFICE_LOCATION" AS pl
           ON
             ms.postoffice_location_id = pl.postoffice_location_id
+          
           ORDER BY
-            ms.year, ms.month, ms.product_id;
+            ms.year, ms.month, ms.product_id
           `;
 
         return {
@@ -546,6 +547,8 @@ export const reportRouter = router({
         queryBuilder({ ...input }).text,
         queryBuilder({ ...input }).values
       );
+
+      console.log(report.rows);
 
       return {
         status: "success",
