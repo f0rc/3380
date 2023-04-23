@@ -462,12 +462,13 @@ export const reportRouter = router({
         let query = `
           WITH monthly_sales AS (
             SELECT
-                oi.product_id,
-                EXTRACT(MONTH FROM o.order_date) AS month,
-                EXTRACT(YEAR FROM o.order_date) AS year,
-                o.postoffice_location_id,
-                COUNT(DISTINCT o.order_id) AS orders_count,
-                SUM(oi.quantity) AS total_sold
+              oi.product_id,
+              EXTRACT(MONTH FROM o.order_date) AS month,
+              EXTRACT(YEAR FROM o.order_date) AS year,
+              o.postoffice_location_id,
+              COUNT(DISTINCT o.order_id) AS orders_count,
+              SUM(oi.quantity) AS total_sold,
+              SUM(oi.price * oi.quantity) AS total_revenue
             FROM
                 "ORDER_ITEMS" AS oi
             JOIN
@@ -487,6 +488,18 @@ export const reportRouter = router({
           index++;
         }
 
+        if (data.startDate) {
+          query += ` AND o.order_date >= $${index}`;
+          values.push(data.startDate);
+          index++;
+        }
+
+        if (data.endDate) {
+          query += ` AND o.order_date <= $${index}`;
+          values.push(data.endDate);
+          index++;
+        }
+
         query += `
             GROUP BY
               oi.product_id, month, year, o.postoffice_location_id
@@ -495,6 +508,7 @@ export const reportRouter = router({
           SELECT
             ms.product_id,
             p.product_name,
+            p.price,
             ms.month,
             ms.year,
             ms.postoffice_location_id,
@@ -504,7 +518,8 @@ export const reportRouter = router({
             pl.address_state,
             pl.address_zipcode,
             ms.orders_count,
-            ms.total_sold
+            ms.total_sold,
+            ms.total_revenue
           FROM
             monthly_sales AS ms
           JOIN
@@ -523,6 +538,18 @@ export const reportRouter = router({
           text: query,
           values,
         };
+      };
+
+      const { postgresQuery } = ctx;
+
+      const report = await postgresQuery(
+        queryBuilder({ ...input }).text,
+        queryBuilder({ ...input }).values
+      );
+
+      return {
+        status: "success",
+        report: report.rows as ProductReportSchema[],
       };
     }),
 });
@@ -562,6 +589,7 @@ export type PackageTableData = {
 export type ProductReportSchema = {
   product_id: string;
   product_name: string;
+  price: string;
   month: string;
   year: string;
   postoffice_location_id: string;
@@ -570,21 +598,24 @@ export type ProductReportSchema = {
   address_city: string;
   address_state: string;
   address_zipcode: number;
-  total_sold: string;
   orders_count: string;
+  total_sold: string;
+  total_revenue: string;
 };
 
 // {
-//   product_id: 'f1463992-b2bb-472f-a995-da105421832b',
-//   product_name: 'Duck Tape',
+//   product_id: '8961bb74-2047-45ba-aba7-5d9e057be0ec',
+//   product_name: 'money',
+//   price: '20.00',
 //   month: '4',
 //   year: '2023',
-//   postoffice_location_id: '61e57254-20db-4443-90a0-864505c17cbf',
-//   locationname: 'UH Building',
-//   address_street: '13 jane st',
-//   address_city: 'houston',
-//   address_state: 'tx',
-//   address_zipcode: 77777,
-//   total_sold: '5',
-//   orders_count: '1'
+//   postoffice_location_id: 'd6976302-7092-4804-8b08-127f0a320002',
+//   locationname: 'Geo Palace',
+//   address_street: '72820 Jaime Loaf',
+//   address_city: 'Wuckertborough',
+//   address_state: 'TX',
+//   address_zipcode: 84703,
+//   orders_count: '3',
+//   total_sold: '18',
+//   total_revenue: '360.00'
 // }

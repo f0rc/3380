@@ -1,5 +1,4 @@
 import React, { useEffect } from "react";
-import ReactDOM from "react-dom/client";
 import {
   Column,
   Table,
@@ -50,21 +49,6 @@ const fuzzyFilter: FilterFn<any> = (row, columnId, value, addMeta) => {
   return itemRank.passed;
 };
 
-const fuzzySort: SortingFn<any> = (rowA, rowB, columnId) => {
-  let dir = 0;
-
-  // Only sort by rank if the column has ranking information
-  if (rowA.columnFiltersMeta[columnId]) {
-    dir = compareItems(
-      rowA.columnFiltersMeta[columnId]?.itemRank!,
-      rowB.columnFiltersMeta[columnId]?.itemRank!
-    );
-  }
-
-  // Provide an alphanumeric fallback for when the item ranks are equal
-  return dir === 0 ? sortingFns.alphanumeric(rowA, rowB, columnId) : dir;
-};
-
 export default function EmployeeTableReport({
   data,
 }: {
@@ -82,8 +66,6 @@ export default function EmployeeTableReport({
     []
   );
   const [globalFilter, setGlobalFilter] = React.useState("");
-
-  console.log(data);
 
   const columns = React.useMemo<ColumnDef<employeeList>[]>(
     () => [
@@ -156,45 +138,41 @@ export default function EmployeeTableReport({
             <table className="border border-[#41413E]">
               <thead>
                 {table.getHeaderGroups().map((headerGroup) => (
-                  <>
-                    <tr key={headerGroup.id} className="">
-                      {headerGroup.headers.map((header) => {
-                        return (
-                          <>
-                            <th
-                              key={header.id}
-                              colSpan={header.colSpan}
-                              className="px-6 py-4 border-b border-r  border-[#41413E] font-bold uppercase  cursor-pointer overflow-hidden"
-                            >
-                              {header.isPlaceholder ? null : (
-                                <>
-                                  <div
-                                    {...{
-                                      className: header.column.getCanSort()
-                                        ? "cursor-pointer select-none flex flex-col "
-                                        : " flex flex-col",
-                                      onClick:
-                                        header.column.getToggleSortingHandler(),
-                                    }}
-                                  >
-                                    {flexRender(
-                                      header.column.columnDef.header,
-                                      header.getContext()
-                                    )}
-                                    {{
-                                      asc: " 🔼",
-                                      desc: " 🔽",
-                                    }[header.column.getIsSorted() as string] ??
-                                      null}
-                                  </div>
-                                </>
-                              )}
-                            </th>
-                          </>
-                        );
-                      })}
-                    </tr>
-                  </>
+                  <tr key={headerGroup.id} className="">
+                    {headerGroup.headers.map((header) => {
+                      return (
+                        <th
+                          key={header.id}
+                          colSpan={header.colSpan}
+                          className="px-6 py-4 border-b border-r  border-[#41413E] font-bold uppercase  cursor-pointer overflow-hidden"
+                        >
+                          {header.isPlaceholder ? null : (
+                            <>
+                              <div
+                                {...{
+                                  className: header.column.getCanSort()
+                                    ? "cursor-pointer select-none flex flex-col "
+                                    : " flex flex-col",
+                                  onClick:
+                                    header.column.getToggleSortingHandler(),
+                                }}
+                              >
+                                {flexRender(
+                                  header.column.columnDef.header,
+                                  header.getContext()
+                                )}
+                                {{
+                                  asc: " 🔼",
+                                  desc: " 🔽",
+                                }[header.column.getIsSorted() as string] ??
+                                  null}
+                              </div>
+                            </>
+                          )}
+                        </th>
+                      );
+                    })}
+                  </tr>
                 ))}
               </thead>
               <tbody className="text-gray-100 text-center text-md">
