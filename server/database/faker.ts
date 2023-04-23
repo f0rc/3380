@@ -373,7 +373,7 @@ const productsList = [
 
 const main = async () => {
   await createFakeLocations(6);
-  await createFakeManagers(3);
+  await createFakeManagers(6);
   await createFakeEmployees(20);
   await createFakeCustomers(50);
   await createFakeLogHours(500);

@@ -10,7 +10,14 @@ const handler = createHTTPHandler({
 
 const server = http.createServer((req, res) => {
   // CORS change this to your domain
-  res.setHeader("Access-Control-Allow-Origin", `${process.env.PUBLIC_URL}`);
+  res.setHeader(
+    "Access-Control-Allow-Origin",
+    `${
+      process.env.NODE_ENV === "production"
+        ? process.env.PUBLIC_URL
+        : "http://localhost:3000"
+    }`
+  );
   res.setHeader("Access-Control-Request-Method", "GET, POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Methods", "OPTIONS, GET, POST");
   res.setHeader("Access-Control-Allow-Headers", "content-type");

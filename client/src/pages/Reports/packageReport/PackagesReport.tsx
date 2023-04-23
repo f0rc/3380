@@ -10,25 +10,7 @@ import Chart from "chart.js/auto";
 import { PackageReportSchema } from "../../../../../server/trpc/router/reports";
 import "chartjs-adapter-date-fns";
 
-import {
-  Column,
-  Table,
-  useReactTable,
-  ColumnFiltersState,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getFacetedRowModel,
-  getFacetedUniqueValues,
-  getFacetedMinMaxValues,
-  getPaginationRowModel,
-  sortingFns,
-  getSortedRowModel,
-  FilterFn,
-  SortingFn,
-  ColumnDef,
-  flexRender,
-  FilterFns,
-} from "@tanstack/react-table";
+import { FilterFn } from "@tanstack/react-table";
 
 import {
   RankingInfo,
@@ -47,41 +29,8 @@ declare module "@tanstack/table-core" {
   }
 }
 
-const fuzzyFilter: FilterFn<any> = (row, columnId, value, addMeta) => {
-  // Rank the item
-  const itemRank = rankItem(row.getValue(columnId), value);
-
-  // Store the itemRank info
-  addMeta({
-    itemRank,
-  });
-
-  // Return if the item should be filtered in/out
-  return itemRank.passed;
-};
-
-const fuzzySort: SortingFn<any> = (rowA, rowB, columnId) => {
-  let dir = 0;
-
-  // Only sort by rank if the column has ranking information
-  if (rowA.columnFiltersMeta[columnId]) {
-    dir = compareItems(
-      rowA.columnFiltersMeta[columnId]?.itemRank!,
-      rowB.columnFiltersMeta[columnId]?.itemRank!
-    );
-  }
-
-  // Provide an alphanumeric fallback for when the item ranks are equal
-  return dir === 0 ? sortingFns.alphanumeric(rowA, rowB, columnId) : dir;
-};
-
 Chart.register(LinearScale, TimeScale);
 Chart.defaults.backgroundColor = "#ffff";
-
-type ChatDataItem = {
-  month: string;
-  package_count: string;
-};
 
 type ChartData = {
   labels: string[];
@@ -265,6 +214,9 @@ const PackagesReport = () => {
                       type: "time",
                       time: {
                         unit: "month",
+                        displayFormats: {
+                          month: "yyyy-MM",
+                        },
                       },
                     },
                     y: {

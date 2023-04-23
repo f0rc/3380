@@ -13,25 +13,7 @@ import {
 } from "../../../../../server/trpc/router/reports";
 import "chartjs-adapter-date-fns";
 
-import {
-  Column,
-  Table,
-  useReactTable,
-  ColumnFiltersState,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getFacetedRowModel,
-  getFacetedUniqueValues,
-  getFacetedMinMaxValues,
-  getPaginationRowModel,
-  sortingFns,
-  getSortedRowModel,
-  FilterFn,
-  SortingFn,
-  ColumnDef,
-  flexRender,
-  FilterFns,
-} from "@tanstack/react-table";
+import { FilterFn } from "@tanstack/react-table";
 
 import {
   RankingInfo,
@@ -105,21 +87,20 @@ const EmployeeReport = () => {
   const [chartData, setChartData] = useState<ChartData | null>(null);
 
   const formatChartData = (chatData: postOfficeLocationReport[]): ChartData => {
-    const labels = chatData.map(
-      (item) =>
-        item.year +
-        "-" +
-        (item.month.length === 1 ? "0" + item.month : item.month)
-    );
+    const labels = chatData.map((item) => {
+      console.log("HERE", item.year, item.month);
+      return item.year + "-" + item.month;
+    });
+    console.log(labels);
     const values = chatData.map((item) => Number(item.total_hours));
 
-    // console.log("labels", labels);
-    // console.log("values", values);
+    console.log("labels", labels);
+    console.log("values", values);
     return {
       labels,
       datasets: [
         {
-          label: "Hours Worked",
+          label: "Hours Worked Per Month Per Location",
           data: values,
           backgroundColor: "rgba(75, 192, 192, 0.2)",
           borderColor: "rgba(75, 192, 192, 1)",

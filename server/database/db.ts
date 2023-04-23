@@ -3,11 +3,11 @@ import { Pool } from "pg";
 import { env } from "../env";
 
 const pool = new Pool({
-  host: env.PGHOST,
-  port: Number(env.PGPORT),
-  user: env.PGUSER,
-  password: env.PGPASSWORD,
-  database: env.PGDATABASE,
+  host: process.env.NODE_ENV === "production" ? env.PGHOST : "localhost",
+  port: process.env.NODE_ENV === "production" ? Number(env.PGPORT) : 6543,
+  user: process.env.NODE_ENV === "production" ? env.PGUSER : "test",
+  password: process.env.NODE_ENV === "production" ? env.PGPASSWORD : "test",
+  database: process.env.NODE_ENV === "production" ? env.PGDATABASE : "test",
 
   max: 20,
   // idleTimeoutMillis: 30000,

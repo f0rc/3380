@@ -89,7 +89,7 @@ export const credRouter = router({
       const cookies = new Cookies(ctx.req, ctx.res, { secure: true });
       cookies.set("auth-session-id", sessionToken, {
         expires: sessionexpires,
-        sameSite: "lax",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
       });

@@ -227,8 +227,8 @@ const ProductReport = () => {
               <Bar
                 data={chartData}
                 style={{
-                  height: "400px",
-                  width: "200px",
+                  height: "50%",
+                  width: "50%",
                   border: "1px dotted rgba(255, 255, 255, 0.2)",
                 }}
                 options={{
@@ -242,6 +242,9 @@ const ProductReport = () => {
                       type: "time",
                       time: {
                         unit: "month",
+                        displayFormats: {
+                          month: "yyyy-MM",
+                        },
                       },
                     },
                     y: {

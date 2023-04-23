@@ -105,7 +105,7 @@ export const reportRouter = router({
         let query = `WITH "latest_status" AS (
           SELECT
               "package_id",
-              MAX("processedAt") AS "latest_processed_at"
+              MAX(intransitcounter) AS "latest_processed_at"
           FROM "PACKAGE_LOCATION_HISTORY"
           GROUP BY "package_id"
       )
@@ -125,7 +125,7 @@ export const reportRouter = router({
       JOIN "CUSTOMER" AS S ON P."sender_id" = S."customer_id"
       JOIN "CUSTOMER" AS R ON P."receiver_id" = R."customer_id"
       JOIN "PACKAGE_LOCATION_HISTORY" AS PLH ON P."package_id" = PLH."package_id"
-      JOIN "latest_status" AS LS ON PLH."package_id" = LS."package_id" AND PLH."processedAt" = LS."latest_processed_at"
+      JOIN "latest_status" AS LS ON PLH."package_id" = LS."package_id" AND PLH.intransitcounter = LS."latest_processed_at"
       WHERE TRUE`;
 
         let index = 1;
@@ -254,7 +254,7 @@ export const reportRouter = router({
         WITH employee_work_hours AS (
           SELECT
               wf.postoffice_location_id,
-              EXTRACT(MONTH FROM wl.date) AS month,
+              TO_CHAR(wl.date, 'MM') AS month,
               EXTRACT(YEAR FROM wl.date) AS year,
               SUM(wl.hours) AS total_hours
           FROM

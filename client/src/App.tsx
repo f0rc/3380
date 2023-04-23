@@ -17,11 +17,16 @@ export function App() {
         }),
 
         httpBatchLink({
-          url: `${import.meta.env.VITE_BACKEND_URL}:${
-            import.meta.env.VITE_BACKEND_PORT
+          url: `${
+            process.env.NODE_ENV === "production"
+              ? import.meta.env.VITE_BACKEND_URL
+              : "http://localhost:8080"
           }`,
           fetch(url, opts) {
-            // console.log(import.meta.env.VITE_BACKEND_PORT);
+            // console.log(
+            //   import.meta.env.VITE_BACKEND_URL,
+            //   import.meta.env.VITE_BACKEND_PORT
+            // );
             return fetch(url, {
               ...opts,
               credentials: "include",
