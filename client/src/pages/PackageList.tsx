@@ -219,7 +219,7 @@ const PackageList = () => {
                       {pkg.size}
                     </td>
                     <td className="px-6 py-4 border-b border-r border-[#41413E]">
-                      {new Date(pkg.processedAt).toLocaleString()}
+                      {new Date(pkg.processedAt).toLocaleString().split(",")[0]}
                     </td>
                     <td className="px-6 py-4 border-b  border-[#41413E]">
                       <span

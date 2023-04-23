@@ -73,6 +73,7 @@ export default function EmployeeTable({ data }: { data: employeeList[] }) {
       state: { data: employee },
     });
   };
+
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   );
@@ -94,10 +95,23 @@ export default function EmployeeTable({ data }: { data: employeeList[] }) {
         accessorKey: "role",
         header: "role",
         footer: (props) => props.column.id,
+        cell: (props) => {
+          if (props.row.original.role === 4) {
+            return <span>Admin</span>;
+          } else if (props.row.original.role === 3) {
+            return <span>Manager</span>;
+          } else if (props.row.original.role === 2) {
+            return <span>Driver</span>;
+          } else if (props.row.original.role === 1) {
+            return <span>Clerk</span>;
+          } else {
+            return <span>Unassigned</span>;
+          }
+        },
       },
       {
         accessorKey: "hours",
-        header: "hours",
+        header: "Total hours",
         footer: (props) => props.column.id,
       },
       {
@@ -111,7 +125,7 @@ export default function EmployeeTable({ data }: { data: employeeList[] }) {
         footer: (props) => props.column.id,
       },
       {
-        accessorKey: "locationname",
+        accessorKey: "work_location",
         header: "Work Location",
         footer: (props) => props.column.id,
       },
@@ -142,6 +156,8 @@ export default function EmployeeTable({ data }: { data: employeeList[] }) {
   });
 
   const navigate = useNavigate();
+
+  // console.log();
   return (
     <div className="flex justify-center">
       <div className="max-w-5xl">
@@ -210,6 +226,7 @@ export default function EmployeeTable({ data }: { data: employeeList[] }) {
                   hover:bg-[#c0bcbc] hover:text-[#1D1D1C] cursor-pointer h-2 even:bg-[#3A3A38] bg-[#2F2F2E]"
                     >
                       {row.getVisibleCells().map((cell) => {
+                        // console.log("MONEY");
                         return (
                           <td
                             key={cell.id}
