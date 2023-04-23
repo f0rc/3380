@@ -1,8 +1,8 @@
 import { randomUUID } from "crypto";
-import Postgres from "pg";
+import { Pool } from "pg";
 import { env } from "../env";
 
-const pool = new Postgres.Pool({
+const pool = new Pool({
   host: env.PGHOST,
   port: Number(env.PGPORT),
   user: env.PGUSER,

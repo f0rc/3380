@@ -490,68 +490,160 @@ FOR EACH ROW
 EXECUTE FUNCTION email_after_insert();
 
 
+CREATE OR REPLACE FUNCTION simulate_delivery_system_accepted()
+RETURNS TRIGGER AS $$
+DECLARE
+  rand_probability FLOAT;
+  new_location TEXT;
+  new_intransitcounter INTEGER;
+BEGIN
+    NEW.status := 'transit';
+    new_intransitcounter := NEW.intransitcounter + 1;
+
+    -- Select a random postoffice_location that has not been a part of the past postoffice_locations
+    LOOP
+      SELECT postoffice_location_id
+      INTO new_location
+      FROM "POSTOFFICE_LOCATION"
+      WHERE postoffice_location_id != NEW.postoffice_location_id
+      ORDER BY RANDOM()
+      LIMIT 1;
+
+      IF NOT EXISTS (
+        SELECT 1
+        FROM "PACKAGE_LOCATION_HISTORY"
+        WHERE package_id = NEW.package_id
+        AND postoffice_location_id = new_location
+      ) THEN
+        EXIT;
+      END IF;
+    END LOOP;
+
+    INSERT INTO "PACKAGE_LOCATION_HISTORY" (
+      package_id,
+      postoffice_location_id,
+      intransitcounter,
+      status,
+      "processedBy"
+    ) VALUES (
+      NEW.package_id,
+      new_location,
+      new_intransitcounter,
+      NEW.status,
+      NEW."processedBy"
+    );
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER after_package_location_history_insert
+AFTER INSERT ON "PACKAGE_LOCATION_HISTORY"
+FOR EACH ROW
+WHEN (NEW.status = 'accepted')
+EXECUTE FUNCTION simulate_delivery_system_accepted();
 
 
+CREATE OR REPLACE FUNCTION simulate_delivery_system_transit()
+RETURNS TRIGGER AS $$
+DECLARE
+  rand_probability FLOAT;
+  new_location TEXT;
+  new_intransitcounter INTEGER;
+BEGIN
+    rand_probability := RANDOM();
+    -- Set the intransitcounter based on the probability
+    IF NEW.intransitcounter = 1 AND rand_probability < 0.8 THEN
+    new_intransitcounter := NEW.intransitcounter + 1;
+    ELSIF NEW.intransitcounter = 2 AND rand_probability < 0.6 THEN
+    new_intransitcounter := NEW.intransitcounter + 1;
+    ELSIF NEW.intransitcounter = 3 AND rand_probability < 0.4 THEN
+    new_intransitcounter := NEW.intransitcounter + 1;
+    ELSE
+    new_intransitcounter := NEW.intransitcounter + 1;
+    END IF;
 
+    IF new_intransitcounter >= 4 THEN
+    NEW.status := 'out-for-delivery';
+    ELSE
+    NEW.status := 'transit';
+    END IF;
 
--- trigger to add a new entry into "WORKS_FOR" table when a new employee is added
+    LOOP
+      SELECT postoffice_location_id
+      INTO new_location
+      FROM "POSTOFFICE_LOCATION"
+      WHERE postoffice_location_id != NEW.postoffice_location_id
+      ORDER BY RANDOM()
+      LIMIT 1;
 
+      IF NOT EXISTS (
+        SELECT 1
+        FROM "PACKAGE_LOCATION_HISTORY"
+        WHERE package_id = NEW.package_id
+        AND postoffice_location_id = new_location
+      ) THEN
+        EXIT;
+      END IF;
+    END LOOP;
 
+    INSERT INTO "PACKAGE_LOCATION_HISTORY" (
+      package_id,
+      postoffice_location_id,
+      intransitcounter,
+      status,
+      "processedBy"
+    ) VALUES (
+      NEW.package_id,
+      new_location,
+      new_intransitcounter,
+      NEW.status,
+      NEW."processedBy"
+    );
 
--- does not work
--- CREATE TRIGGER adding_Profit ON orders
--- AFTER INSERT ON purchases
--- FOR EACH ROW
--- BEGIN
---     Update Company
---     CONSTRAINT "company_profit" PRIMARY KEY ("profit"),
---     CONSTRAINT "company_ProductID" PRIMARY KEY("ProductID");
---     CONSTRAINT "Product_Cost" PRIMARY KEY("Cost");
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
 
---     SELECT company_profit, company_ProductID
---     FROM Company,Product
---     SET company_profit = company_profit+Product_Cost
---     WHERE company.id = NEW.company_id;
---     END IF;
--- END;
+CREATE TRIGGER after_package_location_history_insert_transit
+AFTER INSERT ON "PACKAGE_LOCATION_HISTORY"
+FOR EACH ROW
+WHEN (NEW.status = 'transit')
+EXECUTE FUNCTION simulate_delivery_system_transit();
 
--- CREATE TRIGGER receipt_Sender ON orders
--- FOR EACH ROW
--- BEGIN
---     CONSTRAINT "customer_email" PRIMARY KEY ("email"),
---     "order_id" INT;
---     "order_total" DECIMAL(10,2);
---     "order_date" DATE;
+CREATE OR REPLACE FUNCTION simulate_delivery_system_out()
+RETURNS TRIGGER AS $$
+DECLARE
+  rand_probability FLOAT;
+BEGIN
+    rand_probability := RANDOM();
 
---     SELECT customer_email, order_id, total_amount, order_date
---     FROM customer
---     WHERE order_id = NEW.order_id;
+    IF rand_probability < 0.1 THEN
+      NEW.status := 'fail';
+    ELSE
+      NEW.status := 'delivered';
+    END IF;
 
---     IF customer_email IS NOT NULL THEN
---         SELECT CONCAT('Order Receipt for Order #', order_id, '\n\n',
---                       'Order Date: ', order_date, '\n',
---                       'Total Amount: $', order_total) AS receipt;
---     END IF;
--- END; 
+    INSERT INTO "PACKAGE_LOCATION_HISTORY" (
+      package_id,
+      postoffice_location_id,
+      intransitcounter,
+      status,
+      "processedBy"
+    ) VALUES (
+      NEW.package_id,
+      NEW.postoffice_location_id,
+      NEW.intransitcounter + 1,
+      NEW.status,
+      NEW."processedBy"
+    );
 
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
 
--- need to fix this
--- CREATE TABLE "Company"(
---     "companyID" TEXT NOT NULL,
---     "ceo_fistName" VARCHAR(30) NOT NULL,
---     "ceo_lastname" VARCHAR(30) NOT NULL,
---     "email" TEXT NOT NULL,
---     "ceo_phoneNumber" INTEGER NOT NULL,
---     "companyName" TEXT NOT NULL,
---     "address_street" TEXT NOT NULL,
---     "address_street_2" TEXT,
---     "address_city" TEXT NOT NULL,
---     "address_state" TEXT NOT NULL,
---     "address_zipcode" INTEGER NOT NULL,
---     "revenue" INTEGER NOT NULL,
---     "profit" INTEGER NOT NULL,
---     "createdAt" DATE NOT NULL DEFAULT CURRENT_TIMESTAMP,
---     "updatedAt" DATE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
---     CONSTRAINT "company_pkey" PRIMARY KEY ("companyID")
--- );
+CREATE TRIGGER after_package_location_history_insert_out
+AFTER INSERT ON "PACKAGE_LOCATION_HISTORY"
+FOR EACH ROW
+WHEN (NEW.status = 'out-for-delivery')
+EXECUTE FUNCTION simulate_delivery_system_out();
