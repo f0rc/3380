@@ -7,8 +7,6 @@ import { lostStockNotification } from "../../../server/trpc/router/product";
 
 import toast, { Toaster } from "react-hot-toast";
 
-const notify = () => toast("Here is your toast.");
-
 export interface RouteType {
   path: string;
   index?: boolean;
