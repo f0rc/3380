@@ -97,15 +97,20 @@ export const employeeRouter = router({
       E."updatedAt",
       E."updatedBy",
       PL.locationname AS "work_location",
+      M.firstname AS "manager_firstname",
+      M.lastname AS "manager_lastname",
       SUM(WL.hours) AS "hours"
   FROM
       "EMPLOYEE" AS E
   LEFT JOIN "WORKS_FOR" AS WF ON E.employee_id = WF.employee_id
   LEFT JOIN "POSTOFFICE_LOCATION" AS PL ON WF.postoffice_location_id = PL.postoffice_location_id
   LEFT JOIN "WORK_LOG" AS WL ON E.employee_id = WL.employee_id
+  LEFT JOIN "EMPLOYEE" AS M ON E.manager_id = M.employee_id
   GROUP BY
       E.employee_id,
-      PL.locationname;`,
+      PL.locationname,
+      M.firstname,
+      M.lastname`,
       []
     );
 
@@ -325,7 +330,8 @@ export interface employeeList {
   salary: number;
   manager_id: string;
   manager_lastname: string;
-  locationname: string;
+  manager_firstname: string;
+  work_location: string;
   address_street: string;
   address_city: string;
   address_state: string;
