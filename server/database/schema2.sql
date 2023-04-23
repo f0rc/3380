@@ -408,6 +408,7 @@ AFTER UPDATE ON "PRODUCT_INVENTORY"
 FOR EACH ROW
 EXECUTE FUNCTION resolve_low_stock_alerts();
 
+
 CREATE TABLE "EMAIL_NOTIFICATION" (
     "email_notification_id" SERIAL NOT NULL,
     "recipient" TEXT NOT NULL,
@@ -420,74 +421,39 @@ CREATE TABLE "EMAIL_NOTIFICATION" (
     CONSTRAINT "EMAIL_NOTIFICATION_PK" PRIMARY KEY ("email_notification_id")
 );
 
-
 -- -- email trigger
--- CREATE OR REPLACE FUNCTION email_after_update()
--- RETURNS TRIGGER AS $$
--- DECLARE
---     sender_email TEXT;
---     receiver_email TEXT;
--- BEGIN
---     SELECT c.email
---     INTO sender_email
---     FROM "CUSTOMER" c
---     JOIN "PACKAGE" p ON p.sender_id = c.customer_id
---     WHERE p.package_id = NEW.package_id;
-
---     SELECT c.email
---     INTO receiver_email
---     FROM "CUSTOMER" c
---     JOIN "PACKAGE" p ON p.receiver_id = c.customer_id
---     WHERE p.package_id = NEW.package_id;
-
---     INSERT INTO "EMAIL_NOTIFICATION" (recipient, subject, body)
---     VALUES (sender_email, 'Order Update', 'Thank you for your order. Your order ID is ' || NEW.package_id || ' and its current status is ' || NEW.status || '.');
-
---     INSERT INTO "EMAIL_NOTIFICATION" (recipient, subject, body)
---     VALUES (receiver_email, 'Order Update', 'Thank you for your order. Your order ID is ' || NEW.package_id || ' and its current status is ' || NEW.status || '.');
-
---     RETURN NEW;
--- END;
--- $$ LANGUAGE plpgsql;
-
--- CREATE TRIGGER email_after_update_trigger
--- AFTER UPDATE ON "PACKAGE_LOCATION_HISTORY"
--- FOR EACH ROW
--- EXECUTE FUNCTION email_after_update();
-
-
-CREATE OR REPLACE FUNCTION email_after_insert()
+CREATE OR REPLACE FUNCTION email_after_update()
 RETURNS TRIGGER AS $$
 DECLARE
-    sender_phone TEXT;
-    receiver_phone TEXT;
+    sender_email TEXT;
+    receiver_email TEXT;
 BEGIN
-    SELECT c."phoneNumber"
-    INTO sender_phone
+    SELECT c.email
+    INTO sender_email
     FROM "CUSTOMER" c
     JOIN "PACKAGE" p ON p.sender_id = c.customer_id
     WHERE p.package_id = NEW.package_id;
 
-    SELECT c."phoneNumber"
-    INTO receiver_phone
+    SELECT c.email
+    INTO receiver_email
     FROM "CUSTOMER" c
     JOIN "PACKAGE" p ON p.receiver_id = c.customer_id
     WHERE p.package_id = NEW.package_id;
 
     INSERT INTO "EMAIL_NOTIFICATION" (recipient, subject, body)
-    VALUES (sender_phone, 'Order Update', 'Thank you for your order. Your order ID is ' || NEW.package_id || ' and its current status is ' || NEW.status || '.');
+    VALUES (sender_email, 'Order Update', 'Thank you for your order. Your order ID is ' || NEW.package_id || ' and its current status is ' || NEW.status || '.');
 
     INSERT INTO "EMAIL_NOTIFICATION" (recipient, subject, body)
-    VALUES (receiver_phone, 'Order Update', 'Thank you for your order. Your order ID is ' || NEW.package_id || ' and its current status is ' || NEW.status || '.');
+    VALUES (receiver_email, 'Order Update', 'Thank you for your order. Your order ID is ' || NEW.package_id || ' and its current status is ' || NEW.status || '.');
 
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER email_after_insert_trigger
-AFTER INSERT ON "PACKAGE_LOCATION_HISTORY"
+CREATE TRIGGER email_after_update_trigger
+AFTER UPDATE ON "PACKAGE_LOCATION_HISTORY"
 FOR EACH ROW
-EXECUTE FUNCTION email_after_insert();
+EXECUTE FUNCTION email_after_update();
 
 
 CREATE OR REPLACE FUNCTION simulate_delivery_system_accepted()
@@ -500,7 +466,6 @@ BEGIN
     NEW.status := 'transit';
     new_intransitcounter := NEW.intransitcounter + 1;
 
-    -- Select a random postoffice_location that has not been a part of the past postoffice_locations
     LOOP
       SELECT postoffice_location_id
       INTO new_location

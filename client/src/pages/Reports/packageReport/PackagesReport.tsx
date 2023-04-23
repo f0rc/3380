@@ -7,10 +7,7 @@ import { Bar } from "react-chartjs-2";
 import { LinearScale, TimeScale } from "chart.js";
 import Chart from "chart.js/auto";
 
-import {
-  PackageReportSchema,
-  postOfficeLocationReport,
-} from "../../../../../server/trpc/router/reports";
+import { PackageReportSchema } from "../../../../../server/trpc/router/reports";
 import "chartjs-adapter-date-fns";
 
 import {
@@ -38,8 +35,8 @@ import {
   rankItem,
   compareItems,
 } from "@tanstack/match-sorter-utils";
+import Money from "./PackageTable";
 import Spinner from "../../../icons/Spinner";
-import EmployeeTableReport from "./EmployeeTable";
 
 declare module "@tanstack/table-core" {
   interface FilterFns {
@@ -49,8 +46,42 @@ declare module "@tanstack/table-core" {
     itemRank: RankingInfo;
   }
 }
+
+const fuzzyFilter: FilterFn<any> = (row, columnId, value, addMeta) => {
+  // Rank the item
+  const itemRank = rankItem(row.getValue(columnId), value);
+
+  // Store the itemRank info
+  addMeta({
+    itemRank,
+  });
+
+  // Return if the item should be filtered in/out
+  return itemRank.passed;
+};
+
+const fuzzySort: SortingFn<any> = (rowA, rowB, columnId) => {
+  let dir = 0;
+
+  // Only sort by rank if the column has ranking information
+  if (rowA.columnFiltersMeta[columnId]) {
+    dir = compareItems(
+      rowA.columnFiltersMeta[columnId]?.itemRank!,
+      rowB.columnFiltersMeta[columnId]?.itemRank!
+    );
+  }
+
+  // Provide an alphanumeric fallback for when the item ranks are equal
+  return dir === 0 ? sortingFns.alphanumeric(rowA, rowB, columnId) : dir;
+};
+
 Chart.register(LinearScale, TimeScale);
 Chart.defaults.backgroundColor = "#ffff";
+
+type ChatDataItem = {
+  month: string;
+  package_count: string;
+};
 
 type ChartData = {
   labels: string[];
@@ -63,55 +94,56 @@ type ChartData = {
   }[];
 };
 
-const EmployeeReport = () => {
+const PackagesReport = () => {
   const { handleSubmit, register, watch } = useForm({
     defaultValues: {
       startDate: "",
       endDate: "",
-      postoffice_location_id: "",
-      role: 0,
+      type: "all",
+      size: "all",
+      senderID: "", // todo
+      receiverID: "", // todo
+      employeeID: "", // todo
+      postoffice_location_id: "", // TODO
+      status: "all", //todo
     },
-    resolver: zodResolver(employeeReportInput),
+    resolver: zodResolver(packageReportInput),
   });
 
   const { data, isLoading, isError, refetch, isSuccess, isFetching } =
-    trpc.report.getLocationEmployeeReport.useQuery(
+    trpc.report.getPackageReportChart.useQuery(
       {
-        endDate: watch("endDate"),
         startDate: watch("startDate"),
-        postoffice_location_id: watch("postoffice_location_id"),
-        role: watch("role"),
+        endDate: watch("endDate"),
+        senderID: watch("senderID"),
+        receiverID: watch("receiverID"),
+        employeeID: watch("employeeID"),
+        postoffice_location_id:
+          watch("postoffice_location_id") === "all"
+            ? ""
+            : watch("postoffice_location_id"),
+        status: watch("status") === "all" ? "" : watch("status"),
+        type: watch("type") === "all" ? "" : watch("type"),
+        size: watch("size") === "all" ? "" : watch("size"),
       },
       {
         enabled: false,
       }
     );
-
-  // const employeeReport = trpc.employee.getAllEmployee.useQuery(undefined, {
-  //   onSuccess: (data) => {
-  //     // console.log("MONEY");
-  //   },
-  // });
-
-  const locationInfo = trpc.location.getOfficeLocationsFromWorksFor.useQuery();
-
   useEffect(() => {
     if (isSuccess) {
-      setChartData(formatChartData(data.employeeHoursReport));
+      setChartData(formatChartData(data.packageReport));
       // console.log("HEHE", chartData);
     }
   }, [data, isSuccess]);
 
   const [chartData, setChartData] = useState<ChartData | null>(null);
 
-  const formatChartData = (chatData: postOfficeLocationReport[]): ChartData => {
-    const labels = chatData.map(
-      (item) =>
-        item.year +
-        "-" +
-        (item.month.length === 1 ? "0" + item.month : item.month)
-    );
-    const values = chatData.map((item) => Number(item.total_hours));
+  const formatChartData = (chatData: PackageReportSchema[]): ChartData => {
+    const labels = chatData.map((item) => item.month);
+    const values = chatData.map((item) => item.package_count);
+
+    // console.log(chartData);
 
     // console.log("labels", labels);
     // console.log("values", values);
@@ -119,7 +151,7 @@ const EmployeeReport = () => {
       labels,
       datasets: [
         {
-          label: "Hours Worked",
+          label: "Package Count",
           data: values,
           backgroundColor: "rgba(75, 192, 192, 0.2)",
           borderColor: "rgba(75, 192, 192, 1)",
@@ -133,49 +165,56 @@ const EmployeeReport = () => {
     await refetch();
     // console.log(data);
   });
+
   // TABLE:
 
   // if (isError) {
   //   return <div>Error</div>;
   // }
 
-  // console.log(typeof watch("role"));
-
   return (
-    <div className="">
+    <div className="flex flex-col gap-3">
       <div className="flex flex-col gap-4 mt-10 bg-[#3a3a38]/50 p-12 rounded-md border-2 border-[#41413E] shadow-2xl w-full">
         <div className="grow gap-2 items-center">
-          <h1 className="font-bold text-2xl pb-3">Employee Report</h1>
+          <h1 className="font-bold text-2xl pb-3">Package Report</h1>
           <h1 className="text-xl font-bold pb-3">Select Filters:</h1>
           <div className="pb-3 ">
             <form onSubmit={onSubmit} className="">
               <div className="flex flex-row mb-3">
                 <div className="flex flex-col grow gap-3 items-start">
                   <label htmlFor="type" className="text-xl font-bold \">
-                    Location
+                    Package Type:
                   </label>
-                  {locationInfo.isLoading ? (
-                    <div>Loading...</div>
-                  ) : (
-                    <select
-                      className="font-bold font-xl p-3 bg-transparent border border-calm-yellow outline-none"
-                      {...register("postoffice_location_id")}
-                    >
-                      <option value="">All</option>
-                      {locationInfo.data?.locations?.map((location) => (
-                        <option
-                          value={location.postoffice_location_id}
-                          key={location.postoffice_location_id}
-                        >
-                          {location.locationname}
-                        </option>
-                      ))}
-                    </select>
-                  )}
+                  <select
+                    {...register("type")}
+                    className="font-bold font-xl p-3 bg-transparent border border-calm-yellow outline-none"
+                    placeholder="type"
+                  >
+                    <option value="envelope">envelope</option>
+                    <option value="box">box</option>
+                    <option value="other">other</option>
+                    <option value="all">all</option>
+                  </select>
                 </div>
-
                 <div className="flex flex-col grow gap-3 items-start">
-                  <h1 className="text-xl font-bold uppercase">Start date</h1>
+                  <label
+                    htmlFor="package-size"
+                    className="text-xl font-bold uppercase"
+                  >
+                    package size
+                  </label>
+                  <select
+                    {...register("size")}
+                    className="font-bold font-xl p-3 bg-transparent border border-calm-yellow outline-none"
+                  >
+                    <option value="small">small</option>
+                    <option value="medium">medium</option>
+                    <option value="large">large</option>
+                    <option value="all">all</option>
+                  </select>
+                </div>
+                <div className="flex flex-col grow gap-3 items-start">
+                  <h1 className="text-xl font-bold uppercase">from date</h1>
                   <input
                     type="date"
                     className="font-bold font-xl p-3 bg-transparent border border-calm-yellow outline-none"
@@ -201,7 +240,6 @@ const EmployeeReport = () => {
                   generate
                 </button>
               </div>
-              {/* <pre>{JSON.stringify(watch(), null, 2)}</pre> */}
             </form>
           </div>
         </div>
@@ -213,8 +251,8 @@ const EmployeeReport = () => {
               <Bar
                 data={chartData}
                 style={{
-                  height: "50%",
-                  width: "50%",
+                  height: "100%",
+                  width: "100%",
                   border: "1px dotted rgba(255, 255, 255, 0.2)",
                 }}
                 options={{
@@ -227,9 +265,6 @@ const EmployeeReport = () => {
                       type: "time",
                       time: {
                         unit: "month",
-                        displayFormats: {
-                          month: "yyyy-MM",
-                        },
                       },
                     },
                     y: {
@@ -243,21 +278,21 @@ const EmployeeReport = () => {
               />
             )}
           </div>
-          <div>{/* <pre>{JSON.stringify(data, null, 2)}</pre> */}</div>
+          {/* <pre>{JSON.stringify(data, null, 2)}</pre> */}
         </div>
       </div>
       {isFetching ? (
         <Spinner />
       ) : (
         chartData &&
-        data?.employeeHoursReport && (
-          <EmployeeTableReport data={data?.employeeHoursReport} />
-        )
+        data?.packageReportTable && <Money data={data.packageReportTable} />
       )}
       {isError && (
         <div className="flex flex-col gap-4 mt-10 bg-[#3a3a38]/50 p-12 rounded-md border-2 border-[#41413E] shadow-2xl w-full">
           <div className="grow gap-2 items-center">
-            <div className="font-bold text-2xl pb-3">Error</div>
+            <div className="font-bold text-2xl pb-3">
+              No Data Found Please Re-select filters and generate again
+            </div>
             <div className="text-xl font-bold pb-3">Error</div>
           </div>
         </div>
@@ -266,14 +301,15 @@ const EmployeeReport = () => {
   );
 };
 
-export const employeeReportInput = z.object({
+export const packageReportInput = z.object({
   startDate: z.string().optional(),
-  hoursMin: z.number().optional(),
-  hoursMax: z.number().optional(),
-  firstName: z.string().optional(),
-  lastName: z.string().optional(),
+  endDate: z.string().optional(),
+  senderID: z.string().optional(),
+  receiverID: z.string().optional(),
+  employeeID: z.string().optional(),
   postoffice_location_id: z.string().optional(),
-  role: z.number().optional(),
-  clerkPackages: z.number().optional(),
+  status: z.string().optional(),
+  type: z.string().optional(),
+  size: z.string().optional(),
 });
-export default EmployeeReport;
+export default PackagesReport;
