@@ -28,7 +28,7 @@ const server = http.createServer((req, res) => {
 const port = process.env.PORT || 8080;
 
 server.on("listening", () => {
-  console.log(process.env.VITE_BACKEND_URL);
+  // console.log(process.env.VITE_BACKEND_URL);
   console.log(`listening on ${process.env.VITE_BACKEND_URL}:${port} `);
 });
 

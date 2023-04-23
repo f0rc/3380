@@ -114,7 +114,7 @@ export const employeeRouter = router({
       []
     );
 
-    console.log(getEmployeeInfo.rows);
+    // console.log(getEmployeeInfo.rows);
 
     // console.log(dbGetEmployee.rows);
 
@@ -128,7 +128,7 @@ export const employeeRouter = router({
     .query(async ({ ctx, input }) => {
       const { postgresQuery } = ctx;
 
-      console.log(input);
+      // console.log(input);
 
       const dbGetEmployee = await postgresQuery(
         `SELECT

@@ -28,7 +28,7 @@ export const credRouter = router({
 
       const hashedPassword = await hash(password);
       const id = randomUUID();
-      console.log(id);
+      // console.log(id);
       const result = await postgresQuery(
         `INSERT INTO "USER" (user_id, email, password) values ($1, $2, $3) returning *`,
         [id, email, hashedPassword]
@@ -46,8 +46,8 @@ export const credRouter = router({
       const { postgresQuery } = ctx;
       const { email, password } = input;
 
-      console.log("email", email);
-      console.log("passwrd", password);
+      // console.log("email", email);
+      // console.log("passwrd", password);
       const data = await postgresQuery(
         `SELECT * FROM "USER" WHERE "email" = $1;`,
         [email]
@@ -69,18 +69,18 @@ export const credRouter = router({
         });
       }
 
-      console.log("data", data);
+      // console.log("data", data);
 
       const user = mapDBUserToUser(data.rows[0]);
-      console.log("user", user);
+      // console.log("user", user);
 
       const sessionToken = randomUUID();
       const sessionMaxAge = 60 * 60 * 24 * 7; // 7 days
       const sessionexpires = fromDate(sessionMaxAge);
-      console.log("sessionexpires", sessionexpires);
-      console.log("sessionToken", sessionToken);
-      console.log("user.id", user.id);
-      console.log("sessionToken", sessionToken);
+      // console.log("sessionexpires", sessionexpires);
+      // console.log("sessionToken", sessionToken);
+      // console.log("user.id", user.id);
+      // console.log("sessionToken", sessionToken);
       //creating a session
       await postgresQuery(
         `INSERT INTO "SESSION" ("session_id", "user_id", "token", "expires") VALUES ($1, $2, $3, $4);`,
@@ -102,7 +102,7 @@ export const credRouter = router({
   logout: protectedProcedure.mutation(async ({ ctx }) => {
     const { postgresQuery, session } = ctx;
 
-    console.log(session.user.id);
+    // console.log(session.user.id);
     postgresQuery(`DELETE FROM "SESSION" where "user_id" = $1`, [
       session.user.id,
     ]);

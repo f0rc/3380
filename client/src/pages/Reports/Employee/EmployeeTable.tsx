@@ -56,12 +56,12 @@ export default function EmployeeTableReport({
 }) {
   const rerender = React.useReducer(() => ({}), {})[1];
 
-  const handlePackageClick = (employee: any) => {
-    // console.log("NAV", employee);
-    navigate(`/employee/${employee.employee_id}`, {
-      state: { data: employee },
-    });
-  };
+  // const handlePackageClick = (location: any) => {
+  //   // console.log("NAV", employee);
+  //   navigate(`/location/${location.postoffice_location_id}`, {
+  //     state: { data: location },
+  //   });
+  // };
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   );
@@ -179,10 +179,10 @@ export default function EmployeeTableReport({
                 {table.getRowModel().rows.map((row) => {
                   return (
                     <tr
-                      onClick={() => handlePackageClick(row.original)}
+                      // onClick={() => handlePackageClick(row.original)}
                       key={row.id}
                       className="
-                  hover:bg-[#c0bcbc] hover:text-[#1D1D1C] cursor-pointer h-2 even:bg-[#3A3A38] bg-[#2F2F2E]"
+                  hover:bg-[#c0bcbc] hover:text-[#1D1D1C] h-2 even:bg-[#3A3A38] bg-[#2F2F2E]"
                     >
                       {row.getVisibleCells().map((cell) => {
                         return (

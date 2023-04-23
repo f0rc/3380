@@ -157,7 +157,7 @@ export default function EmployeeTable({ data }: { data: employeeList[] }) {
 
   const navigate = useNavigate();
 
-  console.log();
+  // console.log();
   return (
     <div className="flex justify-center">
       <div className="max-w-5xl">
@@ -226,7 +226,7 @@ export default function EmployeeTable({ data }: { data: employeeList[] }) {
                   hover:bg-[#c0bcbc] hover:text-[#1D1D1C] cursor-pointer h-2 even:bg-[#3A3A38] bg-[#2F2F2E]"
                     >
                       {row.getVisibleCells().map((cell) => {
-                        console.log("MONEY");
+                        // console.log("MONEY");
                         return (
                           <td
                             key={cell.id}
