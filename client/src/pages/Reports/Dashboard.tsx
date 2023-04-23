@@ -1,6 +1,6 @@
 import React from "react";
-import ProductsReport from "./ProductsReport";
-import PackagesReport from "./package/PackagesReport";
+import ProductsReport from "./Products/ProductsReport";
+import PackagesReport from "./packageReport/PackagesReport";
 import EmployeeReport from "./Employee/EmployeeReport";
 const Dashboard = () => {
   const [reportType, setReportType] = React.useState("packages");
@@ -37,7 +37,7 @@ const Dashboard = () => {
                 >
                   <option value="packages">Packages</option>
                   <option value="employees">Employees</option>
-                  {/* <option value="products">Products</option> */}
+                  <option value="products">Products</option>
                 </select>
               </div>
             </div>

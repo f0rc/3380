@@ -1,5 +1,4 @@
 import React, { useEffect } from "react";
-import ReactDOM from "react-dom/client";
 import {
   Column,
   Table,
@@ -26,6 +25,7 @@ import {
 } from "@tanstack/match-sorter-utils";
 import { useNavigate } from "react-router-dom";
 import { employeeList } from "../../../../../server/trpc/router/employee";
+import { postOfficeLocationReport } from "../../../../../server/trpc/router/reports";
 
 declare module "@tanstack/table-core" {
   interface FilterFns {
@@ -49,76 +49,49 @@ const fuzzyFilter: FilterFn<any> = (row, columnId, value, addMeta) => {
   return itemRank.passed;
 };
 
-const fuzzySort: SortingFn<any> = (rowA, rowB, columnId) => {
-  let dir = 0;
-
-  // Only sort by rank if the column has ranking information
-  if (rowA.columnFiltersMeta[columnId]) {
-    dir = compareItems(
-      rowA.columnFiltersMeta[columnId]?.itemRank!,
-      rowB.columnFiltersMeta[columnId]?.itemRank!
-    );
-  }
-
-  // Provide an alphanumeric fallback for when the item ranks are equal
-  return dir === 0 ? sortingFns.alphanumeric(rowA, rowB, columnId) : dir;
-};
-
 export default function EmployeeTableReport({
   data,
 }: {
-  data: employeeList[];
+  data: postOfficeLocationReport[];
 }) {
   const rerender = React.useReducer(() => ({}), {})[1];
 
-  const handlePackageClick = (employee: any) => {
-    // console.log("NAV", employee);
-    navigate(`/employee/${employee.employee_id}`, {
-      state: { data: employee },
-    });
-  };
+  // const handlePackageClick = (location: any) => {
+  //   // console.log("NAV", employee);
+  //   navigate(`/location/${location.postoffice_location_id}`, {
+  //     state: { data: location },
+  //   });
+  // };
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   );
   const [globalFilter, setGlobalFilter] = React.useState("");
 
-  console.log(data);
-
   const columns = React.useMemo<ColumnDef<employeeList>[]>(
     () => [
       {
-        accessorKey: "firstname",
-        header: () => <span>First Name</span>,
-        footer: (props) => props.column.id,
-      },
-      {
-        accessorKey: "lastname",
-        header: "Last Name",
-        footer: (props) => props.column.id,
-      },
-      {
-        accessorKey: "role",
-        header: "role",
-        footer: (props) => props.column.id,
-      },
-      {
-        accessorKey: "hours",
-        header: "hours",
-        footer: (props) => props.column.id,
-      },
-      {
-        accessorKey: "salary",
-        header: "salary",
-        footer: (props) => props.column.id,
-      },
-      {
-        accessorKey: "manager_lastname",
-        header: "Supervisor",
-        footer: (props) => props.column.id,
-      },
-      {
         accessorKey: "locationname",
-        header: "Work Location",
+        header: () => <span>Location Name</span>,
+        footer: (props) => props.column.id,
+      },
+      {
+        accessorKey: "address_street",
+        header: "Street",
+        footer: (props) => props.column.id,
+      },
+      {
+        accessorKey: "total_hours",
+        header: "Hours of All Employees",
+        footer: (props) => props.column.id,
+      },
+      {
+        accessorKey: "year",
+        header: "year",
+        footer: (props) => props.column.id,
+      },
+      {
+        accessorKey: "month",
+        header: "month",
         footer: (props) => props.column.id,
       },
     ],
@@ -165,55 +138,51 @@ export default function EmployeeTableReport({
             <table className="border border-[#41413E]">
               <thead>
                 {table.getHeaderGroups().map((headerGroup) => (
-                  <>
-                    <tr key={headerGroup.id} className="">
-                      {headerGroup.headers.map((header) => {
-                        return (
-                          <>
-                            <th
-                              key={header.id}
-                              colSpan={header.colSpan}
-                              className="px-6 py-4 border-b border-r  border-[#41413E] font-bold uppercase  cursor-pointer overflow-hidden"
-                            >
-                              {header.isPlaceholder ? null : (
-                                <>
-                                  <div
-                                    {...{
-                                      className: header.column.getCanSort()
-                                        ? "cursor-pointer select-none flex flex-col "
-                                        : " flex flex-col",
-                                      onClick:
-                                        header.column.getToggleSortingHandler(),
-                                    }}
-                                  >
-                                    {flexRender(
-                                      header.column.columnDef.header,
-                                      header.getContext()
-                                    )}
-                                    {{
-                                      asc: " 🔼",
-                                      desc: " 🔽",
-                                    }[header.column.getIsSorted() as string] ??
-                                      null}
-                                  </div>
-                                </>
-                              )}
-                            </th>
-                          </>
-                        );
-                      })}
-                    </tr>
-                  </>
+                  <tr key={headerGroup.id} className="">
+                    {headerGroup.headers.map((header) => {
+                      return (
+                        <th
+                          key={header.id}
+                          colSpan={header.colSpan}
+                          className="px-6 py-4 border-b border-r  border-[#41413E] font-bold uppercase  cursor-pointer overflow-hidden"
+                        >
+                          {header.isPlaceholder ? null : (
+                            <>
+                              <div
+                                {...{
+                                  className: header.column.getCanSort()
+                                    ? "cursor-pointer select-none flex flex-col "
+                                    : " flex flex-col",
+                                  onClick:
+                                    header.column.getToggleSortingHandler(),
+                                }}
+                              >
+                                {flexRender(
+                                  header.column.columnDef.header,
+                                  header.getContext()
+                                )}
+                                {{
+                                  asc: " 🔼",
+                                  desc: " 🔽",
+                                }[header.column.getIsSorted() as string] ??
+                                  null}
+                              </div>
+                            </>
+                          )}
+                        </th>
+                      );
+                    })}
+                  </tr>
                 ))}
               </thead>
               <tbody className="text-gray-100 text-center text-md">
                 {table.getRowModel().rows.map((row) => {
                   return (
                     <tr
-                      onClick={() => handlePackageClick(row.original)}
+                      // onClick={() => handlePackageClick(row.original)}
                       key={row.id}
                       className="
-                  hover:bg-[#c0bcbc] hover:text-[#1D1D1C] cursor-pointer h-2 even:bg-[#3A3A38] bg-[#2F2F2E]"
+                  hover:bg-[#c0bcbc] hover:text-[#1D1D1C] h-2 even:bg-[#3A3A38] bg-[#2F2F2E]"
                     >
                       {row.getVisibleCells().map((cell) => {
                         return (

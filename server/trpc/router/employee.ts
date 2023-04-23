@@ -97,19 +97,24 @@ export const employeeRouter = router({
       E."updatedAt",
       E."updatedBy",
       PL.locationname AS "work_location",
+      M.firstname AS "manager_firstname",
+      M.lastname AS "manager_lastname",
       SUM(WL.hours) AS "hours"
   FROM
       "EMPLOYEE" AS E
-  JOIN "WORKS_FOR" AS WF ON E.employee_id = WF.employee_id
-  JOIN "POSTOFFICE_LOCATION" AS PL ON WF.postoffice_location_id = PL.postoffice_location_id
-  JOIN "WORK_LOG" AS WL ON E.employee_id = WL.employee_id
+  LEFT JOIN "WORKS_FOR" AS WF ON E.employee_id = WF.employee_id
+  LEFT JOIN "POSTOFFICE_LOCATION" AS PL ON WF.postoffice_location_id = PL.postoffice_location_id
+  LEFT JOIN "WORK_LOG" AS WL ON E.employee_id = WL.employee_id
+  LEFT JOIN "EMPLOYEE" AS M ON E.manager_id = M.employee_id
   GROUP BY
       E.employee_id,
-      PL.locationname;`,
+      PL.locationname,
+      M.firstname,
+      M.lastname`,
       []
     );
 
-    console.log(getEmployeeInfo.rows);
+    // console.log(getEmployeeInfo.rows);
 
     // console.log(dbGetEmployee.rows);
 
@@ -123,6 +128,8 @@ export const employeeRouter = router({
     .query(async ({ ctx, input }) => {
       const { postgresQuery } = ctx;
 
+      // console.log(input);
+
       const dbGetEmployee = await postgresQuery(
         `SELECT
         E.*,
@@ -134,14 +141,23 @@ export const employeeRouter = router({
         PL.address_state AS postoffice_address_state,
         PL.address_zipcode AS postoffice_address_zipcode,
         SUM(WL.hours) AS "hours"
-      FROM
-          "EMPLOYEE" AS E
-          LEFT JOIN "WORKS_FOR" AS WF ON E.employee_id = WF.employee_id
-          LEFT JOIN "WORK_LOG" AS WL ON E.employee_id = WL.employee_id
-          LEFT JOIN "POSTOFFICE_LOCATION" AS PL ON WF.postoffice_location_id = PL.postoffice_location_id
-          LEFT JOIN "EMPLOYEE" AS M ON E.manager_id = M.employee_id
-      WHERE
-          E.employee_id = $1;`,
+    FROM
+        "EMPLOYEE" AS E
+        LEFT JOIN "WORKS_FOR" AS WF ON E.employee_id = WF.employee_id
+        LEFT JOIN "WORK_LOG" AS WL ON E.employee_id = WL.employee_id
+        LEFT JOIN "POSTOFFICE_LOCATION" AS PL ON WF.postoffice_location_id = PL.postoffice_location_id
+        LEFT JOIN "EMPLOYEE" AS M ON E.manager_id = M.employee_id
+    WHERE
+        E.employee_id = $1
+    GROUP BY
+        E.employee_id,
+        M.lastname,
+        PL.postoffice_location_id,
+        PL.locationname,
+        PL.address_street,
+        PL.address_city,
+        PL.address_state,
+        PL.address_zipcode;`,
         [input.employeeID]
       );
 
@@ -314,7 +330,8 @@ export interface employeeList {
   salary: number;
   manager_id: string;
   manager_lastname: string;
-  locationname: string;
+  manager_firstname: string;
+  work_location: string;
   address_street: string;
   address_city: string;
   address_state: string;
