@@ -9,18 +9,9 @@
 # Dependencies: 
 - node js latest
 
-# start
-- run `npm install` to install the packages in `package.json`
-- run `npm run start` to start the app from scripts in `package.json`
-
-
 # todo:
-products report 
-- items sold per month
 
 triggers (DONE)
- - mail- pg notify + email code
- - show products low stock on manager ui
 
 MISC: 
 - add location update button
