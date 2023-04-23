@@ -24,7 +24,7 @@ const Employee = () => {
   return (
     <div className="">
       <div className="overflow-none flex h-screen justify-center">
-        <div className="flex h-full w-full flex-col md:max-w-fit border-x">
+        <div className="flex h-full w-full flex-col md:max-w-fit">
           <div className="mt-10 flex flex-col px-10 gap-12">
             <div className="flex flex-col gap-6">
               <h1 className="text-2xl font-bold mb-3">Employee Overview</h1>

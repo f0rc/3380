@@ -146,28 +146,23 @@ export const packageRouter = router({
     const { postgresQuery } = ctx;
 
     const packageList = await postgresQuery(
-      `
-      SELECT p.*, plh.*
-      FROM "PACKAGE" p
-      INNER JOIN (
-      SELECT package_id, MAX("processedAt") AS latest_date
+      `SELECT 
+      p.*,
+      plh.status,
+    plh."processedAt"
+  FROM "PACKAGE" p
+  JOIN "PACKAGE_LOCATION_HISTORY" plh
+  ON p.package_id = plh.package_id
+  JOIN "CUSTOMER" c_sender
+  ON p.sender_id = c_sender.customer_id
+  JOIN "CUSTOMER" c_receiver
+  ON p.receiver_id = c_receiver.customer_id
+  WHERE (c_sender.user_id = $1 OR c_receiver.user_id = $1)
+  AND plh.intransitcounter = (
+      SELECT MAX(intransitcounter)
       FROM "PACKAGE_LOCATION_HISTORY"
-      GROUP BY package_id
-      ) plh2 ON p.package_id = plh2.package_id
-
-      INNER JOIN "PACKAGE_LOCATION_HISTORY" plh
-      ON plh.package_id = plh2.package_id
-      AND plh."processedAt" = plh2.latest_date
-
-      WHERE p."sender_id" IN (
-        SELECT "customer_id"
-        FROM "CUSTOMER"
-        WHERE "user_id" = $1
-    ) OR p."receiver_id" IN (
-        SELECT "customer_id"
-        FROM "CUSTOMER"
-        WHERE "user_id" = $1
-    );
+      WHERE package_id = p.package_id
+  );
       `,
       [ctx.session.user.id]
     );
@@ -192,7 +187,7 @@ export const packageRouter = router({
           SELECT plh.*
           FROM "PACKAGE_LOCATION_HISTORY" plh
           WHERE plh."package_id" = $1
-          ORDER BY plh."processedAt" DESC
+          ORDER BY plh."intransitcounter" DESC
           LIMIT 1
       )
       SELECT p.*, lpl.*, pol."locationname"
@@ -231,9 +226,11 @@ export const packageRouter = router({
         FROM "PACKAGE_LOCATION_HISTORY" AS plh
         JOIN "POSTOFFICE_LOCATION" AS pol ON plh.postoffice_location_id = pol.postoffice_location_id
         WHERE package_id = $1
-        ORDER BY plh."processedAt" DESC;`,
+        ORDER BY plh."intransitcounter" DESC;`,
         [package_id]
       );
+
+      // console.log("packageDetails", packageDetails.rows[0].createdAt);
 
       if (packageDetails.rowCount === 0) {
         return {
@@ -260,6 +257,7 @@ export interface PackageSchema {
   size: string;
   createdBy: string;
   updatedBy: string;
+  processedAt: string;
   createdAt: Date;
   updatedAt: Date;
 }

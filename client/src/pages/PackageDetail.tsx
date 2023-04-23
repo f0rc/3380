@@ -36,17 +36,34 @@ const PackageDetail = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "accepted":
-        return "bg-green-500";
+        return "bg-teal-500";
       case "delivered":
         return "bg-green-700";
       case "out-for-delivery":
         return "bg-blue-500";
       case "transit":
-        return "bg-yellow-500";
+        return "bg-amber-600";
       case "fail":
         return "bg-red-500";
       default:
         return "bg-gray-500";
+    }
+  };
+
+  const GetStatusCode = (status: string) => {
+    switch (status) {
+      case "accepted":
+        return "Accepted";
+      case "delivered":
+        return "Delivered";
+      case "out-for-delivery":
+        return "Out for Delivery";
+      case "transit":
+        return "In Transit";
+      case "fail":
+        return "Failed to Deliver";
+      default:
+        return "Unknown";
     }
   };
 
@@ -76,13 +93,33 @@ const PackageDetail = () => {
               </div>
 
               <div className="grow gap-2 items-center">
+                <h1 className="text-xl font-bold pb-3">Send Date</h1>
+                <p className="">
+                  {new Date(
+                    data?.packageDetails?.createdAt ?? "UNKNOWN"
+                  ).toLocaleDateString()}
+                </p>
+              </div>
+
+              {data?.packageDetails?.status === "delivered" ? (
+                <div className="grow gap-2 items-center">
+                  <h1 className="text-xl font-bold pb-3">Deliverd Date</h1>
+                  <p className="">
+                    {new Date(
+                      data?.packageDetails?.processedAt ?? "UNKNOWN"
+                    ).toLocaleDateString()}
+                  </p>
+                </div>
+              ) : null}
+
+              <div className="grow gap-2 items-center">
                 <h1 className="text-xl font-bold pb-3">Status</h1>
                 <p
                   className={`"text-lg py-2 px-3 rounded-full text-white text-center w-fit " + ${getStatusColor(
                     data?.packageDetails?.status ?? "UNKNOWN"
                   )}`}
                 >
-                  {data?.packageDetails?.status ?? " UNKNOWN"}
+                  {GetStatusCode(data?.packageDetails?.status ?? " UNKNOWN")}
                 </p>
               </div>
             </div>
@@ -92,28 +129,34 @@ const PackageDetail = () => {
                 <h1 className="text-4xl font-bold text-start mt-10">
                   Package History
                 </h1>
-                <div className="grid grid-cols-3 gap-5">
-                  {detailPackage.data?.packageHistory?.map((item) => (
-                    <div className="flex flex-row gap-4 mt-10 bg-[#3a3a38]/50 p-12 rounded-md border-2 border-[#41413E] shadow-2xl">
-                      <div className="grow gap-2 items-center">
-                        <div className="flex flex-row gap-3">
-                          <h1 className="text-xl font-bold pb-3">Location</h1>
-                          <p className="text-lg">{item.locationname}</p>
+                <div className="flex flex-row justify-between w-full mt-10">
+                  {detailPackage.data?.packageHistory
+                    ?.slice()
+                    .reverse()
+                    .map((item, index) => (
+                      <div key={index} className="flex flex-col items-center">
+                        <div
+                          className={`${getStatusColor(
+                            item.status
+                          )} p-3 rounded-full border-2 border-[#41413E] shadow-2xl`}
+                        >
+                          <span className="text-lg">
+                            {GetStatusCode(item.status ?? " UNKNOWN")}
+                          </span>
                         </div>
-
-                        <div className="flex flex-row gap-3">
-                          <h1 className="text-xl font-bold pb-3">Address: </h1>
+                        <div className="mt-2 text-center">
+                          <p className="text-lg">{item.locationname}</p>
                           <p className="text-lg">{item.address_street}</p>
                           <p className="text-lg">{item.address_city}</p>
                           <p className="text-lg">{item.address_state}</p>
                           <p className="text-lg">{item.address_zipcode}</p>
+                          <p className="text-lg">
+                            {new Date(item.processedAt).toLocaleDateString()}
+                          </p>
+                          <p className="text-lg">{++index}</p>
                         </div>
-                        <p>{item.status}</p>
-                        <p className="text-end">{item.intransitcounter + 1}</p>
                       </div>
-                      {/* <pre>{JSON.stringify(detailPackage, null, 2)}</pre> */}
-                    </div>
-                  ))}
+                    ))}
                 </div>
               </div>
             ) : (

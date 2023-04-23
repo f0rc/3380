@@ -7,7 +7,10 @@ import { Bar } from "react-chartjs-2";
 import { LinearScale, TimeScale } from "chart.js";
 import Chart from "chart.js/auto";
 
-import { PackageReportSchema } from "../../../../../server/trpc/router/reports";
+import {
+  PackageReportSchema,
+  ProductReportSchema,
+} from "../../../../../server/trpc/router/reports";
 import "chartjs-adapter-date-fns";
 
 import {
@@ -35,7 +38,7 @@ import {
   rankItem,
   compareItems,
 } from "@tanstack/match-sorter-utils";
-import Money from "./PackageTable";
+import Money from "./ProductTable";
 import Spinner from "../../../icons/Spinner";
 
 declare module "@tanstack/table-core" {
@@ -47,41 +50,8 @@ declare module "@tanstack/table-core" {
   }
 }
 
-const fuzzyFilter: FilterFn<any> = (row, columnId, value, addMeta) => {
-  // Rank the item
-  const itemRank = rankItem(row.getValue(columnId), value);
-
-  // Store the itemRank info
-  addMeta({
-    itemRank,
-  });
-
-  // Return if the item should be filtered in/out
-  return itemRank.passed;
-};
-
-const fuzzySort: SortingFn<any> = (rowA, rowB, columnId) => {
-  let dir = 0;
-
-  // Only sort by rank if the column has ranking information
-  if (rowA.columnFiltersMeta[columnId]) {
-    dir = compareItems(
-      rowA.columnFiltersMeta[columnId]?.itemRank!,
-      rowB.columnFiltersMeta[columnId]?.itemRank!
-    );
-  }
-
-  // Provide an alphanumeric fallback for when the item ranks are equal
-  return dir === 0 ? sortingFns.alphanumeric(rowA, rowB, columnId) : dir;
-};
-
 Chart.register(LinearScale, TimeScale);
 Chart.defaults.backgroundColor = "#ffff";
-
-type ChatDataItem = {
-  month: string;
-  package_count: string;
-};
 
 type ChartData = {
   labels: string[];
@@ -94,7 +64,7 @@ type ChartData = {
   }[];
 };
 
-const PackagesReport = () => {
+const ProductReport = () => {
   const { handleSubmit, register, watch } = useForm({
     defaultValues: {
       startDate: "",
@@ -107,24 +77,20 @@ const PackagesReport = () => {
       postoffice_location_id: "", // TODO
       status: "all", //todo
     },
-    resolver: zodResolver(packageReportInput),
+    resolver: zodResolver(productReportInput),
   });
 
+  const locationInfo = trpc.location.getOfficeLocationsFromWorksFor.useQuery();
+
   const { data, isLoading, isError, refetch, isSuccess, isFetching } =
-    trpc.report.getPackageReportChart.useQuery(
+    trpc.report.getProductReport.useQuery(
       {
         startDate: watch("startDate"),
         endDate: watch("endDate"),
-        senderID: watch("senderID"),
-        receiverID: watch("receiverID"),
-        employeeID: watch("employeeID"),
         postoffice_location_id:
           watch("postoffice_location_id") === "all"
             ? ""
             : watch("postoffice_location_id"),
-        status: watch("status") === "all" ? "" : watch("status"),
-        type: watch("type") === "all" ? "" : watch("type"),
-        size: watch("size") === "all" ? "" : watch("size"),
       },
       {
         enabled: false,
@@ -132,30 +98,57 @@ const PackagesReport = () => {
     );
   useEffect(() => {
     if (isSuccess) {
-      setChartData(formatChartData(data.packageReport));
+      setChartData(formatChartData(data.report));
       // console.log("HEHE", chartData);
     }
   }, [data, isSuccess]);
 
   const [chartData, setChartData] = useState<ChartData | null>(null);
 
-  const formatChartData = (chatData: PackageReportSchema[]): ChartData => {
-    const labels = chatData.map((item) => item.month);
-    const values = chatData.map((item) => item.package_count);
+  const formatChartData = (chatData: ProductReportSchema[]): ChartData => {
+    const groupedData: {
+      [key: string]: { labels: string[]; values: number[] };
+    } = {};
 
-    // console.log("labels", labels);
-    // console.log("values", values);
+    // Group data by product
+    chatData.forEach((item) => {
+      const label =
+        item.year +
+        "-" +
+        (item.month.length === 1 ? "0" + item.month : item.month);
+      if (!groupedData[item.product_name]) {
+        groupedData[item.product_name] = { labels: [], values: [] };
+      }
+      groupedData[item.product_name].labels.push(label);
+      groupedData[item.product_name].values.push(Number(item.total_revenue));
+    });
+
+    // Create a dataset for each product
+    const datasets = Object.entries(groupedData).map(
+      ([productName, data], index) => {
+        const backgroundColor = `rgba(${75 + index * 30}, ${
+          192 - index * 30
+        }, 192, 0.2)`;
+        const borderColor = `rgba(${75 + index * 30}, ${
+          192 - index * 30
+        }, 192, 1)`;
+
+        return {
+          label: `${productName} Sales $ Per Month`,
+          data: data.values,
+          backgroundColor,
+          borderColor,
+          borderWidth: 1,
+        };
+      }
+    );
+
+    // Assuming all products have the same set of labels (months)
+    const labels = Object.values(groupedData)[0]?.labels || [];
+
     return {
       labels,
-      datasets: [
-        {
-          label: "Package Count",
-          data: values,
-          backgroundColor: "rgba(75, 192, 192, 0.2)",
-          borderColor: "rgba(75, 192, 192, 1)",
-          borderWidth: 1,
-        },
-      ],
+      datasets,
     };
   };
   const onSubmit = handleSubmit(async (data) => {
@@ -163,12 +156,6 @@ const PackagesReport = () => {
     await refetch();
     // console.log(data);
   });
-
-  // TABLE:
-
-  // if (isError) {
-  //   return <div>Error</div>;
-  // }
 
   return (
     <div className="flex flex-col gap-3">
@@ -181,35 +168,26 @@ const PackagesReport = () => {
               <div className="flex flex-row mb-3">
                 <div className="flex flex-col grow gap-3 items-start">
                   <label htmlFor="type" className="text-xl font-bold \">
-                    Package Type:
+                    Location
                   </label>
-                  <select
-                    {...register("type")}
-                    className="font-bold font-xl p-3 bg-transparent border border-calm-yellow outline-none"
-                    placeholder="type"
-                  >
-                    <option value="envelope">envelope</option>
-                    <option value="box">box</option>
-                    <option value="other">other</option>
-                    <option value="all">all</option>
-                  </select>
-                </div>
-                <div className="flex flex-col grow gap-3 items-start">
-                  <label
-                    htmlFor="package-size"
-                    className="text-xl font-bold uppercase"
-                  >
-                    package size
-                  </label>
-                  <select
-                    {...register("size")}
-                    className="font-bold font-xl p-3 bg-transparent border border-calm-yellow outline-none"
-                  >
-                    <option value="small">small</option>
-                    <option value="medium">medium</option>
-                    <option value="large">large</option>
-                    <option value="all">all</option>
-                  </select>
+                  {locationInfo.isLoading ? (
+                    <div>Loading...</div>
+                  ) : (
+                    <select
+                      className="font-bold font-xl p-3 bg-transparent border border-calm-yellow outline-none"
+                      {...register("postoffice_location_id")}
+                    >
+                      <option value="">All</option>
+                      {locationInfo.data?.locations?.map((location) => (
+                        <option
+                          value={location.postoffice_location_id}
+                          key={location.postoffice_location_id}
+                        >
+                          {location.locationname}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                 </div>
                 <div className="flex flex-col grow gap-3 items-start">
                   <h1 className="text-xl font-bold uppercase">from date</h1>
@@ -249,14 +227,15 @@ const PackagesReport = () => {
               <Bar
                 data={chartData}
                 style={{
-                  height: "100%",
-                  width: "100%",
+                  height: "400px",
+                  width: "200px",
                   border: "1px dotted rgba(255, 255, 255, 0.2)",
                 }}
                 options={{
                   maintainAspectRatio: false,
                   scales: {
                     x: {
+                      stacked: false,
                       grid: {
                         color: "rgba(255, 255, 255, 0.2)",
                       },
@@ -266,10 +245,25 @@ const PackagesReport = () => {
                       },
                     },
                     y: {
+                      stacked: false,
                       grid: {
                         color: "rgba(255, 255, 255, 0.2)",
                       },
                       type: "linear",
+                    },
+                  },
+                  plugins: {
+                    tooltip: {
+                      callbacks: {
+                        title: function (context) {
+                          const d = new Date(context[0].parsed.x);
+                          const formatedDate = d.toLocaleString("default", {
+                            month: "long",
+                            year: "numeric",
+                          });
+                          return formatedDate;
+                        },
+                      },
                     },
                   },
                 }}
@@ -282,23 +276,18 @@ const PackagesReport = () => {
       {isFetching ? (
         <Spinner />
       ) : (
-        chartData &&
-        data?.packageReportTable && <Money data={data.packageReportTable} />
+        chartData && data?.report && <Money data={data.report} />
       )}
       {}
     </div>
   );
 };
 
-export const packageReportInput = z.object({
+export const productReportInput = z.object({
   startDate: z.string().optional(),
   endDate: z.string().optional(),
   senderID: z.string().optional(),
-  receiverID: z.string().optional(),
-  employeeID: z.string().optional(),
   postoffice_location_id: z.string().optional(),
-  status: z.string().optional(),
-  type: z.string().optional(),
-  size: z.string().optional(),
+  item_ID: z.string().optional(),
 });
-export default PackagesReport;
+export default ProductReport;
