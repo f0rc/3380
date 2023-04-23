@@ -5,7 +5,7 @@ import React, {
   useEffect,
   useState,
 } from "react";
-import { defaultFormState, formSchemaType } from "./formSchema";
+import { formSchemaType } from "./formSchema";
 import { produce } from "immer";
 import { Tab } from "@headlessui/react";
 import {
@@ -33,6 +33,50 @@ const FORM_STEPS = [
   },
 ];
 
+export const defaultFormState = {
+  selectedIndex: 0,
+  steps: {
+    packageInfo: {
+      valid: false,
+      dirty: false,
+      value: {
+        packageType: "",
+        packageSize: "",
+        packageWeight: 0,
+        price: 0,
+      },
+    },
+    senderInfo: {
+      valid: false,
+      dirty: false,
+      value: {
+        firstName: "",
+        lastName: "",
+        email: "",
+        phone: "",
+        address: "",
+        city: "",
+        state: "",
+        zip: "",
+      },
+    },
+    receiverInfo: {
+      valid: false,
+      dirty: false,
+      value: {
+        firstName: "",
+        lastName: "",
+        email: "",
+        phone: "",
+        address: "",
+        city: "",
+        state: "",
+        zip: "",
+      },
+    },
+  },
+};
+
 export const FormStateContext = createContext({
   form: defaultFormState,
   setForm: (
@@ -56,12 +100,13 @@ const CreateMultiStepForm = () => {
   const { form, setForm } = useContext(FormStateContext);
 
   function nextStep() {
-    if (form.selectedIndex === 3) return;
-    setForm(
-      produce((form) => {
-        form.selectedIndex += 1;
-      })
-    );
+    if (form.steps.packageInfo.valid) {
+      setForm(
+        produce((form) => {
+          form.selectedIndex += 1;
+        })
+      );
+    }
   }
 
   function prevStep() {
@@ -200,7 +245,7 @@ const CreateMultiStepForm = () => {
           </div>
         </Tab.Group>
       </div>
-      {/* <pre>{JSON.stringify(form, null, 2)}</pre> */}
+      <pre>{JSON.stringify(form, null, 2)}</pre>
     </>
   );
 };
