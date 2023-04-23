@@ -192,7 +192,7 @@ export const packageRouter = router({
           SELECT plh.*
           FROM "PACKAGE_LOCATION_HISTORY" plh
           WHERE plh."package_id" = $1
-          ORDER BY plh."processedAt" DESC
+          ORDER BY plh."intransitcounter" DESC
           LIMIT 1
       )
       SELECT p.*, lpl.*, pol."locationname"
@@ -231,7 +231,7 @@ export const packageRouter = router({
         FROM "PACKAGE_LOCATION_HISTORY" AS plh
         JOIN "POSTOFFICE_LOCATION" AS pol ON plh.postoffice_location_id = pol.postoffice_location_id
         WHERE package_id = $1
-        ORDER BY plh."processedAt" DESC;`,
+        ORDER BY plh."intransitcounter" DESC;`,
         [package_id]
       );
 

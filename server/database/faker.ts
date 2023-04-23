@@ -51,7 +51,7 @@ function generateOneWordBuildingName() {
   const prefix = faker.helpers.arrayElement(buildingPrefixes);
   const suffix = faker.helpers.arrayElement(buildingSuffixes);
 
-  return prefix + suffix;
+  return prefix + " " + suffix;
 }
 
 const createFakeLocations = async (numberOfLocations = 20) => {
@@ -337,12 +337,12 @@ const createFakeLogHours = async (numberOfHours = 100) => {
 };
 
 const main = async () => {
-  await createFakeLocations(2);
+  await createFakeLocations(10);
   await createFakeManagers(5);
   await createFakeEmployees(10);
   await createFakeCustomers(10);
+  await createFakeLogHours(20);
   await createFakePackages(20);
-  await createFakeLogHours(100);
 };
 
 main();
