@@ -182,7 +182,7 @@ export default function Money({ data }: { data: PackageTableData[] }) {
               <tr
                 key={row.id}
                 className="
-                  hover:bg-[#c0bcbc] hover:text-[#1D1D1C] cursor-pointer h-2 even:bg-[#3A3A38] bg-[#2F2F2E]"
+                  hover:bg-[#c0bcbc] hover:text-[#1D1D1C] h-2 even:bg-[#3A3A38] bg-[#2F2F2E]"
               >
                 {row.getVisibleCells().map((cell) => {
                   return (

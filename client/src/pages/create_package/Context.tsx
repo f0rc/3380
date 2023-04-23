@@ -245,7 +245,7 @@ const CreateMultiStepForm = () => {
           </div>
         </Tab.Group>
       </div>
-      <pre>{JSON.stringify(form, null, 2)}</pre>
+      {/* <pre>{JSON.stringify(form, null, 2)}</pre> */}
     </>
   );
 };
