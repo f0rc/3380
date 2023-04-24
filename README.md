@@ -52,7 +52,8 @@ Customers without an account can track a package by entering the tracking ID on 
     - Employee report: Displays hours worked by employees at each post office location.
     - Product report: Shows revenue from selling products at specific locations.
 
-When an employee signs up, they must use the same email they provided when hired. This maps their employee profile to their user profile, granting them the appropriate role.
+# note: 
+- When an employee signs up, they must use the same email they provided when hired. There is a trigger that maps their employee profile to their user profile, granting them the appropriate role.
 
 - The same process applies if the order is reversed.
 
