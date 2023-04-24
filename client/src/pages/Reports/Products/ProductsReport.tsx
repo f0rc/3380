@@ -110,12 +110,12 @@ const ProductReport = () => {
       [key: string]: { labels: string[]; values: number[] };
     } = {};
 
+    console.log("chatData", chatData);
+    console.log("groupedData", groupedData);
+
     // Group data by product
     chatData.forEach((item) => {
-      const label =
-        item.year +
-        "-" +
-        (item.month.length === 1 ? "0" + item.month : item.month);
+      const label = `${item.year}-${item.month}`;
       if (!groupedData[item.product_name]) {
         groupedData[item.product_name] = { labels: [], values: [] };
       }
@@ -227,15 +227,15 @@ const ProductReport = () => {
               <Bar
                 data={chartData}
                 style={{
-                  height: "50%",
-                  width: "50%",
+                  height: "100%",
+                  width: "100%",
                   border: "1px dotted rgba(255, 255, 255, 0.2)",
                 }}
                 options={{
                   maintainAspectRatio: false,
                   scales: {
                     x: {
-                      stacked: false,
+                      // stacked: false,
                       grid: {
                         color: "rgba(255, 255, 255, 0.2)",
                       },
@@ -248,7 +248,7 @@ const ProductReport = () => {
                       },
                     },
                     y: {
-                      stacked: false,
+                      // stacked: false,
                       grid: {
                         color: "rgba(255, 255, 255, 0.2)",
                       },

@@ -6,13 +6,17 @@
 - We built the postoffice webapp to include 4 main roles which are 
   - customer
     - customer (no account)
-    - customer (account)
+    - customer (account) 
+      - example login info:
+   
   - Employee
     - clerk
     - driver
     - manager
   - Admin
     - CEO
+      - login info:
+
 - customer with no account is able to track a package by inputing the tracking ID of their package into the home page (the tracking package page) and also look at the store if they want to purchase anything then they need to sign up or log in.
 
 - Employee

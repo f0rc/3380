@@ -463,7 +463,7 @@ export const reportRouter = router({
           WITH monthly_sales AS (
             SELECT
               oi.product_id,
-              EXTRACT(MONTH FROM o.order_date) AS month,
+              TO_CHAR(o.order_date, 'MM') AS month,
               EXTRACT(YEAR FROM o.order_date) AS year,
               o.postoffice_location_id,
               COUNT(DISTINCT o.order_id) AS orders_count,
