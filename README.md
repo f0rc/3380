@@ -1,6 +1,6 @@
 
 # link: https://3380.vercel.app
-# link to dump file: 
+# link to dump file: https://github.com/f0rc/3380/blob/main/final.dump
 
 
 
