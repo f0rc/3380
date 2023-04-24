@@ -126,7 +126,7 @@ const LocationDetail = () => {
                 </div>
               </div>
             </div>
-            <div className="flex justify-center mt-10">
+            {/* <div className="flex justify-center mt-10">
               <button
                 onClick={openModal}
                 className="block text-white focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center border border-calm-yellow hover:bg-zinc-900"
@@ -134,7 +134,7 @@ const LocationDetail = () => {
               >
                 Update Location
               </button>
-            </div>
+            </div> */}
           </div>
         </div>
         {/* <pre>{JSON.stringify(packageDetails, null, 2)}</pre> */}

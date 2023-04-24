@@ -1,26 +1,56 @@
-# docker:
-- install docker-compose + docker
-- to run be in main directory `docker-compose up -d` 
-    - -d is to hide it form ur terminal and to let you use it or u can not use it and run it but would need another terminal to run the application or another "terminal page"
-- database with postgres should be up run `docker ps` to see the docker instances 
 
+# link: https://3380.vercel.app
+# link to dump file: TODO
 
+# PostOffice Database application TEAM 4 Tu/Th
+- We built the postoffice webapp to include 4 main roles which are 
+  - customer
+    - customer (no account)
+    - customer (account)
+  - Employee
+    - clerk
+    - driver
+    - manager
+  - Admin
+    - CEO
+- customer with no account is able to track a package by inputing the tracking ID of their package into the home page (the tracking package page) and also look at the store if they want to purchase anything then they need to sign up or log in.
 
-# Dependencies: 
-- node js latest
+- Employee
+  - all emploeeyes is able to log their daily hours after their shift is up in the work log page
+  - Clerk
+    - clerk is able to create packages for customers when they comin into our postoffice location and it will be sent from the location which were the clerk is assaigned
+  - Manager
+    - # Manager is responsible for the low stock trigger:
+      -  this trigger is made to show a notification to the manager about products in their store that have a <=10 in stock
+    - manager is able to hire clerks and drivers on the add employee page
+    - and they are able to edit their employee's information
+    - managers are also responsible for updating their store and keeping up their products in stock
+      - update product
+      - add product
+      - manage product
+  - ADMIN
+    - CEO is able to view reports 
+      - package report: this report is to represent how many packages were with certain filters applied
+      - employee report: this report is to show the hours created by the employees of each postoffice location
+      - product report: this report is to show the revenue made from selling products at certain locations
+- notes: when a employee they will sign up with the same email as the one they gave in order to be hired which then maps their employee profile to their user profile which then gives them the roles of their postion
+    - same thing happens if the order is reversed
 
-# todo:
+# 2nd trigger update package status
+- we implemented a 2nd trigger to update the package status to transit and see if there can be multiple transits <=4 and get locations of offices where the package is going to be processed along with showing the status back to the customer and also determines if a package is going to be failed to deliver which is less than 10% chance
 
-triggers (DONE)
+# reports: 
+  - as mentioned earlier 
+    - package report
+    - employee hours report
+    - products revenue report
 
-MISC: 
-- add location update button
-- fix bugs{
-  - fix location update button also show table of employees at said location
-  - fix ui {home, packges(ONLY PACKAGES TO ME), create package (clerk + manager ONLY), work log (1,2,3), employee page(add table and add create employee button, LOCATIONS - add location button)}
-- }
-- remove console.log
-- make paper (THUS?)
-
-# fixes: 
-
+# steps to run this application:
+  - make sure you have node js version 18-19(LTS) (version 20 does not work)
+  - run `npm i` in `./` `./client/` and `./server/`
+  - the upload images is not going to work beacuse it we need to provide sensetive data
+  - create a .env file in `./client/` and `./server/` and copy paste the values that are given in `.env.example` which is located in `./client` and `./server`
+  - make sure you have docker-compose and run `docker-compose up -d` in root file to start up the docker image for the postgressql database with the test variables
+  - run `npm run db` in `./server/` in order to run the default data of the app into the database which include the info for admin
+  - (optional) to populate fake data install tsx (globally) and run in `./server/` `tsx ./database/faker.ts` in order to create some fake data
+  - to run the application make sure you are in the root directory and run `npm run dev` for local development the application be on `http://localhost:3000`
