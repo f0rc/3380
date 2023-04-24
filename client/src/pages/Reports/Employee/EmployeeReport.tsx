@@ -94,8 +94,8 @@ const EmployeeReport = () => {
     console.log(labels);
     const values = chatData.map((item) => Number(item.total_hours));
 
-    console.log("labels", labels);
-    console.log("values", values);
+    // console.log("labels", labels);
+    // console.log("values", values);
     return {
       labels,
       datasets: [

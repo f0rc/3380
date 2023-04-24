@@ -376,91 +376,91 @@ const productsList = [
   },
 ];
 
-const createFakeOrders = async (numberOfOrders = 100) => {
-  const getCustomers = await postgresQuery(
-    `SELECT "customer_id" FROM "CUSTOMER"`,
-    []
-  );
+// const createFakeOrders = async (numberOfOrders = 100) => {
+//   const getCustomers = await postgresQuery(
+//     `SELECT "customer_id" FROM "CUSTOMER"`,
+//     []
+//   );
 
-  const customerIDs = getCustomers.rows.map((customer) => customer.customer_id);
+//   const customerIDs = getCustomers.rows.map((customer) => customer.customer_id);
 
-  const getEmployees = await postgresQuery(
-    `SELECT "employee_id" FROM "EMPLOYEE"`,
-    []
-  );
+//   const getEmployees = await postgresQuery(
+//     `SELECT "employee_id" FROM "EMPLOYEE"`,
+//     []
+//   );
 
-  const employeeIDs = getEmployees.rows.map((employee) => employee.employee_id);
+//   const employeeIDs = getEmployees.rows.map((employee) => employee.employee_id);
 
-  for (let i = 0; i < numberOfOrders; i++) {
-    try {
-      const customer = faker.helpers.arrayElement(customerIDs);
-      const employee = faker.helpers.arrayElement(employeeIDs);
+//   for (let i = 0; i < numberOfOrders; i++) {
+//     try {
+//       const customer = faker.helpers.arrayElement(customerIDs);
+//       const employee = faker.helpers.arrayElement(employeeIDs);
 
-      const getProducts = await postgresQuery(
-        `SELECT "product_id", "price"  FROM "PRODUCT"`,
-        []
-      );
+//       const getProducts = await postgresQuery(
+//         `SELECT "product_id", "price"  FROM "PRODUCT"`,
+//         []
+//       );
 
-      console.log(`Creating order ${i + 1}...`);
-      const date = faker.date.past(); // createdAt
-      const products = getProducts.rows;
-      const productsList = [];
-      const numberOfProducts = faker.datatype.number({ min: 1, max: 5 });
-      for (let i = 0; i < numberOfProducts; i++) {
-        const product = faker.helpers.arrayElement(products);
-        productsList.push(product);
-      }
+//       console.log(`Creating order ${i + 1}...`);
+//       const date = faker.date.past(); // createdAt
+//       const products = getProducts.rows;
+//       const productsList = [];
+//       const numberOfProducts = faker.datatype.number({ min: 1, max: 5 });
+//       for (let i = 0; i < numberOfProducts; i++) {
+//         const product = faker.helpers.arrayElement(products);
+//         productsList.push(product);
+//       }
 
-      console.log(productsList);
+//       console.log(productsList);
 
-      // // make a fake order with at least 2 random products from the getProducts query and sum up the price of the products to get the total price
+//       // // make a fake order with at least 2 random products from the getProducts query and sum up the price of the products to get the total price
 
-      const orderTotal = productsList.reduce((acc, product) => {
-        return acc + Number(product.price);
-      }, 0);
+//       const orderTotal = productsList.reduce((acc, product) => {
+//         return acc + Number(product.price);
+//       }, 0);
 
-      console.log(orderTotal);
+//       console.log(orderTotal);
 
-      // const makeOrder = await postgresQuery(
-      //   `INSERT INTO "ORDER" ("customer_id", "employee_id", "total_price", "createdBy", "createdAt", "updatedBy", "updatedAt") VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-      //   [
-      //     customer, // customerID
-      //     employee, // employeeID
-      //     faker.datatype.number({ min: 1, max: 1000 }), // total_price
-      //     employee, // employeeID // createdBy
-      //     date, // createdAt
-      //     employee, // employeeID // updatedBy
-      //     date, // updatedAt
-      //   ]
-      // );
+//       // const makeOrder = await postgresQuery(
+//       //   `INSERT INTO "ORDER" ("customer_id", "employee_id", "total_price", "createdBy", "createdAt", "updatedBy", "updatedAt") VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+//       //   [
+//       //     customer, // customerID
+//       //     employee, // employeeID
+//       //     faker.datatype.number({ min: 1, max: 1000 }), // total_price
+//       //     employee, // employeeID // createdBy
+//       //     date, // createdAt
+//       //     employee, // employeeID // updatedBy
+//       //     date, // updatedAt
+//       //   ]
+//       // );
 
-      // const order_id = makeOrder.rows[0].order_id;
+//       // const order_id = makeOrder.rows[0].order_id;
 
-      // const orderProducts = productsList.map(async (product) => {
-      //   const orderProduct = await postgresQuery(
-      //     `INSERT INTO "ORDER_ITEMS" ("order_id", "product_id", "quantity", "price") VALUES ($1, $2, $3, $4)`,
-      //     [
-      //       order_id,
-      //       faker.datatype.number({ min: 1, max: 6 }),
-      //       faker.datatype.number({ min: 1, max: 10 }),
-      //       product.price,
-      //     ]
-      //   );
-      // });
-    } catch (error) {
-      console.log(`Error creating order ${i + 1}:`, error);
-    }
-  }
-};
+//       // const orderProducts = productsList.map(async (product) => {
+//       //   const orderProduct = await postgresQuery(
+//       //     `INSERT INTO "ORDER_ITEMS" ("order_id", "product_id", "quantity", "price") VALUES ($1, $2, $3, $4)`,
+//       //     [
+//       //       order_id,
+//       //       faker.datatype.number({ min: 1, max: 6 }),
+//       //       faker.datatype.number({ min: 1, max: 10 }),
+//       //       product.price,
+//       //     ]
+//       //   );
+//       // });
+//     } catch (error) {
+//       console.log(`Error creating order ${i + 1}:`, error);
+//     }
+//   }
+// };
 
 const main = async () => {
-  // await createFakeLocations(6);
-  // await createFakeManagers(6);
-  // await createFakeEmployees(20);
-  // await createFakeCustomers(50);
-  // await createFakeLogHours(500);
-  // await createFakePackages(20);
-  await createFakeOrders(20);
+  await createFakeLocations(6);
+  await createFakeManagers(6);
+  await createFakeEmployees(20);
+  await createFakeCustomers(50);
+  await createFakeLogHours(500);
+  await createFakePackages(20);
+  // await createFakeOrders(20);
 };
 
 main();

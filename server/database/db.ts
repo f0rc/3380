@@ -8,6 +8,11 @@ const pool = new Pool({
   user: process.env.NODE_ENV === "production" ? env.PGUSER : "test",
   password: process.env.NODE_ENV === "production" ? env.PGPASSWORD : "test",
   database: process.env.NODE_ENV === "production" ? env.PGDATABASE : "test",
+  // host: env.PGHOST,
+  // port: Number(env.PGPORT),
+  // user: env.PGUSER,
+  // password: env.PGPASSWORD,
+  // database: env.PGDATABASE,
 
   max: 20,
   // idleTimeoutMillis: 30000,

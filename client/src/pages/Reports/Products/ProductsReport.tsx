@@ -110,8 +110,8 @@ const ProductReport = () => {
       [key: string]: { labels: string[]; values: number[] };
     } = {};
 
-    console.log("chatData", chatData);
-    console.log("groupedData", groupedData);
+    // console.log("chatData", chatData);
+    // console.log("groupedData", groupedData);
 
     // Group data by product
     chatData.forEach((item) => {
@@ -161,7 +161,7 @@ const ProductReport = () => {
     <div className="flex flex-col gap-3">
       <div className="flex flex-col gap-4 mt-10 bg-[#3a3a38]/50 p-12 rounded-md border-2 border-[#41413E] shadow-2xl w-full">
         <div className="grow gap-2 items-center">
-          <h1 className="font-bold text-2xl pb-3">Package Report</h1>
+          <h1 className="font-bold text-2xl pb-3">Product Report</h1>
           <h1 className="text-xl font-bold pb-3">Select Filters:</h1>
           <div className="pb-3 ">
             <form onSubmit={onSubmit} className="">
@@ -235,7 +235,7 @@ const ProductReport = () => {
                   maintainAspectRatio: false,
                   scales: {
                     x: {
-                      // stacked: false,
+                      stacked: false,
                       grid: {
                         color: "rgba(255, 255, 255, 0.2)",
                       },
@@ -248,7 +248,7 @@ const ProductReport = () => {
                       },
                     },
                     y: {
-                      // stacked: false,
+                      stacked: false,
                       grid: {
                         color: "rgba(255, 255, 255, 0.2)",
                       },

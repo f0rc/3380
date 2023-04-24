@@ -1,0 +1,2413 @@
+--
+-- PostgreSQL database dump
+--
+
+-- Dumped from database version 13.2
+-- Dumped by pg_dump version 15.2
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+--
+-- Name: public; Type: SCHEMA; Schema: -; Owner: postgres
+--
+
+-- *not* creating schema, since initdb creates it
+
+
+ALTER SCHEMA public OWNER TO postgres;
+
+--
+-- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: postgres
+--
+
+COMMENT ON SCHEMA public IS '';
+
+
+--
+-- Name: check_low_stock(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.check_low_stock() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    IF (TG_OP = 'INSERT' OR TG_OP = 'UPDATE') AND NEW.quantity <= 10 THEN
+        INSERT INTO "LOW_STOCK_ALERTS" ("product_inventory_id", "postoffice_location_id")
+        VALUES (NEW.product_inventory_id, NEW.postoffice_location_id);
+    END IF;
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION public.check_low_stock() OWNER TO postgres;
+
+--
+-- Name: create_employee_role_data(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.create_employee_role_data() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    IF TG_OP = 'INSERT' THEN
+        IF NEW.role = 1 THEN
+            IF NOT EXISTS (SELECT 1 FROM "CLERK" WHERE "employee_id" = NEW.employee_id) THEN
+                INSERT INTO "CLERK" ("employee_id")
+                VALUES (NEW.employee_id);
+            END IF;
+            RETURN NEW;
+        ELSIF NEW.role = 2 THEN
+            IF NOT EXISTS (SELECT 1 FROM "DRIVER" WHERE "employee_id" = NEW.employee_id) THEN
+                INSERT INTO "DRIVER" ("employee_id")
+                VALUES (NEW.employee_id);
+            END IF;
+            RETURN NEW;
+        END IF;
+    ELSIF TG_OP = 'UPDATE' THEN
+        IF NEW.role = 1 THEN
+            IF NOT EXISTS (SELECT 1 FROM "CLERK" WHERE "employee_id" = NEW.employee_id) THEN
+                INSERT INTO "CLERK" ("employee_id")
+                VALUES (NEW.employee_id);
+            END IF;
+            RETURN NEW;
+        ELSIF NEW.role = 2 THEN
+            IF NOT EXISTS (SELECT 1 FROM "DRIVER" WHERE "employee_id" = NEW.employee_id) THEN
+                INSERT INTO "DRIVER" ("employee_id")
+                VALUES (NEW.employee_id);
+                RETURN NEW;
+            END IF;
+        END IF;
+    END IF;
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION public.create_employee_role_data() OWNER TO postgres;
+
+--
+-- Name: email_after_update(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.email_after_update() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    sender_email TEXT;
+    receiver_email TEXT;
+BEGIN
+    SELECT c.email
+    INTO sender_email
+    FROM "CUSTOMER" c
+    JOIN "PACKAGE" p ON p.sender_id = c.customer_id
+    WHERE p.package_id = NEW.package_id;
+
+    SELECT c.email
+    INTO receiver_email
+    FROM "CUSTOMER" c
+    JOIN "PACKAGE" p ON p.receiver_id = c.customer_id
+    WHERE p.package_id = NEW.package_id;
+
+    INSERT INTO "EMAIL_NOTIFICATION" (recipient, subject, body)
+    VALUES (sender_email, 'Order Update', 'Thank you for your order. Your order ID is ' || NEW.package_id || ' and its current status is ' || NEW.status || '.');
+
+    INSERT INTO "EMAIL_NOTIFICATION" (recipient, subject, body)
+    VALUES (receiver_email, 'Order Update', 'Thank you for your order. Your order ID is ' || NEW.package_id || ' and its current status is ' || NEW.status || '.');
+
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION public.email_after_update() OWNER TO postgres;
+
+--
+-- Name: insert_customer(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.insert_customer() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    user_id_money TEXT;
+BEGIN
+    IF EXISTS (SELECT 1 FROM "USER" WHERE "email" = NEW."email") THEN
+        SELECT "user_id" INTO user_id_money FROM "USER" WHERE "email" = NEW."email";
+        UPDATE "CUSTOMER" SET "user_id" = user_id_money WHERE "email" = NEW."email";
+    END IF;
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION public.insert_customer() OWNER TO postgres;
+
+--
+-- Name: insert_employee(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.insert_employee() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    emp_user_id TEXT;
+BEGIN
+    IF EXISTS (SELECT 1 FROM "USER" WHERE "email" = NEW."email") THEN
+        SELECT "user_id" INTO emp_user_id FROM "USER" WHERE "email" = NEW."email";
+        UPDATE "EMPLOYEE" SET "user_id" = emp_user_id WHERE "email" = NEW."email";
+    END IF;
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION public.insert_employee() OWNER TO postgres;
+
+--
+-- Name: insert_user(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.insert_user() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    -- Check if there is a matching Employee and insert user ID into Employee table
+    IF EXISTS (SELECT 1 FROM "EMPLOYEE" WHERE "email" = NEW."email") THEN
+        UPDATE "EMPLOYEE" SET "user_id" = NEW."user_id" WHERE "email" = NEW."email";
+        -- update the role of the NEW user in the user table
+        UPDATE "USER" SET "role" = (SELECT "role" FROM "EMPLOYEE" WHERE "email" = NEW."email") WHERE "email" = NEW."email";
+        RETURN NEW;
+    END IF;
+    
+    -- Check if there is a matching Customer and insert user ID into Customer table
+    IF EXISTS (SELECT 1 FROM "CUSTOMER" WHERE "email" = NEW."email") THEN
+        UPDATE "CUSTOMER" SET "user_id" = NEW."user_id" WHERE "email" = NEW."email";
+    END IF;
+    
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION public.insert_user() OWNER TO postgres;
+
+--
+-- Name: resolve_low_stock_alerts(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.resolve_low_stock_alerts() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    IF (TG_OP = 'UPDATE') AND NEW.quantity > 10 THEN
+        UPDATE "LOW_STOCK_ALERTS" SET "is_resolved" = TRUE WHERE "product_inventory_id" = NEW.product_inventory_id AND "postoffice_location_id" = NEW.postoffice_location_id;
+    END IF;
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION public.resolve_low_stock_alerts() OWNER TO postgres;
+
+--
+-- Name: simulate_delivery_system_accepted(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.simulate_delivery_system_accepted() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+  rand_probability FLOAT;
+  new_location TEXT;
+  new_intransitcounter INTEGER;
+BEGIN
+    NEW.status := 'transit';
+    new_intransitcounter := NEW.intransitcounter + 1;
+
+    LOOP
+      SELECT postoffice_location_id
+      INTO new_location
+      FROM "POSTOFFICE_LOCATION"
+      WHERE postoffice_location_id != NEW.postoffice_location_id
+      ORDER BY RANDOM()
+      LIMIT 1;
+
+      IF NOT EXISTS (
+        SELECT 1
+        FROM "PACKAGE_LOCATION_HISTORY"
+        WHERE package_id = NEW.package_id
+        AND postoffice_location_id = new_location
+      ) THEN
+        EXIT;
+      END IF;
+    END LOOP;
+
+    INSERT INTO "PACKAGE_LOCATION_HISTORY" (
+      package_id,
+      postoffice_location_id,
+      intransitcounter,
+      status,
+      "processedBy"
+    ) VALUES (
+      NEW.package_id,
+      new_location,
+      new_intransitcounter,
+      NEW.status,
+      NEW."processedBy"
+    );
+
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION public.simulate_delivery_system_accepted() OWNER TO postgres;
+
+--
+-- Name: simulate_delivery_system_out(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.simulate_delivery_system_out() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+  rand_probability FLOAT;
+BEGIN
+    rand_probability := RANDOM();
+
+    IF rand_probability < 0.1 THEN
+      NEW.status := 'fail';
+    ELSE
+      NEW.status := 'delivered';
+    END IF;
+
+    INSERT INTO "PACKAGE_LOCATION_HISTORY" (
+      package_id,
+      postoffice_location_id,
+      intransitcounter,
+      status,
+      "processedBy"
+    ) VALUES (
+      NEW.package_id,
+      NEW.postoffice_location_id,
+      NEW.intransitcounter + 1,
+      NEW.status,
+      NEW."processedBy"
+    );
+
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION public.simulate_delivery_system_out() OWNER TO postgres;
+
+--
+-- Name: simulate_delivery_system_transit(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.simulate_delivery_system_transit() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+  rand_probability FLOAT;
+  new_location TEXT;
+  new_intransitcounter INTEGER;
+BEGIN
+    rand_probability := RANDOM();
+    -- Set the intransitcounter based on the probability
+    IF NEW.intransitcounter = 1 AND rand_probability < 0.8 THEN
+    new_intransitcounter := NEW.intransitcounter + 1;
+    ELSIF NEW.intransitcounter = 2 AND rand_probability < 0.6 THEN
+    new_intransitcounter := NEW.intransitcounter + 1;
+    ELSIF NEW.intransitcounter = 3 AND rand_probability < 0.4 THEN
+    new_intransitcounter := NEW.intransitcounter + 1;
+    ELSE
+    new_intransitcounter := NEW.intransitcounter + 1;
+    END IF;
+
+    IF new_intransitcounter >= 4 THEN
+    NEW.status := 'out-for-delivery';
+    ELSE
+    NEW.status := 'transit';
+    END IF;
+
+    LOOP
+      SELECT postoffice_location_id
+      INTO new_location
+      FROM "POSTOFFICE_LOCATION"
+      WHERE postoffice_location_id != NEW.postoffice_location_id
+      ORDER BY RANDOM()
+      LIMIT 1;
+
+      IF NOT EXISTS (
+        SELECT 1
+        FROM "PACKAGE_LOCATION_HISTORY"
+        WHERE package_id = NEW.package_id
+        AND postoffice_location_id = new_location
+      ) THEN
+        EXIT;
+      END IF;
+    END LOOP;
+
+    INSERT INTO "PACKAGE_LOCATION_HISTORY" (
+      package_id,
+      postoffice_location_id,
+      intransitcounter,
+      status,
+      "processedBy"
+    ) VALUES (
+      NEW.package_id,
+      new_location,
+      new_intransitcounter,
+      NEW.status,
+      NEW."processedBy"
+    );
+
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION public.simulate_delivery_system_transit() OWNER TO postgres;
+
+--
+-- Name: update_user_role(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.update_user_role() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM "EMPLOYEE" WHERE "email" = NEW."email") THEN
+        UPDATE "USER" SET "role" = (SELECT "role" FROM "EMPLOYEE" WHERE "email" = NEW."email") WHERE "email" = NEW."email";
+    END IF;
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION public.update_user_role() OWNER TO postgres;
+
+SET default_tablespace = '';
+
+SET default_table_access_method = heap;
+
+--
+-- Name: CLERK; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."CLERK" (
+    employee_id text NOT NULL,
+    packages_made integer DEFAULT 0 NOT NULL,
+    CONSTRAINT "CLERK_packages_made_check" CHECK ((packages_made >= 0))
+);
+
+
+ALTER TABLE public."CLERK" OWNER TO postgres;
+
+--
+-- Name: CUSTOMER; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."CUSTOMER" (
+    user_id text,
+    customer_id text NOT NULL,
+    firstname text NOT NULL,
+    lastname text NOT NULL,
+    email text NOT NULL,
+    "phoneNumber" text NOT NULL,
+    address_street text NOT NULL,
+    address_city text NOT NULL,
+    address_state text NOT NULL,
+    address_zipcode text NOT NULL,
+    "updatedAt" date DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedBy" text NOT NULL,
+    "createdAt" date DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "createdBy" text NOT NULL
+);
+
+
+ALTER TABLE public."CUSTOMER" OWNER TO postgres;
+
+--
+-- Name: DEPENDANT; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."DEPENDANT" (
+    dependant_id text NOT NULL,
+    dependant_name character varying(255) NOT NULL,
+    dependant_birthdate date NOT NULL,
+    employee_id text NOT NULL,
+    relationship character varying(255) NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public."DEPENDANT" OWNER TO postgres;
+
+--
+-- Name: DRIVER; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."DRIVER" (
+    employee_id text NOT NULL,
+    truck_id text DEFAULT 'none'::text NOT NULL,
+    licensenumber character varying(20) DEFAULT 'none'::character varying NOT NULL
+);
+
+
+ALTER TABLE public."DRIVER" OWNER TO postgres;
+
+--
+-- Name: EMAIL_NOTIFICATION; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."EMAIL_NOTIFICATION" (
+    email_notification_id integer NOT NULL,
+    recipient text NOT NULL,
+    subject text NOT NULL,
+    body text NOT NULL,
+    sent boolean DEFAULT false NOT NULL,
+    "createdAt" timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public."EMAIL_NOTIFICATION" OWNER TO postgres;
+
+--
+-- Name: EMAIL_NOTIFICATION_email_notification_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public."EMAIL_NOTIFICATION_email_notification_id_seq"
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public."EMAIL_NOTIFICATION_email_notification_id_seq" OWNER TO postgres;
+
+--
+-- Name: EMAIL_NOTIFICATION_email_notification_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public."EMAIL_NOTIFICATION_email_notification_id_seq" OWNED BY public."EMAIL_NOTIFICATION".email_notification_id;
+
+
+--
+-- Name: EMPLOYEE; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."EMPLOYEE" (
+    employee_id text NOT NULL,
+    user_id text,
+    email text NOT NULL,
+    firstname character varying(30) NOT NULL,
+    lastname character varying(30) NOT NULL,
+    birthdate date NOT NULL,
+    role integer DEFAULT 0 NOT NULL,
+    salary integer NOT NULL,
+    manager_id text,
+    address_street text NOT NULL,
+    address_city text NOT NULL,
+    address_state text NOT NULL,
+    address_zipcode integer NOT NULL,
+    startdate date NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "createdBy" text NOT NULL,
+    "updatedAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedBy" text NOT NULL,
+    CONSTRAINT "EMPLOYEE_check" CHECK ((manager_id <> employee_id)),
+    CONSTRAINT "EMPLOYEE_role_check" CHECK (((role <= 4) AND (role >= 0))),
+    CONSTRAINT "EMPLOYEE_salary_check" CHECK ((salary >= 0))
+);
+
+
+ALTER TABLE public."EMPLOYEE" OWNER TO postgres;
+
+--
+-- Name: LOW_STOCK_ALERTS; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."LOW_STOCK_ALERTS" (
+    alert_id integer NOT NULL,
+    product_inventory_id integer NOT NULL,
+    postoffice_location_id text NOT NULL,
+    alert_date timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    is_resolved boolean DEFAULT false NOT NULL
+);
+
+
+ALTER TABLE public."LOW_STOCK_ALERTS" OWNER TO postgres;
+
+--
+-- Name: LOW_STOCK_ALERTS_alert_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public."LOW_STOCK_ALERTS_alert_id_seq"
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public."LOW_STOCK_ALERTS_alert_id_seq" OWNER TO postgres;
+
+--
+-- Name: LOW_STOCK_ALERTS_alert_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public."LOW_STOCK_ALERTS_alert_id_seq" OWNED BY public."LOW_STOCK_ALERTS".alert_id;
+
+
+--
+-- Name: ORDER; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."ORDER" (
+    order_id integer NOT NULL,
+    customer_id text NOT NULL,
+    postoffice_location_id text NOT NULL,
+    total_price numeric(10,2) NOT NULL,
+    order_date timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "createdAt" timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public."ORDER" OWNER TO postgres;
+
+--
+-- Name: ORDER_ITEMS; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."ORDER_ITEMS" (
+    order_item_id integer NOT NULL,
+    order_id integer NOT NULL,
+    product_id text NOT NULL,
+    quantity integer NOT NULL,
+    price numeric(10,2) NOT NULL,
+    "createdAt" timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public."ORDER_ITEMS" OWNER TO postgres;
+
+--
+-- Name: ORDER_ITEMS_order_item_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public."ORDER_ITEMS_order_item_id_seq"
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public."ORDER_ITEMS_order_item_id_seq" OWNER TO postgres;
+
+--
+-- Name: ORDER_ITEMS_order_item_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public."ORDER_ITEMS_order_item_id_seq" OWNED BY public."ORDER_ITEMS".order_item_id;
+
+
+--
+-- Name: ORDER_order_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public."ORDER_order_id_seq"
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public."ORDER_order_id_seq" OWNER TO postgres;
+
+--
+-- Name: ORDER_order_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public."ORDER_order_id_seq" OWNED BY public."ORDER".order_id;
+
+
+--
+-- Name: PACKAGE; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."PACKAGE" (
+    package_id text NOT NULL,
+    sender_id text NOT NULL,
+    receiver_id text NOT NULL,
+    cost text NOT NULL,
+    weight text NOT NULL,
+    type text NOT NULL,
+    size text NOT NULL,
+    "createdAt" date DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "createdBy" text NOT NULL,
+    "updatedAt" date DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedBy" text NOT NULL,
+    CONSTRAINT "PACKAGE_size_check" CHECK ((size = ANY (ARRAY['small'::text, 'medium'::text, 'large'::text, 'extra large'::text]))),
+    CONSTRAINT "PACKAGE_type_check" CHECK ((type = ANY (ARRAY['envelope'::text, 'box'::text, 'other'::text])))
+);
+
+
+ALTER TABLE public."PACKAGE" OWNER TO postgres;
+
+--
+-- Name: PACKAGE_LOCATION_HISTORY; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."PACKAGE_LOCATION_HISTORY" (
+    package_location_id integer NOT NULL,
+    package_id text NOT NULL,
+    postoffice_location_id text NOT NULL,
+    intransitcounter integer DEFAULT 0 NOT NULL,
+    status text NOT NULL,
+    "processedAt" timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "processedBy" text NOT NULL,
+    CONSTRAINT "PACKAGE_LOCATION_HISTORY_status_check" CHECK ((status = ANY (ARRAY['accepted'::text, 'transit'::text, 'delivered'::text, 'out-for-delivery'::text, 'fail'::text])))
+);
+
+
+ALTER TABLE public."PACKAGE_LOCATION_HISTORY" OWNER TO postgres;
+
+--
+-- Name: PACKAGE_LOCATION_HISTORY_package_location_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public."PACKAGE_LOCATION_HISTORY_package_location_id_seq"
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public."PACKAGE_LOCATION_HISTORY_package_location_id_seq" OWNER TO postgres;
+
+--
+-- Name: PACKAGE_LOCATION_HISTORY_package_location_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public."PACKAGE_LOCATION_HISTORY_package_location_id_seq" OWNED BY public."PACKAGE_LOCATION_HISTORY".package_location_id;
+
+
+--
+-- Name: POSTOFFICE_LOCATION; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."POSTOFFICE_LOCATION" (
+    postoffice_location_id text NOT NULL,
+    locationname text NOT NULL,
+    address_street text NOT NULL,
+    address_city text NOT NULL,
+    address_state text NOT NULL,
+    address_zipcode integer NOT NULL,
+    postoffice_location_manager text,
+    "createdAt" date DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" date DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public."POSTOFFICE_LOCATION" OWNER TO postgres;
+
+--
+-- Name: PRODUCT; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."PRODUCT" (
+    product_id text NOT NULL,
+    product_name character varying(255) NOT NULL,
+    product_description text,
+    price numeric(10,2) NOT NULL,
+    product_image text NOT NULL,
+    "createdBy" text NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public."PRODUCT" OWNER TO postgres;
+
+--
+-- Name: PRODUCT_INVENTORY; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."PRODUCT_INVENTORY" (
+    product_inventory_id integer NOT NULL,
+    product_id text NOT NULL,
+    postoffice_location_id text NOT NULL,
+    quantity integer DEFAULT 0 NOT NULL,
+    "updatedAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public."PRODUCT_INVENTORY" OWNER TO postgres;
+
+--
+-- Name: PRODUCT_INVENTORY_product_inventory_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public."PRODUCT_INVENTORY_product_inventory_id_seq"
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public."PRODUCT_INVENTORY_product_inventory_id_seq" OWNER TO postgres;
+
+--
+-- Name: PRODUCT_INVENTORY_product_inventory_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public."PRODUCT_INVENTORY_product_inventory_id_seq" OWNED BY public."PRODUCT_INVENTORY".product_inventory_id;
+
+
+--
+-- Name: SESSION; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."SESSION" (
+    session_id text NOT NULL,
+    user_id text NOT NULL,
+    token text NOT NULL,
+    expires timestamp(3) without time zone NOT NULL
+);
+
+
+ALTER TABLE public."SESSION" OWNER TO postgres;
+
+--
+-- Name: TRUCK; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."TRUCK" (
+    truck_id text NOT NULL,
+    truck_type character varying(20) NOT NULL,
+    truck_status character varying(20) NOT NULL,
+    postoffice_location_id text NOT NULL,
+    nextmaintenance date NOT NULL,
+    "createdAt" date DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" date DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT "TRUCK_truck_status_check" CHECK (((truck_status)::text = ANY ((ARRAY['available'::character varying, 'out'::character varying, 'inactive'::character varying])::text[]))),
+    CONSTRAINT "TRUCK_truck_type_check" CHECK (((truck_type)::text = ANY ((ARRAY['llv'::character varying, 'van'::character varying, 'semitruck'::character varying])::text[])))
+);
+
+
+ALTER TABLE public."TRUCK" OWNER TO postgres;
+
+--
+-- Name: USER; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."USER" (
+    user_id text NOT NULL,
+    email character varying(255) NOT NULL,
+    password text NOT NULL,
+    role integer DEFAULT 0 NOT NULL,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT "USER_role_check" CHECK (((role <= 4) AND (role >= 0)))
+);
+
+
+ALTER TABLE public."USER" OWNER TO postgres;
+
+--
+-- Name: WORKS_FOR; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."WORKS_FOR" (
+    works_for_id integer NOT NULL,
+    employee_id text NOT NULL,
+    postoffice_location_id text,
+    hours integer DEFAULT 0 NOT NULL
+);
+
+
+ALTER TABLE public."WORKS_FOR" OWNER TO postgres;
+
+--
+-- Name: WORKS_FOR_works_for_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public."WORKS_FOR_works_for_id_seq"
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public."WORKS_FOR_works_for_id_seq" OWNER TO postgres;
+
+--
+-- Name: WORKS_FOR_works_for_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public."WORKS_FOR_works_for_id_seq" OWNED BY public."WORKS_FOR".works_for_id;
+
+
+--
+-- Name: WORK_LOG; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public."WORK_LOG" (
+    work_log_id integer NOT NULL,
+    employee_id text NOT NULL,
+    hours integer NOT NULL,
+    date date DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public."WORK_LOG" OWNER TO postgres;
+
+--
+-- Name: WORK_LOG_work_log_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public."WORK_LOG_work_log_id_seq"
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public."WORK_LOG_work_log_id_seq" OWNER TO postgres;
+
+--
+-- Name: WORK_LOG_work_log_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public."WORK_LOG_work_log_id_seq" OWNED BY public."WORK_LOG".work_log_id;
+
+
+--
+-- Name: EMAIL_NOTIFICATION email_notification_id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."EMAIL_NOTIFICATION" ALTER COLUMN email_notification_id SET DEFAULT nextval('public."EMAIL_NOTIFICATION_email_notification_id_seq"'::regclass);
+
+
+--
+-- Name: LOW_STOCK_ALERTS alert_id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."LOW_STOCK_ALERTS" ALTER COLUMN alert_id SET DEFAULT nextval('public."LOW_STOCK_ALERTS_alert_id_seq"'::regclass);
+
+
+--
+-- Name: ORDER order_id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ORDER" ALTER COLUMN order_id SET DEFAULT nextval('public."ORDER_order_id_seq"'::regclass);
+
+
+--
+-- Name: ORDER_ITEMS order_item_id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ORDER_ITEMS" ALTER COLUMN order_item_id SET DEFAULT nextval('public."ORDER_ITEMS_order_item_id_seq"'::regclass);
+
+
+--
+-- Name: PACKAGE_LOCATION_HISTORY package_location_id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."PACKAGE_LOCATION_HISTORY" ALTER COLUMN package_location_id SET DEFAULT nextval('public."PACKAGE_LOCATION_HISTORY_package_location_id_seq"'::regclass);
+
+
+--
+-- Name: PRODUCT_INVENTORY product_inventory_id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."PRODUCT_INVENTORY" ALTER COLUMN product_inventory_id SET DEFAULT nextval('public."PRODUCT_INVENTORY_product_inventory_id_seq"'::regclass);
+
+
+--
+-- Name: WORKS_FOR works_for_id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."WORKS_FOR" ALTER COLUMN works_for_id SET DEFAULT nextval('public."WORKS_FOR_works_for_id_seq"'::regclass);
+
+
+--
+-- Name: WORK_LOG work_log_id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."WORK_LOG" ALTER COLUMN work_log_id SET DEFAULT nextval('public."WORK_LOG_work_log_id_seq"'::regclass);
+
+
+--
+-- Data for Name: CLERK; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."CLERK" (employee_id, packages_made) FROM stdin;
+b3826065-cb2c-47ed-8361-88d325d90d37	0
+43a577b4-151e-4afb-b684-4424530c64bd	0
+589b770c-8d09-4d60-afbe-e78f8f4a9b2a	0
+4eaa92a0-94b5-4093-8a7a-afba56dc1eb8	0
+2e5aba87-8d2f-4902-b6b9-331ad6ad583a	0
+acdd633e-3153-40c7-8cfc-4679bbac27de	0
+26020ba3-92f6-4db0-a8d2-b4f6ce821bd7	0
+\.
+
+
+--
+-- Data for Name: CUSTOMER; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."CUSTOMER" (user_id, customer_id, firstname, lastname, email, "phoneNumber", address_street, address_city, address_state, address_zipcode, "updatedAt", "updatedBy", "createdAt", "createdBy") FROM stdin;
+c33c0375-753e-40e5-b7c8-9606213d692e	f2c74d34-ec08-46a9-9dea-ece5b83025dd	George	Fischer	admin@admin.com		123 houston dr	houston	tx	77842	2023-04-23	ADMIN	2023-04-23	ADMIN
+\N	47712448-1007-43bb-87bd-a61e3496a1d5	Daisha	Metz	Geoffrey57@hotmail.com	975.340.4796 x7901	57050 Baby Radial	Thielworth	TX	53492	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c
+\N	69b6e72f-04c4-47b0-915a-873c6b35803b	Tracey	Reichel	Hunter41@hotmail.com	553.844.2080 x9721	459 Haley Ridges	Vandervortton	TX	08145	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c
+\N	4fe7bb5a-3a85-404f-a6f1-eaa9cd8ac32d	Noemy	Kshlerin	Milan.Hilpert50@yahoo.com	875.505.2043	9635 Libbie Point	West Devanteboro	TX	00989	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c
+\N	09ee7f85-59c2-4b39-a68e-da82784939f4	Dashawn	Gislason	Kacie19@gmail.com	1-799-493-7023 x9345	36972 Larue Camp	Ernieton	TX	37257	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c
+\N	4f873dca-0694-4d76-9e44-456759c0da4d	Ernestine	Rice	Tess_Legros48@yahoo.com	1-421-470-2269 x927	39090 Dedric Manor	Fort Novaland	TX	27793	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c
+\N	a428f663-1814-449b-839b-026a4a6e5a83	Mable	Medhurst	Ivah.Purdy90@hotmail.com	760-800-0422	33680 Lindsay Prairie	Port Demarcusberg	TX	50001	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c
+\N	cf1ab85b-c79e-4cd9-9381-16820fd39255	Alena	Greenholt	Alexandrine.Hackett37@yahoo.com	(996) 817-0165 x206	220 Nakia Plains	Lake Bransontown	TX	49782	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c
+\N	51cc5dbd-c3c2-485d-afa2-8079d033e09d	Marcos	Lemke	Tabitha_Kuphal@gmail.com	1-848-210-6510 x36063	7181 Konopelski Court	Marianastad	TX	43630	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c
+\N	58f83bbf-6395-4148-8326-14d620b0b33b	Bridgette	Schmeler	Deion.Marvin@hotmail.com	783-545-0073	1131 Abigayle Estate	East Tysonchester	TX	71805	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c
+\N	295ea3e9-65e5-4c59-bb47-d7648291ac1c	Emil	Hoeger	Alessandra.Wilderman51@gmail.com	703-871-8258 x3242	67721 Hermiston Place	Anitafurt	TX	13853	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c
+\N	0f40acd6-66de-489e-95ad-fe59b39601b4	Zelma	Thompson	Keon10@gmail.com	1-553-751-0338 x842	869 Norval River	New Cali	TX	40147	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c
+\N	5f5e4f84-f0a6-4ec5-b9df-96f34661a525	Priscilla	Romaguera	Gregorio_Pfeffer@gmail.com	970.946.6999 x6655	97882 Lia Branch	Lake Lelahberg	TX	62672	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c
+\N	745253db-4450-4e82-939e-c477299a168f	Era	Schroeder	Sylvia_Breitenberg16@yahoo.com	1-708-666-3679 x114	12668 Leo Ferry	Champaign	TX	02009	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c
+\N	1bd7d0ea-5716-4105-a418-0d6251b728ad	Judy	Beahan	Karelle7@hotmail.com	341-242-2416	380 Pfeffer Plaza	Luettgenland	TX	40400	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c
+\N	f39d038d-6ddd-414d-8dc0-81444a537c2b	Meghan	Marks	Wayne.Muller29@gmail.com	333-250-2312	34148 Tremblay Spurs	Jarodfurt	TX	09752	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c
+\N	a64856d3-9873-47aa-9dbd-7496709e0971	Audrey	Hackett	Annamae_Volkman56@hotmail.com	897.752.5313 x3982	03493 Greg Knolls	Sheboygan	TX	57682	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c
+\N	d8612b18-588b-4b40-aed7-ed960fc88952	Dean	Reinger	Justyn_Fisher52@hotmail.com	726-795-0648 x72173	74420 Daniella Manor	South Cooper	TX	27435	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c
+\N	86380c24-d068-4995-b9a4-479df85d6b24	Lewis	Rau	Duane63@yahoo.com	(912) 381-7576	628 Hilll Passage	Port Jonasmouth	TX	59463	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c
+\N	8a734bff-0c24-4553-9800-90aaab472400	Jett	Ratke	Raheem_Emmerich82@yahoo.com	(269) 583-1312	68549 Bogan Villages	Port Gretchenborough	TX	75728	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c
+\N	73bc4fc2-4ad5-4921-b771-9e55289e8388	Jayne	Trantow	Bryce.Sipes@yahoo.com	1-696-712-3147 x226	95549 Hintz Unions	Fort Collins	TX	42438	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c
+\N	4ef7d4d5-905d-4f12-b49b-8962090cd222	Amani	Wilkinson	Shawn.Wisozk8@hotmail.com	(326) 463-3686 x869	81111 Liam Grove	Broken Arrow	TX	60775	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c
+\N	21a5e79f-1188-455f-90b9-bd2d326dbfc9	Erna	Lebsack	Cole90@gmail.com	(274) 387-2933 x6346	3380 DuBuque Circles	Schultzchester	TX	39651	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c
+\N	aac4d7e6-0f13-458b-a66e-7abab8a9f334	Sabrina	Mueller	Kurtis80@hotmail.com	400-253-3325 x297	352 Schuster Forest	South Jesus	TX	14491	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c
+\N	98ddf550-2508-4812-b08f-d25dd777fd35	Sydnee	Gulgowski	Percival_Dooley53@gmail.com	310.699.2352 x535	969 Vanessa Expressway	Fort Darrelland	TX	09108	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c
+\N	d49c3235-1b3a-4ebb-80f0-8e338d7f3cfe	Jameson	Mayer	Darien.Schimmel61@gmail.com	(840) 898-8574	00372 Wilhelmine Squares	Reubenchester	TX	12743	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c
+\N	a38506f1-88d0-455b-8c11-b3d842895cfd	Nova	Kshlerin	Sydni50@hotmail.com	(886) 200-0392	82941 Reina Keys	Leannonworth	TX	66369	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c
+\N	4c73fea9-9a21-4afe-ad40-1f1c8df3ac2e	Willard	Dooley	Abigayle_Goyette75@yahoo.com	(793) 797-0156 x0692	7396 Haag Common	Ramonshire	TX	51919	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c
+\N	c27e85d1-c67b-411d-8551-0d8fa5058acb	Abdiel	Yundt	Adriel_Stamm20@hotmail.com	874-388-9893 x56568	4190 Anya Alley	Laceyport	TX	71142	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c
+b048174a-f674-4292-8109-e7679c33047b	7d2f5a0f-8366-4e3e-a9e5-078301c45607	Jovan	Beer	Blair91@gmail.com	(625) 743-7701 x80986	14613 Jaida Gardens	Maceystad	TX	30165	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c
+\N	ad1c7bd2-1f42-46ab-8cfb-e94efb61b883	Alvena	Bins	Lue64@yahoo.com	881.543.7928 x21831	9924 Dudley Mount	Port David	TX	87285	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c
+\N	f88c4cad-4c50-4c10-9200-a1dae73bc7fd	Isom	Mann	Rowan0@yahoo.com	(401) 745-3283 x53744	013 Lowe Bridge	South Danny	TX	66417	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c
+\N	611db99e-01d6-494d-a45c-63fe68d1f0ff	Claude	Mayer	Jaydon.Walker70@gmail.com	1-776-879-1947 x35710	1256 Caden Ranch	Tucson	TX	07961	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c
+\N	cfd58224-6da0-485d-9a36-660d3da7a041	Rahul	White	Whitney.Lakin@hotmail.com	1-310-552-0792	20728 Lia Path	Bentonhaven	TX	54670	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c
+\N	af031ef5-cca1-43e2-8bb9-d4277cf21e4d	Alexie	Kertzmann	Christy_Harvey@hotmail.com	237-502-3082 x1841	275 Glenda Glens	Rock Hill	TX	32316	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c
+\N	56b7b8c9-b84b-44c8-870b-9291ac2df234	Vida	Hodkiewicz	Ray_Hayes70@hotmail.com	689.949.5978	894 Maida Walks	Seanton	TX	23462	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c
+\N	7cd885dd-b770-46dc-b7d6-4ebbcc20e2f0	Destin	Upton	Houston.Schinner22@yahoo.com	1-205-534-0260	2642 Fay Islands	North Cristinaport	TX	91127	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c
+\N	b7a7d806-7130-4517-9565-4556955e2ab5	Ulices	Ortiz	Frederick_Weber24@gmail.com	454-839-7204 x50904	98690 Angelo Shoal	Mitchellhaven	TX	08196	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c
+\N	68205969-f55c-4a89-a961-b200932fa1d7	Jordi	Hauck	Kyle.Yundt81@gmail.com	(256) 676-7626	98202 Nora Mills	Whiteshire	TX	40121	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c
+\N	67e4b2e5-2c00-4841-a70e-ec46c8058cc3	Dorcas	Jakubowski	Gardner_Bins19@yahoo.com	(949) 922-0815 x586	46056 Stracke Motorway	Estelland	TX	82561	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c
+\N	8c20e973-f1fb-424a-a9f4-1f664b231cb0	Fidel	Bins	Jace_Watsica62@hotmail.com	212-643-3706 x300	5119 Melyssa Vista	East Fleta	TX	84375	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c
+\N	087092f2-e6d9-487d-80af-b4b536386d8a	Alexanne	Ankunding	Lura.Gleichner@hotmail.com	922-916-4682 x306	58273 Wisoky Rapid	Yundtboro	TX	44048	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c
+\N	41ffa705-5788-4aa9-954b-7895a89ecdaa	Elisabeth	Nicolas	Yoshiko72@hotmail.com	(978) 348-9752 x289	29005 Jevon Spur	Marietta	TX	10722	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c
+\N	c871f473-9400-4746-ab8f-fb75360cd50e	Tamia	Bode	Dwight.OKon@yahoo.com	1-508-284-6086 x84135	4898 Volkman Passage	North Tyreseberg	TX	87347	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c
+\N	244ec1be-a09a-42b5-a50d-ca3fa147c4a2	Lavada	Rohan	Effie_Kreiger43@hotmail.com	1-563-585-4941	805 Krajcik Knolls	New Jairo	TX	98737	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c
+\N	db480182-c524-4aca-be82-e4c58b4e6f91	Kaleb	Borer	Zechariah87@yahoo.com	287-679-9875	70961 Ottis Green	North Haley	TX	66379	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c
+\N	7976f04e-ad92-4953-9ed8-6de956fe649c	Ayana	Cassin	Laisha57@yahoo.com	979-830-1111 x09708	58953 Stehr Squares	Union City	TX	12919	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c
+\N	ce5fd263-4cf8-46f9-b460-6311ddbe39a1	Lucinda	Koss	Violet.Prosacco11@hotmail.com	393-795-4620 x51078	171 Fidel Garden	Parma	TX	07131	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c
+\N	7f88e72a-e617-4bc0-802e-99eccfc88d69	Marcellus	Grady	Germaine.Larkin86@hotmail.com	1-613-274-3553	7053 Haylee Springs	Cheektowaga	TX	88857	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c
+1521cd05-99a1-4fd4-a485-3a81c9f4d001	6cc4e968-ca45-49b2-ab98-fb6dc3f1d7f6	Gerry	Sporer	Cyrus_Blick@yahoo.com	(427) 301-9306 x402	84234 Abbott Station	New Maia	TX	55900	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c
+29b38782-31ef-4be6-af3d-4b7409176cea	263114f9-2d9d-4e49-8045-563962bb1bd3	Jerrod	Schmitt	Beatrice80@hotmail.com		775 Lincoln Forks	Lake Osvaldofort	TX	38269	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c	2022-10-10	5c01f46f-5373-4b24-985a-e9e23f4e446c
+\.
+
+
+--
+-- Data for Name: DEPENDANT; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."DEPENDANT" (dependant_id, dependant_name, dependant_birthdate, employee_id, relationship, "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: DRIVER; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."DRIVER" (employee_id, truck_id, licensenumber) FROM stdin;
+aabacfd1-4ec7-49b4-ad85-c5dddbc412f5	none	none
+347cf3ef-e9da-4963-8f6a-97aed61487dd	none	none
+2ec62754-385a-4fd1-999f-e9269fb1d2c3	none	none
+5d96f5da-460c-42d7-89ad-6f0aa5b2bcfa	none	none
+642c7efb-7ab7-40aa-af02-c63e275c9830	none	none
+\.
+
+
+--
+-- Data for Name: EMAIL_NOTIFICATION; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."EMAIL_NOTIFICATION" (email_notification_id, recipient, subject, body, sent, "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: EMPLOYEE; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."EMPLOYEE" (employee_id, user_id, email, firstname, lastname, birthdate, role, salary, manager_id, address_street, address_city, address_state, address_zipcode, startdate, "createdAt", "createdBy", "updatedAt", "updatedBy") FROM stdin;
+74402add-254f-4b77-abe8-fba50f7a1a8a	c33c0375-753e-40e5-b7c8-9606213d692e	admin@admin.com	George	Fischer	1990-12-20	4	1000000	\N	123 houston dr	houston	tx	77842	2023-04-04	2023-04-23 21:37:58.624	ADMIN	2023-04-23 21:37:58.624	ADMIN
+b3826065-cb2c-47ed-8361-88d325d90d37	\N	Maci52@gmail.com	Sydnee	Stanton	1960-11-29	1	52003	f69a29db-3817-4848-a528-5737cde44232	4784 Elsa Fields	North Tristian	TX	56668	2023-02-13	2023-02-13 20:11:10.712	f69a29db-3817-4848-a528-5737cde44232	2023-02-13 20:11:10.712	f69a29db-3817-4848-a528-5737cde44232
+aabacfd1-4ec7-49b4-ad85-c5dddbc412f5	\N	Deven_Collier8@hotmail.com	Constance	Ondricka	1980-11-01	2	96427	3c1752c0-5fb3-4c97-9b54-4b62476e754d	46556 Christophe Throughway	Newark	TX	81295	2022-08-27	2022-08-27 02:56:39.379	3c1752c0-5fb3-4c97-9b54-4b62476e754d	2022-08-27 02:56:39.379	3c1752c0-5fb3-4c97-9b54-4b62476e754d
+347cf3ef-e9da-4963-8f6a-97aed61487dd	\N	Justen32@gmail.com	Yadira	Stamm	1974-11-02	2	55547	3c1752c0-5fb3-4c97-9b54-4b62476e754d	7580 Destinee Ports	Lake Abdul	TX	52650	2022-04-24	2022-04-24 06:15:24.552	3c1752c0-5fb3-4c97-9b54-4b62476e754d	2022-04-24 06:15:24.552	3c1752c0-5fb3-4c97-9b54-4b62476e754d
+43a577b4-151e-4afb-b684-4424530c64bd	\N	Anna97@yahoo.com	Concepcion	O'Keefe	1989-07-22	1	47066	f69a29db-3817-4848-a528-5737cde44232	946 Cartwright Crescent	East Josueberg	TX	95765	2022-09-27	2022-09-27 01:23:31.142	f69a29db-3817-4848-a528-5737cde44232	2022-09-27 01:23:31.142	f69a29db-3817-4848-a528-5737cde44232
+589b770c-8d09-4d60-afbe-e78f8f4a9b2a	\N	Elmira_Koelpin77@hotmail.com	Vesta	Bergnaum	1975-10-29	1	37209	3c1752c0-5fb3-4c97-9b54-4b62476e754d	54993 Efren Harbors	Raynorville	TX	54070	2022-05-12	2022-05-12 00:53:18.937	3c1752c0-5fb3-4c97-9b54-4b62476e754d	2022-05-12 00:53:18.937	3c1752c0-5fb3-4c97-9b54-4b62476e754d
+4eaa92a0-94b5-4093-8a7a-afba56dc1eb8	\N	Izaiah_Koch@gmail.com	Gerard	Veum	1984-08-29	1	49203	f69a29db-3817-4848-a528-5737cde44232	808 Welch Expressway	Catalina Foothills	TX	93898	2023-01-29	2023-01-29 16:53:50.383	f69a29db-3817-4848-a528-5737cde44232	2023-01-29 16:53:50.383	f69a29db-3817-4848-a528-5737cde44232
+2ec62754-385a-4fd1-999f-e9269fb1d2c3	\N	Gaston0@gmail.com	Orrin	Cronin	2002-04-10	2	27628	3c1752c0-5fb3-4c97-9b54-4b62476e754d	66717 Albertha Drives	Katlynburgh	TX	15254	2022-09-06	2022-09-06 05:08:20.961	3c1752c0-5fb3-4c97-9b54-4b62476e754d	2022-09-06 05:08:20.961	3c1752c0-5fb3-4c97-9b54-4b62476e754d
+2e5aba87-8d2f-4902-b6b9-331ad6ad583a	\N	Iva.Prosacco98@gmail.com	Cloyd	Koss	1985-04-23	1	92791	f69a29db-3817-4848-a528-5737cde44232	35281 Hannah Mill	East Marlenstead	TX	9578	2023-03-30	2023-03-30 08:59:29.475	f69a29db-3817-4848-a528-5737cde44232	2023-03-30 08:59:29.475	f69a29db-3817-4848-a528-5737cde44232
+acdd633e-3153-40c7-8cfc-4679bbac27de	\N	Maryam72@yahoo.com	Tillman	Ankunding	1998-01-19	1	17147	3c1752c0-5fb3-4c97-9b54-4b62476e754d	47382 Wunsch Ford	Bell Gardens	TX	43407	2022-12-28	2022-12-28 13:26:10.511	3c1752c0-5fb3-4c97-9b54-4b62476e754d	2022-12-28 13:26:10.511	3c1752c0-5fb3-4c97-9b54-4b62476e754d
+26020ba3-92f6-4db0-a8d2-b4f6ce821bd7	\N	Mortimer29@gmail.com	Rashawn	Boyle	1995-07-05	1	84577	f69a29db-3817-4848-a528-5737cde44232	0950 Hilll Parkways	Jaskolskimouth	TX	2133	2022-07-09	2022-07-09 01:34:18.532	f69a29db-3817-4848-a528-5737cde44232	2022-07-09 01:34:18.532	f69a29db-3817-4848-a528-5737cde44232
+5d96f5da-460c-42d7-89ad-6f0aa5b2bcfa	\N	Jamel15@yahoo.com	Jonathon	Harvey	1995-06-14	2	81447	3c1752c0-5fb3-4c97-9b54-4b62476e754d	4257 Dean Pine	Carmelastead	TX	81739	2023-03-27	2023-03-27 09:30:55.763	3c1752c0-5fb3-4c97-9b54-4b62476e754d	2023-03-27 09:30:55.763	3c1752c0-5fb3-4c97-9b54-4b62476e754d
+642c7efb-7ab7-40aa-af02-c63e275c9830	\N	Reina_Jenkins34@yahoo.com	Germaine	Glover	1968-04-22	2	41773	f69a29db-3817-4848-a528-5737cde44232	53221 Crooks Village	New Valentinfurt	TX	72534	2023-02-18	2023-02-18 03:48:31.452	f69a29db-3817-4848-a528-5737cde44232	2023-02-18 03:48:31.452	f69a29db-3817-4848-a528-5737cde44232
+f69a29db-3817-4848-a528-5737cde44232	bf0e87e6-5136-4a73-9080-556aff39c9cc	Audreanne_Mills85@yahoo.com	Tillman	Rutherford	1989-02-01	3	45648	74402add-254f-4b77-abe8-fba50f7a1a8a	3395 Renner Shore	Charlottemouth	TX	64807	2023-02-21	2023-02-21 20:05:23.511	74402add-254f-4b77-abe8-fba50f7a1a8a	2023-02-21 20:05:23.511	74402add-254f-4b77-abe8-fba50f7a1a8a
+9a140897-20b2-4f22-a19c-1f25ea024fc8	e7994113-ae1c-49df-aab6-06474b5a3de5	Santina.Homenick87@gmail.com	Danielle	Ebert	1962-12-19	3	47709	74402add-254f-4b77-abe8-fba50f7a1a8a	92536 Felicia Wells	North Vita	TX	60584	2022-10-16	2022-10-16 00:19:24.938	74402add-254f-4b77-abe8-fba50f7a1a8a	2022-10-16 00:19:24.938	74402add-254f-4b77-abe8-fba50f7a1a8a
+d86ab11e-6d8c-494c-9817-c4131489b2e4	f962d8f2-e126-476d-a300-7d2c8ff782e8	Aidan.Kuvalis@hotmail.com	Ivy	Kohler	1959-07-01	3	50997	74402add-254f-4b77-abe8-fba50f7a1a8a	285 Keshaun Glens	North Novahaven	TX	64880	2023-04-22	2023-04-22 20:52:24.408	74402add-254f-4b77-abe8-fba50f7a1a8a	2023-04-22 20:52:24.408	74402add-254f-4b77-abe8-fba50f7a1a8a
+affe4ab7-2c2d-4a9e-a4ce-b618419528e7	7c51697c-69f1-4c37-9154-53c66d7efc85	Katelyn.Ortiz@gmail.com	Dianna	Bayer	1979-09-28	3	33909	74402add-254f-4b77-abe8-fba50f7a1a8a	078 Kasey Dale	Emersonmouth	TX	30448	2022-11-10	2022-11-10 16:57:49.05	74402add-254f-4b77-abe8-fba50f7a1a8a	2022-11-10 16:57:49.05	74402add-254f-4b77-abe8-fba50f7a1a8a
+1d5b786f-1e37-4d04-ac63-3fb1a20a087c	43edc8ac-25a1-45ee-abb9-198ddda355bb	Liam.Reichert89@yahoo.com	Vickie	Kulas	1992-12-09	3	33398	74402add-254f-4b77-abe8-fba50f7a1a8a	78005 Weber Circle	New Maxine	TX	18904	2022-07-13	2022-07-13 13:19:41.612	74402add-254f-4b77-abe8-fba50f7a1a8a	2022-07-13 13:19:41.612	74402add-254f-4b77-abe8-fba50f7a1a8a
+3c1752c0-5fb3-4c97-9b54-4b62476e754d	caeb4b75-6f39-4ebf-9dcb-d08be1986843	Joana.Roberts@gmail.com	Danyka	Smith	1981-11-07	3	27602	74402add-254f-4b77-abe8-fba50f7a1a8a	614 Marlene River	South Bend	TX	60007	2022-05-09	2022-05-09 03:05:06.868	74402add-254f-4b77-abe8-fba50f7a1a8a	2022-05-09 03:05:06.868	74402add-254f-4b77-abe8-fba50f7a1a8a
+\.
+
+
+--
+-- Data for Name: LOW_STOCK_ALERTS; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."LOW_STOCK_ALERTS" (alert_id, product_inventory_id, postoffice_location_id, alert_date, is_resolved) FROM stdin;
+1	7	ebb97728-7ab3-47e5-ab3c-b3ed1b2fef7a	2023-04-24 01:05:28.751	f
+\.
+
+
+--
+-- Data for Name: ORDER; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."ORDER" (order_id, customer_id, postoffice_location_id, total_price, order_date, "createdAt", "updatedAt") FROM stdin;
+2	f2c74d34-ec08-46a9-9dea-ece5b83025dd	62c35b19-c21a-44b6-a122-e4a658e77a1f	20.00	2023-04-24 00:43:47.250352	2023-04-24 00:43:47.250352	2023-04-24 00:43:47.250352
+4	f2c74d34-ec08-46a9-9dea-ece5b83025dd	62c35b19-c21a-44b6-a122-e4a658e77a1f	96.00	2023-04-24 00:43:53.867037	2023-04-24 00:43:53.867037	2023-04-24 00:43:53.867037
+5	263114f9-2d9d-4e49-8045-563962bb1bd3	1eadb43c-e267-4daf-aa96-111f1dd94068	314.00	2023-04-24 00:44:49.629141	2023-04-24 00:44:49.629141	2023-04-24 00:44:49.629141
+9	263114f9-2d9d-4e49-8045-563962bb1bd3	1eadb43c-e267-4daf-aa96-111f1dd94068	70.00	2023-04-24 00:45:00.432131	2023-04-24 00:45:00.432131	2023-04-24 00:45:00.432131
+1	f2c74d34-ec08-46a9-9dea-ece5b83025dd	62c35b19-c21a-44b6-a122-e4a658e77a1f	78.00	2023-01-24 00:43:44.136	2023-04-24 00:43:44.136189	2023-04-24 00:43:44.136189
+3	f2c74d34-ec08-46a9-9dea-ece5b83025dd	62c35b19-c21a-44b6-a122-e4a658e77a1f	110.00	2023-01-24 00:43:50.91	2023-04-24 00:43:50.910969	2023-04-24 00:43:50.910969
+8	263114f9-2d9d-4e49-8045-563962bb1bd3	1eadb43c-e267-4daf-aa96-111f1dd94068	70.00	2023-01-24 00:44:57.745	2023-04-24 00:44:57.74531	2023-04-24 00:44:57.74531
+6	263114f9-2d9d-4e49-8045-563962bb1bd3	1eadb43c-e267-4daf-aa96-111f1dd94068	50.00	2023-04-24 00:44:52.378	2023-04-24 00:44:52.37876	2023-04-24 00:44:52.37876
+7	263114f9-2d9d-4e49-8045-563962bb1bd3	1eadb43c-e267-4daf-aa96-111f1dd94068	80.00	2023-04-01 00:44:55.245	2023-04-24 00:44:55.245121	2023-04-24 00:44:55.245121
+10	f2c74d34-ec08-46a9-9dea-ece5b83025dd	ebb97728-7ab3-47e5-ab3c-b3ed1b2fef7a	132.00	2023-04-24 01:05:25.574937	2023-04-24 01:05:25.574937	2023-04-24 01:05:25.574937
+11	f2c74d34-ec08-46a9-9dea-ece5b83025dd	ebb97728-7ab3-47e5-ab3c-b3ed1b2fef7a	30.00	2023-04-24 01:05:28.746866	2023-04-24 01:05:28.746866	2023-04-24 01:05:28.746866
+\.
+
+
+--
+-- Data for Name: ORDER_ITEMS; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."ORDER_ITEMS" (order_item_id, order_id, product_id, quantity, price, "createdAt", "updatedAt") FROM stdin;
+1	1	8d7cb292-a4fd-4a67-99cf-67acc951dec5	4	12.00	2023-04-24 00:43:44.140576	2023-04-24 00:43:44.140576
+2	1	b9e83d47-9b6a-48d0-9e58-c52a68e98301	3	10.00	2023-04-24 00:43:44.14115	2023-04-24 00:43:44.14115
+3	2	ba4742d5-e506-480d-8b1d-06ec9afb84cf	4	5.00	2023-04-24 00:43:47.254584	2023-04-24 00:43:47.254584
+4	3	b9e83d47-9b6a-48d0-9e58-c52a68e98301	11	10.00	2023-04-24 00:43:50.913419	2023-04-24 00:43:50.913419
+5	4	8d7cb292-a4fd-4a67-99cf-67acc951dec5	8	12.00	2023-04-24 00:43:53.869645	2023-04-24 00:43:53.869645
+6	5	a355fdd8-1155-4153-acac-4b378493b206	7	12.00	2023-04-24 00:44:49.632335	2023-04-24 00:44:49.632335
+7	5	931ba3aa-5219-42fe-8868-2fef44fa7f4b	23	10.00	2023-04-24 00:44:49.632784	2023-04-24 00:44:49.632784
+8	6	931ba3aa-5219-42fe-8868-2fef44fa7f4b	5	10.00	2023-04-24 00:44:52.382721	2023-04-24 00:44:52.382721
+9	7	931ba3aa-5219-42fe-8868-2fef44fa7f4b	8	10.00	2023-04-24 00:44:55.249006	2023-04-24 00:44:55.249006
+10	8	931ba3aa-5219-42fe-8868-2fef44fa7f4b	7	10.00	2023-04-24 00:44:57.748019	2023-04-24 00:44:57.748019
+11	9	931ba3aa-5219-42fe-8868-2fef44fa7f4b	7	10.00	2023-04-24 00:45:00.435341	2023-04-24 00:45:00.435341
+12	10	16fbb868-7266-4dc1-8a0c-604a2d3d7902	7	5.00	2023-04-24 01:05:25.579	2023-04-24 01:05:25.579
+13	10	e12f0a3f-4fd7-4170-a28c-c565e2dcba2c	6	12.00	2023-04-24 01:05:25.579296	2023-04-24 01:05:25.579296
+14	10	b8ecf43a-aad3-4561-a307-ef441ffd7356	5	5.00	2023-04-24 01:05:25.589296	2023-04-24 01:05:25.589296
+15	11	b8ecf43a-aad3-4561-a307-ef441ffd7356	6	5.00	2023-04-24 01:05:28.750694	2023-04-24 01:05:28.750694
+\.
+
+
+--
+-- Data for Name: PACKAGE; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."PACKAGE" (package_id, sender_id, receiver_id, cost, weight, type, size, "createdAt", "createdBy", "updatedAt", "updatedBy") FROM stdin;
+43348a8e-97a2-4181-b55d-2eb7fdb012af	8a734bff-0c24-4553-9800-90aaab472400	b7a7d806-7130-4517-9565-4556955e2ab5	928	4.49	box	large	2022-07-04	347cf3ef-e9da-4963-8f6a-97aed61487dd	2022-07-04	347cf3ef-e9da-4963-8f6a-97aed61487dd
+4c9e5e22-d3b0-4009-adb1-bf89ea7bde82	68205969-f55c-4a89-a961-b200932fa1d7	7cd885dd-b770-46dc-b7d6-4ebbcc20e2f0	1039	24.11	box	small	2022-06-22	642c7efb-7ab7-40aa-af02-c63e275c9830	2022-06-22	642c7efb-7ab7-40aa-af02-c63e275c9830
+63f32c2f-2846-4c5a-ad04-2910a86a7f69	f2c74d34-ec08-46a9-9dea-ece5b83025dd	47712448-1007-43bb-87bd-a61e3496a1d5	483	2.51	envelope	medium	2022-10-12	5d96f5da-460c-42d7-89ad-6f0aa5b2bcfa	2022-10-12	5d96f5da-460c-42d7-89ad-6f0aa5b2bcfa
+45ace94f-8eac-4be4-a6f9-f54170ccd12f	7d2f5a0f-8366-4e3e-a9e5-078301c45607	f39d038d-6ddd-414d-8dc0-81444a537c2b	1610	45.05	box	large	2022-07-16	aabacfd1-4ec7-49b4-ad85-c5dddbc412f5	2022-07-16	aabacfd1-4ec7-49b4-ad85-c5dddbc412f5
+597992b2-833f-456a-886a-4054efaa91a9	4c73fea9-9a21-4afe-ad40-1f1c8df3ac2e	47712448-1007-43bb-87bd-a61e3496a1d5	1187	35.08	box	large	2022-05-01	aabacfd1-4ec7-49b4-ad85-c5dddbc412f5	2022-05-01	aabacfd1-4ec7-49b4-ad85-c5dddbc412f5
+c836ae5e-d6ac-4130-8178-f2673e1ca276	f39d038d-6ddd-414d-8dc0-81444a537c2b	4fe7bb5a-3a85-404f-a6f1-eaa9cd8ac32d	899	12.69	envelope	small	2023-01-02	347cf3ef-e9da-4963-8f6a-97aed61487dd	2023-01-02	347cf3ef-e9da-4963-8f6a-97aed61487dd
+2443250e-d936-4036-bcd6-c9d356ad3878	21a5e79f-1188-455f-90b9-bd2d326dbfc9	09ee7f85-59c2-4b39-a68e-da82784939f4	1582	4.92	box	medium	2023-02-10	347cf3ef-e9da-4963-8f6a-97aed61487dd	2023-02-10	347cf3ef-e9da-4963-8f6a-97aed61487dd
+4b6e3e68-3805-411f-b589-4a4bf9ae5e96	a64856d3-9873-47aa-9dbd-7496709e0971	ce5fd263-4cf8-46f9-b460-6311ddbe39a1	78	19.18	envelope	medium	2022-08-26	347cf3ef-e9da-4963-8f6a-97aed61487dd	2022-08-26	347cf3ef-e9da-4963-8f6a-97aed61487dd
+5e98b800-7d0e-4d9d-a0d5-c531de0239f2	1bd7d0ea-5716-4105-a418-0d6251b728ad	58f83bbf-6395-4148-8326-14d620b0b33b	1373	31.98	box	medium	2022-08-15	642c7efb-7ab7-40aa-af02-c63e275c9830	2022-08-15	642c7efb-7ab7-40aa-af02-c63e275c9830
+717d23fb-7c13-4aa7-89de-25d204418fe0	611db99e-01d6-494d-a45c-63fe68d1f0ff	58f83bbf-6395-4148-8326-14d620b0b33b	1643	21.05	envelope	medium	2022-09-15	642c7efb-7ab7-40aa-af02-c63e275c9830	2022-09-15	642c7efb-7ab7-40aa-af02-c63e275c9830
+8ef94517-a67d-4260-b159-b3e62f032c86	09ee7f85-59c2-4b39-a68e-da82784939f4	f39d038d-6ddd-414d-8dc0-81444a537c2b	523	35	envelope	medium	2022-07-27	642c7efb-7ab7-40aa-af02-c63e275c9830	2022-07-27	642c7efb-7ab7-40aa-af02-c63e275c9830
+8293233a-1898-471f-808b-a3244b92d40b	af031ef5-cca1-43e2-8bb9-d4277cf21e4d	f39d038d-6ddd-414d-8dc0-81444a537c2b	705	5.67	envelope	large	2022-12-19	aabacfd1-4ec7-49b4-ad85-c5dddbc412f5	2022-12-19	aabacfd1-4ec7-49b4-ad85-c5dddbc412f5
+acfda207-6574-42a8-8a5a-d504bb9a79f4	7976f04e-ad92-4953-9ed8-6de956fe649c	b7a7d806-7130-4517-9565-4556955e2ab5	1938	18.37	box	large	2022-05-07	2ec62754-385a-4fd1-999f-e9269fb1d2c3	2022-05-07	2ec62754-385a-4fd1-999f-e9269fb1d2c3
+38b53780-2a67-48c7-a0eb-f9084d5c7ec7	d8612b18-588b-4b40-aed7-ed960fc88952	7cd885dd-b770-46dc-b7d6-4ebbcc20e2f0	1187	22.2	box	small	2022-06-02	642c7efb-7ab7-40aa-af02-c63e275c9830	2022-06-02	642c7efb-7ab7-40aa-af02-c63e275c9830
+553981d9-98be-4fb2-85f0-e0a678179ad8	611db99e-01d6-494d-a45c-63fe68d1f0ff	ad1c7bd2-1f42-46ab-8cfb-e94efb61b883	645	6.14	envelope	small	2023-04-08	642c7efb-7ab7-40aa-af02-c63e275c9830	2023-04-08	642c7efb-7ab7-40aa-af02-c63e275c9830
+4d504b56-7f89-4b82-ac10-7ab1714aad18	263114f9-2d9d-4e49-8045-563962bb1bd3	09ee7f85-59c2-4b39-a68e-da82784939f4	322	19.65	envelope	large	2022-07-30	aabacfd1-4ec7-49b4-ad85-c5dddbc412f5	2022-07-30	aabacfd1-4ec7-49b4-ad85-c5dddbc412f5
+f7411c7d-8f5a-4e7d-ac34-068faace8a10	aac4d7e6-0f13-458b-a66e-7abab8a9f334	98ddf550-2508-4812-b08f-d25dd777fd35	282	12.25	envelope	medium	2022-08-17	642c7efb-7ab7-40aa-af02-c63e275c9830	2022-08-17	642c7efb-7ab7-40aa-af02-c63e275c9830
+e89090a7-beae-4444-850c-eac07331f128	ad1c7bd2-1f42-46ab-8cfb-e94efb61b883	86380c24-d068-4995-b9a4-479df85d6b24	296	30.84	box	small	2023-04-05	347cf3ef-e9da-4963-8f6a-97aed61487dd	2023-04-05	347cf3ef-e9da-4963-8f6a-97aed61487dd
+a6b67fea-6286-43ee-96d2-34b54f9b058b	5f5e4f84-f0a6-4ec5-b9df-96f34661a525	09ee7f85-59c2-4b39-a68e-da82784939f4	1654	5.55	box	large	2023-03-14	642c7efb-7ab7-40aa-af02-c63e275c9830	2023-03-14	642c7efb-7ab7-40aa-af02-c63e275c9830
+804f2d17-1ca8-4d3a-b502-a334a34d25ac	73bc4fc2-4ad5-4921-b771-9e55289e8388	4f873dca-0694-4d76-9e44-456759c0da4d	679	13.33	box	large	2022-09-19	642c7efb-7ab7-40aa-af02-c63e275c9830	2022-09-19	642c7efb-7ab7-40aa-af02-c63e275c9830
+\.
+
+
+--
+-- Data for Name: PACKAGE_LOCATION_HISTORY; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."PACKAGE_LOCATION_HISTORY" (package_location_id, package_id, postoffice_location_id, intransitcounter, status, "processedAt", "processedBy") FROM stdin;
+1	43348a8e-97a2-4181-b55d-2eb7fdb012af	a707dd03-fa91-4b86-9a22-463179060aad	0	accepted	2022-07-04 12:00:04.018	347cf3ef-e9da-4963-8f6a-97aed61487dd
+2	43348a8e-97a2-4181-b55d-2eb7fdb012af	ebb97728-7ab3-47e5-ab3c-b3ed1b2fef7a	1	transit	2023-04-23 21:40:04.281951	347cf3ef-e9da-4963-8f6a-97aed61487dd
+3	43348a8e-97a2-4181-b55d-2eb7fdb012af	1eadb43c-e267-4daf-aa96-111f1dd94068	2	transit	2023-04-23 21:40:04.281951	347cf3ef-e9da-4963-8f6a-97aed61487dd
+4	43348a8e-97a2-4181-b55d-2eb7fdb012af	62c35b19-c21a-44b6-a122-e4a658e77a1f	3	transit	2023-04-23 21:40:04.281951	347cf3ef-e9da-4963-8f6a-97aed61487dd
+5	43348a8e-97a2-4181-b55d-2eb7fdb012af	7d168b29-1572-43a7-bcc6-2a84184fa11f	4	out-for-delivery	2023-04-23 21:40:04.281951	347cf3ef-e9da-4963-8f6a-97aed61487dd
+6	43348a8e-97a2-4181-b55d-2eb7fdb012af	7d168b29-1572-43a7-bcc6-2a84184fa11f	5	delivered	2023-04-23 21:40:04.281951	347cf3ef-e9da-4963-8f6a-97aed61487dd
+7	4c9e5e22-d3b0-4009-adb1-bf89ea7bde82	62c35b19-c21a-44b6-a122-e4a658e77a1f	0	accepted	2022-06-22 20:21:58.08	642c7efb-7ab7-40aa-af02-c63e275c9830
+8	4c9e5e22-d3b0-4009-adb1-bf89ea7bde82	57c9e09d-4b6d-4cc5-b8e6-c7a0665e769d	1	transit	2023-04-23 21:40:04.477981	642c7efb-7ab7-40aa-af02-c63e275c9830
+9	4c9e5e22-d3b0-4009-adb1-bf89ea7bde82	7d168b29-1572-43a7-bcc6-2a84184fa11f	2	transit	2023-04-23 21:40:04.477981	642c7efb-7ab7-40aa-af02-c63e275c9830
+10	4c9e5e22-d3b0-4009-adb1-bf89ea7bde82	ebb97728-7ab3-47e5-ab3c-b3ed1b2fef7a	3	transit	2023-04-23 21:40:04.477981	642c7efb-7ab7-40aa-af02-c63e275c9830
+11	4c9e5e22-d3b0-4009-adb1-bf89ea7bde82	1eadb43c-e267-4daf-aa96-111f1dd94068	4	out-for-delivery	2023-04-23 21:40:04.477981	642c7efb-7ab7-40aa-af02-c63e275c9830
+12	4c9e5e22-d3b0-4009-adb1-bf89ea7bde82	1eadb43c-e267-4daf-aa96-111f1dd94068	5	fail	2023-04-23 21:40:04.477981	642c7efb-7ab7-40aa-af02-c63e275c9830
+13	63f32c2f-2846-4c5a-ad04-2910a86a7f69	a707dd03-fa91-4b86-9a22-463179060aad	0	accepted	2022-10-12 21:59:19.687	5d96f5da-460c-42d7-89ad-6f0aa5b2bcfa
+14	63f32c2f-2846-4c5a-ad04-2910a86a7f69	7d168b29-1572-43a7-bcc6-2a84184fa11f	1	transit	2023-04-23 21:40:04.674003	5d96f5da-460c-42d7-89ad-6f0aa5b2bcfa
+15	63f32c2f-2846-4c5a-ad04-2910a86a7f69	57c9e09d-4b6d-4cc5-b8e6-c7a0665e769d	2	transit	2023-04-23 21:40:04.674003	5d96f5da-460c-42d7-89ad-6f0aa5b2bcfa
+16	63f32c2f-2846-4c5a-ad04-2910a86a7f69	1eadb43c-e267-4daf-aa96-111f1dd94068	3	transit	2023-04-23 21:40:04.674003	5d96f5da-460c-42d7-89ad-6f0aa5b2bcfa
+17	63f32c2f-2846-4c5a-ad04-2910a86a7f69	62c35b19-c21a-44b6-a122-e4a658e77a1f	4	out-for-delivery	2023-04-23 21:40:04.674003	5d96f5da-460c-42d7-89ad-6f0aa5b2bcfa
+18	63f32c2f-2846-4c5a-ad04-2910a86a7f69	62c35b19-c21a-44b6-a122-e4a658e77a1f	5	delivered	2023-04-23 21:40:04.674003	5d96f5da-460c-42d7-89ad-6f0aa5b2bcfa
+19	45ace94f-8eac-4be4-a6f9-f54170ccd12f	a707dd03-fa91-4b86-9a22-463179060aad	0	accepted	2022-07-16 18:22:10.252	aabacfd1-4ec7-49b4-ad85-c5dddbc412f5
+20	45ace94f-8eac-4be4-a6f9-f54170ccd12f	ebb97728-7ab3-47e5-ab3c-b3ed1b2fef7a	1	transit	2023-04-23 21:40:04.870175	aabacfd1-4ec7-49b4-ad85-c5dddbc412f5
+21	45ace94f-8eac-4be4-a6f9-f54170ccd12f	62c35b19-c21a-44b6-a122-e4a658e77a1f	2	transit	2023-04-23 21:40:04.870175	aabacfd1-4ec7-49b4-ad85-c5dddbc412f5
+22	45ace94f-8eac-4be4-a6f9-f54170ccd12f	57c9e09d-4b6d-4cc5-b8e6-c7a0665e769d	3	transit	2023-04-23 21:40:04.870175	aabacfd1-4ec7-49b4-ad85-c5dddbc412f5
+23	45ace94f-8eac-4be4-a6f9-f54170ccd12f	7d168b29-1572-43a7-bcc6-2a84184fa11f	4	out-for-delivery	2023-04-23 21:40:04.870175	aabacfd1-4ec7-49b4-ad85-c5dddbc412f5
+24	45ace94f-8eac-4be4-a6f9-f54170ccd12f	7d168b29-1572-43a7-bcc6-2a84184fa11f	5	delivered	2023-04-23 21:40:04.870175	aabacfd1-4ec7-49b4-ad85-c5dddbc412f5
+25	597992b2-833f-456a-886a-4054efaa91a9	a707dd03-fa91-4b86-9a22-463179060aad	0	accepted	2022-05-01 17:07:17.582	aabacfd1-4ec7-49b4-ad85-c5dddbc412f5
+26	597992b2-833f-456a-886a-4054efaa91a9	7d168b29-1572-43a7-bcc6-2a84184fa11f	1	transit	2023-04-23 21:40:05.058384	aabacfd1-4ec7-49b4-ad85-c5dddbc412f5
+27	597992b2-833f-456a-886a-4054efaa91a9	ebb97728-7ab3-47e5-ab3c-b3ed1b2fef7a	2	transit	2023-04-23 21:40:05.058384	aabacfd1-4ec7-49b4-ad85-c5dddbc412f5
+28	597992b2-833f-456a-886a-4054efaa91a9	62c35b19-c21a-44b6-a122-e4a658e77a1f	3	transit	2023-04-23 21:40:05.058384	aabacfd1-4ec7-49b4-ad85-c5dddbc412f5
+29	597992b2-833f-456a-886a-4054efaa91a9	1eadb43c-e267-4daf-aa96-111f1dd94068	4	out-for-delivery	2023-04-23 21:40:05.058384	aabacfd1-4ec7-49b4-ad85-c5dddbc412f5
+30	597992b2-833f-456a-886a-4054efaa91a9	1eadb43c-e267-4daf-aa96-111f1dd94068	5	delivered	2023-04-23 21:40:05.058384	aabacfd1-4ec7-49b4-ad85-c5dddbc412f5
+31	c836ae5e-d6ac-4130-8178-f2673e1ca276	a707dd03-fa91-4b86-9a22-463179060aad	0	accepted	2023-01-02 05:11:58.101	347cf3ef-e9da-4963-8f6a-97aed61487dd
+32	c836ae5e-d6ac-4130-8178-f2673e1ca276	57c9e09d-4b6d-4cc5-b8e6-c7a0665e769d	1	transit	2023-04-23 21:40:05.254101	347cf3ef-e9da-4963-8f6a-97aed61487dd
+33	c836ae5e-d6ac-4130-8178-f2673e1ca276	7d168b29-1572-43a7-bcc6-2a84184fa11f	2	transit	2023-04-23 21:40:05.254101	347cf3ef-e9da-4963-8f6a-97aed61487dd
+34	c836ae5e-d6ac-4130-8178-f2673e1ca276	62c35b19-c21a-44b6-a122-e4a658e77a1f	3	transit	2023-04-23 21:40:05.254101	347cf3ef-e9da-4963-8f6a-97aed61487dd
+35	c836ae5e-d6ac-4130-8178-f2673e1ca276	ebb97728-7ab3-47e5-ab3c-b3ed1b2fef7a	4	out-for-delivery	2023-04-23 21:40:05.254101	347cf3ef-e9da-4963-8f6a-97aed61487dd
+36	c836ae5e-d6ac-4130-8178-f2673e1ca276	ebb97728-7ab3-47e5-ab3c-b3ed1b2fef7a	5	delivered	2023-04-23 21:40:05.254101	347cf3ef-e9da-4963-8f6a-97aed61487dd
+37	2443250e-d936-4036-bcd6-c9d356ad3878	a707dd03-fa91-4b86-9a22-463179060aad	0	accepted	2023-02-10 11:34:24.671	347cf3ef-e9da-4963-8f6a-97aed61487dd
+38	2443250e-d936-4036-bcd6-c9d356ad3878	62c35b19-c21a-44b6-a122-e4a658e77a1f	1	transit	2023-04-23 21:40:05.441947	347cf3ef-e9da-4963-8f6a-97aed61487dd
+39	2443250e-d936-4036-bcd6-c9d356ad3878	1eadb43c-e267-4daf-aa96-111f1dd94068	2	transit	2023-04-23 21:40:05.441947	347cf3ef-e9da-4963-8f6a-97aed61487dd
+40	2443250e-d936-4036-bcd6-c9d356ad3878	ebb97728-7ab3-47e5-ab3c-b3ed1b2fef7a	3	transit	2023-04-23 21:40:05.441947	347cf3ef-e9da-4963-8f6a-97aed61487dd
+41	2443250e-d936-4036-bcd6-c9d356ad3878	7d168b29-1572-43a7-bcc6-2a84184fa11f	4	out-for-delivery	2023-04-23 21:40:05.441947	347cf3ef-e9da-4963-8f6a-97aed61487dd
+42	2443250e-d936-4036-bcd6-c9d356ad3878	7d168b29-1572-43a7-bcc6-2a84184fa11f	5	fail	2023-04-23 21:40:05.441947	347cf3ef-e9da-4963-8f6a-97aed61487dd
+43	4b6e3e68-3805-411f-b589-4a4bf9ae5e96	a707dd03-fa91-4b86-9a22-463179060aad	0	accepted	2022-08-26 22:00:54.27	347cf3ef-e9da-4963-8f6a-97aed61487dd
+44	4b6e3e68-3805-411f-b589-4a4bf9ae5e96	62c35b19-c21a-44b6-a122-e4a658e77a1f	1	transit	2023-04-23 21:40:05.634274	347cf3ef-e9da-4963-8f6a-97aed61487dd
+45	4b6e3e68-3805-411f-b589-4a4bf9ae5e96	1eadb43c-e267-4daf-aa96-111f1dd94068	2	transit	2023-04-23 21:40:05.634274	347cf3ef-e9da-4963-8f6a-97aed61487dd
+46	4b6e3e68-3805-411f-b589-4a4bf9ae5e96	57c9e09d-4b6d-4cc5-b8e6-c7a0665e769d	3	transit	2023-04-23 21:40:05.634274	347cf3ef-e9da-4963-8f6a-97aed61487dd
+47	4b6e3e68-3805-411f-b589-4a4bf9ae5e96	ebb97728-7ab3-47e5-ab3c-b3ed1b2fef7a	4	out-for-delivery	2023-04-23 21:40:05.634274	347cf3ef-e9da-4963-8f6a-97aed61487dd
+48	4b6e3e68-3805-411f-b589-4a4bf9ae5e96	ebb97728-7ab3-47e5-ab3c-b3ed1b2fef7a	5	delivered	2023-04-23 21:40:05.634274	347cf3ef-e9da-4963-8f6a-97aed61487dd
+49	5e98b800-7d0e-4d9d-a0d5-c531de0239f2	62c35b19-c21a-44b6-a122-e4a658e77a1f	0	accepted	2022-08-15 03:57:08.193	642c7efb-7ab7-40aa-af02-c63e275c9830
+50	5e98b800-7d0e-4d9d-a0d5-c531de0239f2	1eadb43c-e267-4daf-aa96-111f1dd94068	1	transit	2023-04-23 21:40:05.822049	642c7efb-7ab7-40aa-af02-c63e275c9830
+51	5e98b800-7d0e-4d9d-a0d5-c531de0239f2	a707dd03-fa91-4b86-9a22-463179060aad	2	transit	2023-04-23 21:40:05.822049	642c7efb-7ab7-40aa-af02-c63e275c9830
+52	5e98b800-7d0e-4d9d-a0d5-c531de0239f2	7d168b29-1572-43a7-bcc6-2a84184fa11f	3	transit	2023-04-23 21:40:05.822049	642c7efb-7ab7-40aa-af02-c63e275c9830
+53	5e98b800-7d0e-4d9d-a0d5-c531de0239f2	57c9e09d-4b6d-4cc5-b8e6-c7a0665e769d	4	out-for-delivery	2023-04-23 21:40:05.822049	642c7efb-7ab7-40aa-af02-c63e275c9830
+54	5e98b800-7d0e-4d9d-a0d5-c531de0239f2	57c9e09d-4b6d-4cc5-b8e6-c7a0665e769d	5	delivered	2023-04-23 21:40:05.822049	642c7efb-7ab7-40aa-af02-c63e275c9830
+55	717d23fb-7c13-4aa7-89de-25d204418fe0	62c35b19-c21a-44b6-a122-e4a658e77a1f	0	accepted	2022-09-15 12:34:45.835	642c7efb-7ab7-40aa-af02-c63e275c9830
+56	717d23fb-7c13-4aa7-89de-25d204418fe0	ebb97728-7ab3-47e5-ab3c-b3ed1b2fef7a	1	transit	2023-04-23 21:40:06.014267	642c7efb-7ab7-40aa-af02-c63e275c9830
+57	717d23fb-7c13-4aa7-89de-25d204418fe0	57c9e09d-4b6d-4cc5-b8e6-c7a0665e769d	2	transit	2023-04-23 21:40:06.014267	642c7efb-7ab7-40aa-af02-c63e275c9830
+58	717d23fb-7c13-4aa7-89de-25d204418fe0	1eadb43c-e267-4daf-aa96-111f1dd94068	3	transit	2023-04-23 21:40:06.014267	642c7efb-7ab7-40aa-af02-c63e275c9830
+59	717d23fb-7c13-4aa7-89de-25d204418fe0	7d168b29-1572-43a7-bcc6-2a84184fa11f	4	out-for-delivery	2023-04-23 21:40:06.014267	642c7efb-7ab7-40aa-af02-c63e275c9830
+60	717d23fb-7c13-4aa7-89de-25d204418fe0	7d168b29-1572-43a7-bcc6-2a84184fa11f	5	delivered	2023-04-23 21:40:06.014267	642c7efb-7ab7-40aa-af02-c63e275c9830
+61	8ef94517-a67d-4260-b159-b3e62f032c86	62c35b19-c21a-44b6-a122-e4a658e77a1f	0	accepted	2022-07-27 11:41:23.385	642c7efb-7ab7-40aa-af02-c63e275c9830
+62	8ef94517-a67d-4260-b159-b3e62f032c86	1eadb43c-e267-4daf-aa96-111f1dd94068	1	transit	2023-04-23 21:40:06.206178	642c7efb-7ab7-40aa-af02-c63e275c9830
+63	8ef94517-a67d-4260-b159-b3e62f032c86	57c9e09d-4b6d-4cc5-b8e6-c7a0665e769d	2	transit	2023-04-23 21:40:06.206178	642c7efb-7ab7-40aa-af02-c63e275c9830
+64	8ef94517-a67d-4260-b159-b3e62f032c86	a707dd03-fa91-4b86-9a22-463179060aad	3	transit	2023-04-23 21:40:06.206178	642c7efb-7ab7-40aa-af02-c63e275c9830
+65	8ef94517-a67d-4260-b159-b3e62f032c86	7d168b29-1572-43a7-bcc6-2a84184fa11f	4	out-for-delivery	2023-04-23 21:40:06.206178	642c7efb-7ab7-40aa-af02-c63e275c9830
+66	8ef94517-a67d-4260-b159-b3e62f032c86	7d168b29-1572-43a7-bcc6-2a84184fa11f	5	delivered	2023-04-23 21:40:06.206178	642c7efb-7ab7-40aa-af02-c63e275c9830
+67	8293233a-1898-471f-808b-a3244b92d40b	a707dd03-fa91-4b86-9a22-463179060aad	0	accepted	2022-12-19 00:58:56.19	aabacfd1-4ec7-49b4-ad85-c5dddbc412f5
+68	8293233a-1898-471f-808b-a3244b92d40b	7d168b29-1572-43a7-bcc6-2a84184fa11f	1	transit	2023-04-23 21:40:06.394136	aabacfd1-4ec7-49b4-ad85-c5dddbc412f5
+69	8293233a-1898-471f-808b-a3244b92d40b	ebb97728-7ab3-47e5-ab3c-b3ed1b2fef7a	2	transit	2023-04-23 21:40:06.394136	aabacfd1-4ec7-49b4-ad85-c5dddbc412f5
+70	8293233a-1898-471f-808b-a3244b92d40b	62c35b19-c21a-44b6-a122-e4a658e77a1f	3	transit	2023-04-23 21:40:06.394136	aabacfd1-4ec7-49b4-ad85-c5dddbc412f5
+71	8293233a-1898-471f-808b-a3244b92d40b	1eadb43c-e267-4daf-aa96-111f1dd94068	4	out-for-delivery	2023-04-23 21:40:06.394136	aabacfd1-4ec7-49b4-ad85-c5dddbc412f5
+72	8293233a-1898-471f-808b-a3244b92d40b	1eadb43c-e267-4daf-aa96-111f1dd94068	5	delivered	2023-04-23 21:40:06.394136	aabacfd1-4ec7-49b4-ad85-c5dddbc412f5
+73	acfda207-6574-42a8-8a5a-d504bb9a79f4	a707dd03-fa91-4b86-9a22-463179060aad	0	accepted	2022-05-07 05:17:52.031	2ec62754-385a-4fd1-999f-e9269fb1d2c3
+74	acfda207-6574-42a8-8a5a-d504bb9a79f4	57c9e09d-4b6d-4cc5-b8e6-c7a0665e769d	1	transit	2023-04-23 21:40:06.586646	2ec62754-385a-4fd1-999f-e9269fb1d2c3
+75	acfda207-6574-42a8-8a5a-d504bb9a79f4	7d168b29-1572-43a7-bcc6-2a84184fa11f	2	transit	2023-04-23 21:40:06.586646	2ec62754-385a-4fd1-999f-e9269fb1d2c3
+76	acfda207-6574-42a8-8a5a-d504bb9a79f4	ebb97728-7ab3-47e5-ab3c-b3ed1b2fef7a	3	transit	2023-04-23 21:40:06.586646	2ec62754-385a-4fd1-999f-e9269fb1d2c3
+77	acfda207-6574-42a8-8a5a-d504bb9a79f4	62c35b19-c21a-44b6-a122-e4a658e77a1f	4	out-for-delivery	2023-04-23 21:40:06.586646	2ec62754-385a-4fd1-999f-e9269fb1d2c3
+78	acfda207-6574-42a8-8a5a-d504bb9a79f4	62c35b19-c21a-44b6-a122-e4a658e77a1f	5	delivered	2023-04-23 21:40:06.586646	2ec62754-385a-4fd1-999f-e9269fb1d2c3
+79	38b53780-2a67-48c7-a0eb-f9084d5c7ec7	62c35b19-c21a-44b6-a122-e4a658e77a1f	0	accepted	2022-06-02 02:07:48.347	642c7efb-7ab7-40aa-af02-c63e275c9830
+80	38b53780-2a67-48c7-a0eb-f9084d5c7ec7	57c9e09d-4b6d-4cc5-b8e6-c7a0665e769d	1	transit	2023-04-23 21:40:06.779643	642c7efb-7ab7-40aa-af02-c63e275c9830
+81	38b53780-2a67-48c7-a0eb-f9084d5c7ec7	ebb97728-7ab3-47e5-ab3c-b3ed1b2fef7a	2	transit	2023-04-23 21:40:06.779643	642c7efb-7ab7-40aa-af02-c63e275c9830
+82	38b53780-2a67-48c7-a0eb-f9084d5c7ec7	7d168b29-1572-43a7-bcc6-2a84184fa11f	3	transit	2023-04-23 21:40:06.779643	642c7efb-7ab7-40aa-af02-c63e275c9830
+83	38b53780-2a67-48c7-a0eb-f9084d5c7ec7	1eadb43c-e267-4daf-aa96-111f1dd94068	4	out-for-delivery	2023-04-23 21:40:06.779643	642c7efb-7ab7-40aa-af02-c63e275c9830
+84	38b53780-2a67-48c7-a0eb-f9084d5c7ec7	1eadb43c-e267-4daf-aa96-111f1dd94068	5	delivered	2023-04-23 21:40:06.779643	642c7efb-7ab7-40aa-af02-c63e275c9830
+85	553981d9-98be-4fb2-85f0-e0a678179ad8	62c35b19-c21a-44b6-a122-e4a658e77a1f	0	accepted	2023-04-08 07:09:34.206	642c7efb-7ab7-40aa-af02-c63e275c9830
+86	553981d9-98be-4fb2-85f0-e0a678179ad8	a707dd03-fa91-4b86-9a22-463179060aad	1	transit	2023-04-23 21:40:06.96785	642c7efb-7ab7-40aa-af02-c63e275c9830
+87	553981d9-98be-4fb2-85f0-e0a678179ad8	57c9e09d-4b6d-4cc5-b8e6-c7a0665e769d	2	transit	2023-04-23 21:40:06.96785	642c7efb-7ab7-40aa-af02-c63e275c9830
+88	553981d9-98be-4fb2-85f0-e0a678179ad8	ebb97728-7ab3-47e5-ab3c-b3ed1b2fef7a	3	transit	2023-04-23 21:40:06.96785	642c7efb-7ab7-40aa-af02-c63e275c9830
+89	553981d9-98be-4fb2-85f0-e0a678179ad8	1eadb43c-e267-4daf-aa96-111f1dd94068	4	out-for-delivery	2023-04-23 21:40:06.96785	642c7efb-7ab7-40aa-af02-c63e275c9830
+90	553981d9-98be-4fb2-85f0-e0a678179ad8	1eadb43c-e267-4daf-aa96-111f1dd94068	5	delivered	2023-04-23 21:40:06.96785	642c7efb-7ab7-40aa-af02-c63e275c9830
+91	4d504b56-7f89-4b82-ac10-7ab1714aad18	a707dd03-fa91-4b86-9a22-463179060aad	0	accepted	2022-07-30 01:22:53.446	aabacfd1-4ec7-49b4-ad85-c5dddbc412f5
+92	4d504b56-7f89-4b82-ac10-7ab1714aad18	7d168b29-1572-43a7-bcc6-2a84184fa11f	1	transit	2023-04-23 21:40:07.159657	aabacfd1-4ec7-49b4-ad85-c5dddbc412f5
+93	4d504b56-7f89-4b82-ac10-7ab1714aad18	1eadb43c-e267-4daf-aa96-111f1dd94068	2	transit	2023-04-23 21:40:07.159657	aabacfd1-4ec7-49b4-ad85-c5dddbc412f5
+94	4d504b56-7f89-4b82-ac10-7ab1714aad18	ebb97728-7ab3-47e5-ab3c-b3ed1b2fef7a	3	transit	2023-04-23 21:40:07.159657	aabacfd1-4ec7-49b4-ad85-c5dddbc412f5
+95	4d504b56-7f89-4b82-ac10-7ab1714aad18	57c9e09d-4b6d-4cc5-b8e6-c7a0665e769d	4	out-for-delivery	2023-04-23 21:40:07.159657	aabacfd1-4ec7-49b4-ad85-c5dddbc412f5
+96	4d504b56-7f89-4b82-ac10-7ab1714aad18	57c9e09d-4b6d-4cc5-b8e6-c7a0665e769d	5	delivered	2023-04-23 21:40:07.159657	aabacfd1-4ec7-49b4-ad85-c5dddbc412f5
+97	f7411c7d-8f5a-4e7d-ac34-068faace8a10	62c35b19-c21a-44b6-a122-e4a658e77a1f	0	accepted	2022-08-17 17:03:53.469	642c7efb-7ab7-40aa-af02-c63e275c9830
+98	f7411c7d-8f5a-4e7d-ac34-068faace8a10	a707dd03-fa91-4b86-9a22-463179060aad	1	transit	2023-04-23 21:40:07.347662	642c7efb-7ab7-40aa-af02-c63e275c9830
+99	f7411c7d-8f5a-4e7d-ac34-068faace8a10	57c9e09d-4b6d-4cc5-b8e6-c7a0665e769d	2	transit	2023-04-23 21:40:07.347662	642c7efb-7ab7-40aa-af02-c63e275c9830
+100	f7411c7d-8f5a-4e7d-ac34-068faace8a10	7d168b29-1572-43a7-bcc6-2a84184fa11f	3	transit	2023-04-23 21:40:07.347662	642c7efb-7ab7-40aa-af02-c63e275c9830
+101	f7411c7d-8f5a-4e7d-ac34-068faace8a10	1eadb43c-e267-4daf-aa96-111f1dd94068	4	out-for-delivery	2023-04-23 21:40:07.347662	642c7efb-7ab7-40aa-af02-c63e275c9830
+102	f7411c7d-8f5a-4e7d-ac34-068faace8a10	1eadb43c-e267-4daf-aa96-111f1dd94068	5	delivered	2023-04-23 21:40:07.347662	642c7efb-7ab7-40aa-af02-c63e275c9830
+103	e89090a7-beae-4444-850c-eac07331f128	a707dd03-fa91-4b86-9a22-463179060aad	0	accepted	2023-04-05 16:35:37.821	347cf3ef-e9da-4963-8f6a-97aed61487dd
+104	e89090a7-beae-4444-850c-eac07331f128	7d168b29-1572-43a7-bcc6-2a84184fa11f	1	transit	2023-04-23 21:40:07.539927	347cf3ef-e9da-4963-8f6a-97aed61487dd
+105	e89090a7-beae-4444-850c-eac07331f128	ebb97728-7ab3-47e5-ab3c-b3ed1b2fef7a	2	transit	2023-04-23 21:40:07.539927	347cf3ef-e9da-4963-8f6a-97aed61487dd
+106	e89090a7-beae-4444-850c-eac07331f128	1eadb43c-e267-4daf-aa96-111f1dd94068	3	transit	2023-04-23 21:40:07.539927	347cf3ef-e9da-4963-8f6a-97aed61487dd
+107	e89090a7-beae-4444-850c-eac07331f128	57c9e09d-4b6d-4cc5-b8e6-c7a0665e769d	4	out-for-delivery	2023-04-23 21:40:07.539927	347cf3ef-e9da-4963-8f6a-97aed61487dd
+108	e89090a7-beae-4444-850c-eac07331f128	57c9e09d-4b6d-4cc5-b8e6-c7a0665e769d	5	delivered	2023-04-23 21:40:07.539927	347cf3ef-e9da-4963-8f6a-97aed61487dd
+109	a6b67fea-6286-43ee-96d2-34b54f9b058b	62c35b19-c21a-44b6-a122-e4a658e77a1f	0	accepted	2023-03-14 17:04:39.875	642c7efb-7ab7-40aa-af02-c63e275c9830
+110	a6b67fea-6286-43ee-96d2-34b54f9b058b	57c9e09d-4b6d-4cc5-b8e6-c7a0665e769d	1	transit	2023-04-23 21:40:07.728012	642c7efb-7ab7-40aa-af02-c63e275c9830
+111	a6b67fea-6286-43ee-96d2-34b54f9b058b	ebb97728-7ab3-47e5-ab3c-b3ed1b2fef7a	2	transit	2023-04-23 21:40:07.728012	642c7efb-7ab7-40aa-af02-c63e275c9830
+112	a6b67fea-6286-43ee-96d2-34b54f9b058b	a707dd03-fa91-4b86-9a22-463179060aad	3	transit	2023-04-23 21:40:07.728012	642c7efb-7ab7-40aa-af02-c63e275c9830
+113	a6b67fea-6286-43ee-96d2-34b54f9b058b	1eadb43c-e267-4daf-aa96-111f1dd94068	4	out-for-delivery	2023-04-23 21:40:07.728012	642c7efb-7ab7-40aa-af02-c63e275c9830
+114	a6b67fea-6286-43ee-96d2-34b54f9b058b	1eadb43c-e267-4daf-aa96-111f1dd94068	5	delivered	2023-04-23 21:40:07.728012	642c7efb-7ab7-40aa-af02-c63e275c9830
+115	804f2d17-1ca8-4d3a-b502-a334a34d25ac	62c35b19-c21a-44b6-a122-e4a658e77a1f	0	accepted	2022-09-19 03:47:51.797	642c7efb-7ab7-40aa-af02-c63e275c9830
+116	804f2d17-1ca8-4d3a-b502-a334a34d25ac	ebb97728-7ab3-47e5-ab3c-b3ed1b2fef7a	1	transit	2023-04-23 21:40:07.920099	642c7efb-7ab7-40aa-af02-c63e275c9830
+117	804f2d17-1ca8-4d3a-b502-a334a34d25ac	7d168b29-1572-43a7-bcc6-2a84184fa11f	2	transit	2023-04-23 21:40:07.920099	642c7efb-7ab7-40aa-af02-c63e275c9830
+118	804f2d17-1ca8-4d3a-b502-a334a34d25ac	57c9e09d-4b6d-4cc5-b8e6-c7a0665e769d	3	transit	2023-04-23 21:40:07.920099	642c7efb-7ab7-40aa-af02-c63e275c9830
+119	804f2d17-1ca8-4d3a-b502-a334a34d25ac	1eadb43c-e267-4daf-aa96-111f1dd94068	4	out-for-delivery	2023-04-23 21:40:07.920099	642c7efb-7ab7-40aa-af02-c63e275c9830
+120	804f2d17-1ca8-4d3a-b502-a334a34d25ac	1eadb43c-e267-4daf-aa96-111f1dd94068	5	delivered	2023-04-23 21:40:07.920099	642c7efb-7ab7-40aa-af02-c63e275c9830
+\.
+
+
+--
+-- Data for Name: POSTOFFICE_LOCATION; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."POSTOFFICE_LOCATION" (postoffice_location_id, locationname, address_street, address_city, address_state, address_zipcode, postoffice_location_manager, "createdAt", "updatedAt") FROM stdin;
+62c35b19-c21a-44b6-a122-e4a658e77a1f	Cosmo Square	2454 Kunde Road	Stammview	TX	64841	f69a29db-3817-4848-a528-5737cde44232	2023-02-20	2023-02-20
+a707dd03-fa91-4b86-9a22-463179060aad	Eco Gardens	788 Reinger Burgs	Stehrstad	TX	27449	3c1752c0-5fb3-4c97-9b54-4b62476e754d	2022-05-27	2022-05-27
+7d168b29-1572-43a7-bcc6-2a84184fa11f	Cosmo Place	6060 Schuppe Skyway	Port Alberta	TX	97525	9a140897-20b2-4f22-a19c-1f25ea024fc8	2023-03-21	2023-03-21
+1eadb43c-e267-4daf-aa96-111f1dd94068	Geo Heights	25649 Lurline Spurs	South Hilma	TX	64534	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	2023-01-25	2023-01-25
+57c9e09d-4b6d-4cc5-b8e6-c7a0665e769d	Aqua Mansion	4186 Koss Green	Altadena	TX	13935	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	2023-01-22	2023-01-22
+ebb97728-7ab3-47e5-ab3c-b3ed1b2fef7a	Strata Lofts	493 Ferry Radial	North Dovie	TX	38180	d86ab11e-6d8c-494c-9817-c4131489b2e4	2022-12-26	2022-12-26
+\.
+
+
+--
+-- Data for Name: PRODUCT; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."PRODUCT" (product_id, product_name, product_description, price, product_image, "createdBy", "createdAt", "updatedAt") FROM stdin;
+b9e83d47-9b6a-48d0-9e58-c52a68e98301	Duck Tape	Very Cool Duck Tape	10.00	images/51c18e44-1e8b-44dd-b506-739aeef8d9ff	f69a29db-3817-4848-a528-5737cde44232	2023-04-24 00:36:09.315	2023-04-24 00:36:09.315
+8d7cb292-a4fd-4a67-99cf-67acc951dec5	Cardboard Box	Very Cool Cardboard Box	12.00	images/3735d8dd-3ed5-402c-9b5a-e0343f00d985	f69a29db-3817-4848-a528-5737cde44232	2023-04-24 00:36:31.265	2023-04-24 00:36:31.265
+ba4742d5-e506-480d-8b1d-06ec9afb84cf	Envelope	Very Cool Envelope	5.00	images/44f2f940-be8b-49c1-9849-221d9bff8dd0	f69a29db-3817-4848-a528-5737cde44232	2023-04-24 00:36:49.924	2023-04-24 00:36:49.924
+985d7ffb-d116-468d-9418-3213bc8f66b7	Bubble Wrap	Very Cool Bubble Wrap	15.00	images/4a317750-9ad3-43c2-9343-ebd52f756fea	9a140897-20b2-4f22-a19c-1f25ea024fc8	2023-04-24 00:37:35.681	2023-04-24 00:37:35.681
+6ef7c01d-0651-475c-ae85-2a5f07e502d5	Manila Envelope	Very Cool Manila Envelope	10.00	images/3dd9b7e2-564c-47fc-82a4-d9c717cd6ff3	9a140897-20b2-4f22-a19c-1f25ea024fc8	2023-04-24 00:37:54.04	2023-04-24 00:37:54.04
+b8ecf43a-aad3-4561-a307-ef441ffd7356	Packing Sticker	Very Cool Packing Sticker	5.00	images/4b0b66a6-d466-4b69-a563-75bf60cc2029	d86ab11e-6d8c-494c-9817-c4131489b2e4	2023-04-24 00:39:09.313	2023-04-24 00:39:09.313
+16fbb868-7266-4dc1-8a0c-604a2d3d7902	Duck Tape	Very Cool Duck Tape	5.00	images/3ba41532-383b-41b4-9911-39b3a7d5831e	d86ab11e-6d8c-494c-9817-c4131489b2e4	2023-04-24 00:39:35.859	2023-04-24 00:39:35.859
+e12f0a3f-4fd7-4170-a28c-c565e2dcba2c	Cardboard Box	Very Cool Cardboard Box	12.00	images/171645e2-5070-4b63-81ed-89fbbd2461c5	d86ab11e-6d8c-494c-9817-c4131489b2e4	2023-04-24 00:39:52.57	2023-04-24 00:39:52.57
+4e58fcbb-2695-4166-b458-b4d5d6b8dfaa	Duck Tape	Very Cool Duck Tape	5.00	images/501621ca-c5e4-4262-9b88-649cdb94ac7c	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	2023-04-24 00:40:43.771	2023-04-24 00:40:43.771
+d37651a0-f132-429a-b0ee-52e1d8360233	Cardboard Box	Very Cool Cardboard Box	20.00	images/182f7951-ebd9-467e-b038-74a98df562ff	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	2023-04-24 00:41:00.578	2023-04-24 00:41:00.578
+a355fdd8-1155-4153-acac-4b378493b206	Bubble Wrap	Very Cool Bubble Wrap	12.00	images/eb25ae04-e76d-4ff6-a25e-7e1afd4f21a0	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	2023-04-24 00:41:39.937	2023-04-24 00:41:39.937
+931ba3aa-5219-42fe-8868-2fef44fa7f4b	Duck Tape	Very Cool Duck Tape	10.00	images/d27e81a0-d5d6-4a79-a563-90dc8dad3a2c	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	2023-04-24 00:41:57.036	2023-04-24 00:41:57.036
+712b0b65-e435-462a-88e3-8c6a54820831	Duck Tape	Very Cool Duck Tape	25.00	images/00ea930a-2630-4fca-a80d-141cdf57bcdc	3c1752c0-5fb3-4c97-9b54-4b62476e754d	2023-04-24 00:43:08.158	2023-04-24 00:43:08.158
+\.
+
+
+--
+-- Data for Name: PRODUCT_INVENTORY; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."PRODUCT_INVENTORY" (product_inventory_id, product_id, postoffice_location_id, quantity, "updatedAt") FROM stdin;
+5	985d7ffb-d116-468d-9418-3213bc8f66b7	7d168b29-1572-43a7-bcc6-2a84184fa11f	200	2023-04-24 00:37:35.684
+6	6ef7c01d-0651-475c-ae85-2a5f07e502d5	7d168b29-1572-43a7-bcc6-2a84184fa11f	90	2023-04-24 00:37:54.044
+10	4e58fcbb-2695-4166-b458-b4d5d6b8dfaa	57c9e09d-4b6d-4cc5-b8e6-c7a0665e769d	200	2023-04-24 00:40:43.775
+11	d37651a0-f132-429a-b0ee-52e1d8360233	57c9e09d-4b6d-4cc5-b8e6-c7a0665e769d	200	2023-04-24 00:41:00.581
+14	712b0b65-e435-462a-88e3-8c6a54820831	a707dd03-fa91-4b86-9a22-463179060aad	200	2023-04-24 00:43:08.162
+4	ba4742d5-e506-480d-8b1d-06ec9afb84cf	62c35b19-c21a-44b6-a122-e4a658e77a1f	11	2023-04-24 00:36:49.927
+2	b9e83d47-9b6a-48d0-9e58-c52a68e98301	62c35b19-c21a-44b6-a122-e4a658e77a1f	86	2023-04-24 00:36:09.319
+3	8d7cb292-a4fd-4a67-99cf-67acc951dec5	62c35b19-c21a-44b6-a122-e4a658e77a1f	188	2023-04-24 00:36:31.269
+12	a355fdd8-1155-4153-acac-4b378493b206	1eadb43c-e267-4daf-aa96-111f1dd94068	13	2023-04-24 00:41:39.946
+13	931ba3aa-5219-42fe-8868-2fef44fa7f4b	1eadb43c-e267-4daf-aa96-111f1dd94068	150	2023-04-24 00:41:57.04
+8	16fbb868-7266-4dc1-8a0c-604a2d3d7902	ebb97728-7ab3-47e5-ab3c-b3ed1b2fef7a	193	2023-04-24 00:39:35.863
+9	e12f0a3f-4fd7-4170-a28c-c565e2dcba2c	ebb97728-7ab3-47e5-ab3c-b3ed1b2fef7a	194	2023-04-24 00:39:52.573
+7	b8ecf43a-aad3-4561-a307-ef441ffd7356	ebb97728-7ab3-47e5-ab3c-b3ed1b2fef7a	9	2023-04-24 00:39:09.317
+\.
+
+
+--
+-- Data for Name: SESSION; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."SESSION" (session_id, user_id, token, expires) FROM stdin;
+eb648998-6517-4811-983f-e7543435d511	95245304-b012-43d2-b2cf-5a370a29ce82	eb648998-6517-4811-983f-e7543435d511	2023-04-30 22:02:50.625
+d187f335-d752-4797-a315-af434fcaf303	c33c0375-753e-40e5-b7c8-9606213d692e	d187f335-d752-4797-a315-af434fcaf303	2023-05-01 00:46:25.972
+\.
+
+
+--
+-- Data for Name: TRUCK; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."TRUCK" (truck_id, truck_type, truck_status, postoffice_location_id, nextmaintenance, "createdAt", "updatedAt") FROM stdin;
+\.
+
+
+--
+-- Data for Name: USER; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."USER" (user_id, email, password, role, "createdAt", "updatedAt") FROM stdin;
+c33c0375-753e-40e5-b7c8-9606213d692e	admin@admin.com	$argon2id$v=19$m=65536,t=3,p=4$+7K5eiKj77PBeocLUSNUoA$CowMSRUTuWUZRbL/Tn/x9Kfb9kcJoEw3oznIbhfI+rM	4	2023-04-23 21:37:58.559	2023-04-23 21:37:58.559
+95245304-b012-43d2-b2cf-5a370a29ce82	admin3@admin.com	$argon2id$v=19$m=65536,t=3,p=4$0o6NK6+rNqmZl1PFaukRkA$6I8xJ4pw3oQctZ6IfWzXkm5P/+EJsEE+pYw+J6oSxvI	0	2023-04-23 22:02:46.429	2023-04-23 22:02:46.429
+bf0e87e6-5136-4a73-9080-556aff39c9cc	Audreanne_Mills85@yahoo.com	$argon2id$v=19$m=65536,t=3,p=4$sqhXyyeKPOKTXii3biAqVg$aR6gASqCjiqygDITanYLrU0GFNCeS1UJGziKUvftQrs	3	2023-04-23 22:51:08.605	2023-04-23 22:51:08.605
+1521cd05-99a1-4fd4-a485-3a81c9f4d001	Cyrus_Blick@yahoo.com	$argon2id$v=19$m=65536,t=3,p=4$38Z7apiudEsBNl1/BJ30Ng$5sC/EVViPP35vucOgX6wBG4eJIDFm3NCMNycq4RM1wM	0	2023-04-23 23:00:21.973	2023-04-23 23:00:21.973
+b048174a-f674-4292-8109-e7679c33047b	Blair91@gmail.com	$argon2id$v=19$m=65536,t=3,p=4$yMI9hGltWNsnKkBJaJ01mQ$TX079Z2TKF0F9E0owY76wJze8qQsxqZyiRVNtBOyGI8	0	2023-04-24 00:10:31.342	2023-04-24 00:10:31.342
+e7994113-ae1c-49df-aab6-06474b5a3de5	Santina.Homenick87@gmail.com	$argon2id$v=19$m=65536,t=3,p=4$wb4JG2LAjpNLailrRWQWgQ$+VnA11Q4W4BUPJYhurtsZr34DCZCCsswf3v4WfHWJxo	3	2023-04-24 00:37:15.024	2023-04-24 00:37:15.024
+f962d8f2-e126-476d-a300-7d2c8ff782e8	Aidan.Kuvalis@hotmail.com	$argon2id$v=19$m=65536,t=3,p=4$leA/NF8U2wytKu4X0jT5iw$zHQPuksHB/GTyxuLActEHSGYZTkRJz5ibTdx/nEcotE	3	2023-04-24 00:38:46.008	2023-04-24 00:38:46.008
+7c51697c-69f1-4c37-9154-53c66d7efc85	Katelyn.Ortiz@gmail.com	$argon2id$v=19$m=65536,t=3,p=4$+fWQzKkFIyxpHWA3iFAWEQ$lQt/SLYmmSqzbXgajTWC1oWSMgWIaOxsDVKg3oDx43Q	3	2023-04-24 00:40:21.978	2023-04-24 00:40:21.978
+43edc8ac-25a1-45ee-abb9-198ddda355bb	Liam.Reichert89@yahoo.com	$argon2id$v=19$m=65536,t=3,p=4$TGG0vZv5TaVPmrjgK+nUGQ$X4cE2svN8A1Y2mEcS8BZTmuT8jVyRLSda3KjfLRiaCw	3	2023-04-24 00:41:19.531	2023-04-24 00:41:19.531
+caeb4b75-6f39-4ebf-9dcb-d08be1986843	Joana.Roberts@gmail.com	$argon2id$v=19$m=65536,t=3,p=4$6Tea13LIuWdqRvPj2Md5Zw$w2bK3l5I2qk5dqV/bIj0hgXxgDOZoWRnY6kgSkwzzAU	3	2023-04-24 00:42:42.115	2023-04-24 00:42:42.115
+29b38782-31ef-4be6-af3d-4b7409176cea	Beatrice80@hotmail.com	$argon2id$v=19$m=65536,t=3,p=4$FvIEuxhxF/2wCwXOvHGRXw$+a80ikFvGR/kkO+IAXcpSixpON7uWEaFxhvdOwh/Ko4	0	2023-04-24 00:44:34.168	2023-04-24 00:44:34.168
+\.
+
+
+--
+-- Data for Name: WORKS_FOR; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."WORKS_FOR" (works_for_id, employee_id, postoffice_location_id, hours) FROM stdin;
+1	74402add-254f-4b77-abe8-fba50f7a1a8a	\N	0
+2	f69a29db-3817-4848-a528-5737cde44232	62c35b19-c21a-44b6-a122-e4a658e77a1f	0
+3	3c1752c0-5fb3-4c97-9b54-4b62476e754d	a707dd03-fa91-4b86-9a22-463179060aad	0
+4	9a140897-20b2-4f22-a19c-1f25ea024fc8	7d168b29-1572-43a7-bcc6-2a84184fa11f	0
+5	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	1eadb43c-e267-4daf-aa96-111f1dd94068	0
+6	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	57c9e09d-4b6d-4cc5-b8e6-c7a0665e769d	0
+7	d86ab11e-6d8c-494c-9817-c4131489b2e4	ebb97728-7ab3-47e5-ab3c-b3ed1b2fef7a	0
+8	aabacfd1-4ec7-49b4-ad85-c5dddbc412f5	a707dd03-fa91-4b86-9a22-463179060aad	0
+9	b3826065-cb2c-47ed-8361-88d325d90d37	62c35b19-c21a-44b6-a122-e4a658e77a1f	0
+10	347cf3ef-e9da-4963-8f6a-97aed61487dd	a707dd03-fa91-4b86-9a22-463179060aad	0
+11	43a577b4-151e-4afb-b684-4424530c64bd	62c35b19-c21a-44b6-a122-e4a658e77a1f	0
+12	589b770c-8d09-4d60-afbe-e78f8f4a9b2a	a707dd03-fa91-4b86-9a22-463179060aad	0
+13	4eaa92a0-94b5-4093-8a7a-afba56dc1eb8	62c35b19-c21a-44b6-a122-e4a658e77a1f	0
+14	2ec62754-385a-4fd1-999f-e9269fb1d2c3	a707dd03-fa91-4b86-9a22-463179060aad	0
+15	2e5aba87-8d2f-4902-b6b9-331ad6ad583a	62c35b19-c21a-44b6-a122-e4a658e77a1f	0
+16	acdd633e-3153-40c7-8cfc-4679bbac27de	a707dd03-fa91-4b86-9a22-463179060aad	0
+17	26020ba3-92f6-4db0-a8d2-b4f6ce821bd7	62c35b19-c21a-44b6-a122-e4a658e77a1f	0
+18	5d96f5da-460c-42d7-89ad-6f0aa5b2bcfa	a707dd03-fa91-4b86-9a22-463179060aad	0
+19	642c7efb-7ab7-40aa-af02-c63e275c9830	62c35b19-c21a-44b6-a122-e4a658e77a1f	0
+\.
+
+
+--
+-- Data for Name: WORK_LOG; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public."WORK_LOG" (work_log_id, employee_id, hours, date) FROM stdin;
+1	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	23	2022-09-29
+2	f69a29db-3817-4848-a528-5737cde44232	16	2022-09-22
+3	9a140897-20b2-4f22-a19c-1f25ea024fc8	3	2022-10-11
+4	9a140897-20b2-4f22-a19c-1f25ea024fc8	18	2022-10-26
+5	d86ab11e-6d8c-494c-9817-c4131489b2e4	5	2023-03-17
+6	9a140897-20b2-4f22-a19c-1f25ea024fc8	13	2022-10-17
+7	3c1752c0-5fb3-4c97-9b54-4b62476e754d	24	2023-02-11
+8	f69a29db-3817-4848-a528-5737cde44232	23	2023-02-01
+9	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	17	2023-04-18
+10	3c1752c0-5fb3-4c97-9b54-4b62476e754d	24	2022-08-25
+11	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	1	2023-03-17
+12	3c1752c0-5fb3-4c97-9b54-4b62476e754d	1	2022-05-30
+13	9a140897-20b2-4f22-a19c-1f25ea024fc8	4	2023-04-21
+14	f69a29db-3817-4848-a528-5737cde44232	4	2022-07-20
+15	d86ab11e-6d8c-494c-9817-c4131489b2e4	3	2022-09-29
+16	9a140897-20b2-4f22-a19c-1f25ea024fc8	13	2022-07-23
+17	9a140897-20b2-4f22-a19c-1f25ea024fc8	7	2022-12-30
+18	f69a29db-3817-4848-a528-5737cde44232	21	2023-02-18
+19	9a140897-20b2-4f22-a19c-1f25ea024fc8	17	2023-04-07
+20	3c1752c0-5fb3-4c97-9b54-4b62476e754d	17	2022-11-11
+21	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	9	2022-11-23
+22	3c1752c0-5fb3-4c97-9b54-4b62476e754d	3	2023-02-15
+23	d86ab11e-6d8c-494c-9817-c4131489b2e4	13	2022-11-13
+24	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	18	2023-01-12
+25	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	1	2022-06-06
+26	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	2	2022-07-03
+27	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	11	2023-02-12
+28	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	9	2022-08-22
+29	f69a29db-3817-4848-a528-5737cde44232	7	2023-02-22
+30	3c1752c0-5fb3-4c97-9b54-4b62476e754d	4	2022-10-20
+31	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	24	2023-01-31
+32	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	22	2022-05-06
+33	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	16	2023-01-26
+34	3c1752c0-5fb3-4c97-9b54-4b62476e754d	23	2022-07-24
+35	f69a29db-3817-4848-a528-5737cde44232	20	2022-09-09
+36	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	4	2022-11-19
+37	f69a29db-3817-4848-a528-5737cde44232	4	2023-01-03
+38	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	19	2022-06-16
+39	9a140897-20b2-4f22-a19c-1f25ea024fc8	11	2022-12-25
+40	d86ab11e-6d8c-494c-9817-c4131489b2e4	1	2022-05-02
+41	d86ab11e-6d8c-494c-9817-c4131489b2e4	20	2022-12-18
+42	d86ab11e-6d8c-494c-9817-c4131489b2e4	24	2022-10-02
+43	9a140897-20b2-4f22-a19c-1f25ea024fc8	7	2023-04-23
+44	3c1752c0-5fb3-4c97-9b54-4b62476e754d	16	2022-07-10
+45	f69a29db-3817-4848-a528-5737cde44232	21	2023-01-28
+46	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	18	2022-06-10
+47	9a140897-20b2-4f22-a19c-1f25ea024fc8	17	2022-07-21
+48	9a140897-20b2-4f22-a19c-1f25ea024fc8	5	2023-04-10
+49	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	9	2023-02-13
+50	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	6	2022-06-10
+51	d86ab11e-6d8c-494c-9817-c4131489b2e4	22	2022-07-01
+52	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	8	2022-09-17
+53	3c1752c0-5fb3-4c97-9b54-4b62476e754d	20	2023-04-04
+54	9a140897-20b2-4f22-a19c-1f25ea024fc8	12	2022-07-01
+55	9a140897-20b2-4f22-a19c-1f25ea024fc8	18	2022-07-01
+56	3c1752c0-5fb3-4c97-9b54-4b62476e754d	13	2022-12-01
+57	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	11	2022-11-15
+58	9a140897-20b2-4f22-a19c-1f25ea024fc8	20	2022-11-12
+59	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	16	2022-08-14
+60	3c1752c0-5fb3-4c97-9b54-4b62476e754d	15	2022-06-05
+61	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	5	2022-05-27
+62	f69a29db-3817-4848-a528-5737cde44232	8	2023-04-17
+63	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	17	2022-06-06
+64	f69a29db-3817-4848-a528-5737cde44232	15	2022-10-08
+65	3c1752c0-5fb3-4c97-9b54-4b62476e754d	16	2022-05-02
+66	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	13	2022-05-01
+67	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	11	2022-05-01
+68	f69a29db-3817-4848-a528-5737cde44232	11	2023-03-06
+69	3c1752c0-5fb3-4c97-9b54-4b62476e754d	12	2022-09-17
+70	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	3	2023-03-26
+71	d86ab11e-6d8c-494c-9817-c4131489b2e4	17	2023-04-02
+72	f69a29db-3817-4848-a528-5737cde44232	19	2023-03-15
+73	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	8	2022-12-20
+74	3c1752c0-5fb3-4c97-9b54-4b62476e754d	24	2022-09-05
+75	9a140897-20b2-4f22-a19c-1f25ea024fc8	22	2023-03-14
+76	f69a29db-3817-4848-a528-5737cde44232	7	2022-11-19
+77	f69a29db-3817-4848-a528-5737cde44232	18	2022-10-09
+78	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	7	2022-10-04
+79	f69a29db-3817-4848-a528-5737cde44232	16	2022-12-10
+80	9a140897-20b2-4f22-a19c-1f25ea024fc8	7	2022-04-27
+81	3c1752c0-5fb3-4c97-9b54-4b62476e754d	1	2022-07-21
+82	f69a29db-3817-4848-a528-5737cde44232	22	2022-09-11
+83	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	19	2022-11-09
+84	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	7	2022-05-11
+85	d86ab11e-6d8c-494c-9817-c4131489b2e4	11	2022-04-23
+86	d86ab11e-6d8c-494c-9817-c4131489b2e4	24	2023-03-15
+87	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	21	2023-01-12
+88	3c1752c0-5fb3-4c97-9b54-4b62476e754d	19	2022-09-24
+89	9a140897-20b2-4f22-a19c-1f25ea024fc8	18	2022-05-04
+90	f69a29db-3817-4848-a528-5737cde44232	9	2022-11-06
+91	9a140897-20b2-4f22-a19c-1f25ea024fc8	22	2022-08-09
+92	d86ab11e-6d8c-494c-9817-c4131489b2e4	5	2022-10-06
+93	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	10	2022-10-09
+94	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	1	2022-11-13
+95	3c1752c0-5fb3-4c97-9b54-4b62476e754d	17	2023-02-03
+96	9a140897-20b2-4f22-a19c-1f25ea024fc8	9	2022-12-19
+97	9a140897-20b2-4f22-a19c-1f25ea024fc8	2	2022-05-29
+98	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	15	2022-05-09
+99	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	24	2023-02-15
+100	3c1752c0-5fb3-4c97-9b54-4b62476e754d	19	2022-08-08
+101	f69a29db-3817-4848-a528-5737cde44232	7	2022-11-16
+102	d86ab11e-6d8c-494c-9817-c4131489b2e4	3	2022-05-04
+103	9a140897-20b2-4f22-a19c-1f25ea024fc8	6	2023-03-16
+104	f69a29db-3817-4848-a528-5737cde44232	17	2022-10-04
+105	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	10	2022-10-01
+106	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	17	2022-06-27
+107	d86ab11e-6d8c-494c-9817-c4131489b2e4	8	2023-03-31
+108	3c1752c0-5fb3-4c97-9b54-4b62476e754d	6	2022-05-29
+109	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	23	2022-08-24
+110	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	17	2022-12-13
+111	d86ab11e-6d8c-494c-9817-c4131489b2e4	4	2023-04-03
+112	d86ab11e-6d8c-494c-9817-c4131489b2e4	5	2022-10-05
+113	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	5	2022-09-19
+114	3c1752c0-5fb3-4c97-9b54-4b62476e754d	20	2023-03-23
+115	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	3	2022-10-26
+116	f69a29db-3817-4848-a528-5737cde44232	19	2022-07-16
+117	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	7	2022-09-10
+118	9a140897-20b2-4f22-a19c-1f25ea024fc8	7	2023-04-03
+119	9a140897-20b2-4f22-a19c-1f25ea024fc8	18	2023-02-24
+120	d86ab11e-6d8c-494c-9817-c4131489b2e4	5	2022-07-18
+121	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	14	2022-05-08
+122	f69a29db-3817-4848-a528-5737cde44232	8	2022-08-12
+123	9a140897-20b2-4f22-a19c-1f25ea024fc8	9	2023-02-09
+124	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	7	2022-05-21
+125	9a140897-20b2-4f22-a19c-1f25ea024fc8	15	2022-11-14
+126	9a140897-20b2-4f22-a19c-1f25ea024fc8	4	2023-01-18
+127	d86ab11e-6d8c-494c-9817-c4131489b2e4	18	2022-11-29
+128	d86ab11e-6d8c-494c-9817-c4131489b2e4	24	2022-06-22
+129	3c1752c0-5fb3-4c97-9b54-4b62476e754d	23	2023-02-24
+130	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	19	2022-09-05
+131	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	23	2022-12-27
+132	d86ab11e-6d8c-494c-9817-c4131489b2e4	2	2022-11-02
+133	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	20	2022-09-27
+134	9a140897-20b2-4f22-a19c-1f25ea024fc8	15	2022-06-18
+135	9a140897-20b2-4f22-a19c-1f25ea024fc8	8	2022-12-24
+136	9a140897-20b2-4f22-a19c-1f25ea024fc8	7	2022-11-22
+137	9a140897-20b2-4f22-a19c-1f25ea024fc8	17	2022-06-23
+138	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	24	2022-06-01
+139	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	19	2022-04-29
+140	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	22	2022-09-21
+141	9a140897-20b2-4f22-a19c-1f25ea024fc8	4	2023-01-13
+142	d86ab11e-6d8c-494c-9817-c4131489b2e4	14	2023-04-13
+143	f69a29db-3817-4848-a528-5737cde44232	19	2022-09-12
+144	9a140897-20b2-4f22-a19c-1f25ea024fc8	3	2022-11-19
+145	3c1752c0-5fb3-4c97-9b54-4b62476e754d	9	2023-02-10
+146	9a140897-20b2-4f22-a19c-1f25ea024fc8	24	2023-01-17
+147	d86ab11e-6d8c-494c-9817-c4131489b2e4	15	2022-07-21
+148	d86ab11e-6d8c-494c-9817-c4131489b2e4	8	2023-03-27
+149	3c1752c0-5fb3-4c97-9b54-4b62476e754d	12	2022-10-07
+150	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	11	2022-08-10
+151	f69a29db-3817-4848-a528-5737cde44232	7	2022-07-06
+152	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	12	2023-02-21
+153	3c1752c0-5fb3-4c97-9b54-4b62476e754d	22	2022-09-11
+154	f69a29db-3817-4848-a528-5737cde44232	21	2022-12-26
+155	3c1752c0-5fb3-4c97-9b54-4b62476e754d	2	2022-07-22
+156	9a140897-20b2-4f22-a19c-1f25ea024fc8	24	2022-12-26
+157	d86ab11e-6d8c-494c-9817-c4131489b2e4	23	2023-02-20
+158	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	6	2022-07-16
+159	d86ab11e-6d8c-494c-9817-c4131489b2e4	13	2022-04-30
+160	f69a29db-3817-4848-a528-5737cde44232	9	2022-07-27
+161	f69a29db-3817-4848-a528-5737cde44232	10	2023-01-03
+162	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	2	2022-05-15
+163	3c1752c0-5fb3-4c97-9b54-4b62476e754d	11	2022-12-20
+164	d86ab11e-6d8c-494c-9817-c4131489b2e4	14	2022-12-19
+165	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	4	2022-06-27
+166	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	4	2023-01-22
+167	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	11	2022-12-21
+168	f69a29db-3817-4848-a528-5737cde44232	15	2022-08-04
+169	3c1752c0-5fb3-4c97-9b54-4b62476e754d	8	2022-10-18
+170	f69a29db-3817-4848-a528-5737cde44232	11	2022-07-23
+171	3c1752c0-5fb3-4c97-9b54-4b62476e754d	15	2023-03-15
+172	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	19	2022-05-25
+173	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	17	2022-09-20
+174	9a140897-20b2-4f22-a19c-1f25ea024fc8	9	2022-10-08
+175	3c1752c0-5fb3-4c97-9b54-4b62476e754d	8	2022-07-09
+176	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	9	2023-02-26
+177	d86ab11e-6d8c-494c-9817-c4131489b2e4	14	2022-08-23
+178	d86ab11e-6d8c-494c-9817-c4131489b2e4	21	2022-07-28
+179	d86ab11e-6d8c-494c-9817-c4131489b2e4	22	2022-12-17
+180	f69a29db-3817-4848-a528-5737cde44232	7	2022-09-28
+181	f69a29db-3817-4848-a528-5737cde44232	17	2023-02-18
+182	3c1752c0-5fb3-4c97-9b54-4b62476e754d	1	2022-05-05
+183	3c1752c0-5fb3-4c97-9b54-4b62476e754d	19	2023-04-07
+184	9a140897-20b2-4f22-a19c-1f25ea024fc8	22	2022-06-07
+185	3c1752c0-5fb3-4c97-9b54-4b62476e754d	24	2022-06-05
+186	f69a29db-3817-4848-a528-5737cde44232	13	2022-09-29
+187	f69a29db-3817-4848-a528-5737cde44232	6	2023-04-06
+188	9a140897-20b2-4f22-a19c-1f25ea024fc8	11	2022-09-04
+189	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	9	2022-09-02
+190	d86ab11e-6d8c-494c-9817-c4131489b2e4	13	2022-08-13
+191	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	22	2022-04-29
+192	d86ab11e-6d8c-494c-9817-c4131489b2e4	8	2023-03-08
+193	f69a29db-3817-4848-a528-5737cde44232	23	2022-07-06
+194	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	19	2023-01-09
+195	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	16	2022-11-24
+196	f69a29db-3817-4848-a528-5737cde44232	1	2023-03-15
+197	f69a29db-3817-4848-a528-5737cde44232	5	2023-03-25
+198	f69a29db-3817-4848-a528-5737cde44232	3	2022-10-07
+199	9a140897-20b2-4f22-a19c-1f25ea024fc8	23	2022-11-14
+200	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	7	2022-05-21
+201	d86ab11e-6d8c-494c-9817-c4131489b2e4	22	2023-01-10
+202	f69a29db-3817-4848-a528-5737cde44232	7	2022-07-27
+203	9a140897-20b2-4f22-a19c-1f25ea024fc8	20	2022-10-26
+204	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	15	2022-08-06
+205	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	18	2022-12-10
+206	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	18	2023-03-04
+207	d86ab11e-6d8c-494c-9817-c4131489b2e4	6	2023-03-17
+208	d86ab11e-6d8c-494c-9817-c4131489b2e4	15	2022-06-25
+209	d86ab11e-6d8c-494c-9817-c4131489b2e4	13	2022-11-15
+210	3c1752c0-5fb3-4c97-9b54-4b62476e754d	23	2023-03-04
+211	f69a29db-3817-4848-a528-5737cde44232	17	2022-07-04
+212	d86ab11e-6d8c-494c-9817-c4131489b2e4	23	2022-04-30
+213	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	10	2023-03-30
+214	9a140897-20b2-4f22-a19c-1f25ea024fc8	23	2023-03-07
+215	f69a29db-3817-4848-a528-5737cde44232	23	2022-11-14
+216	f69a29db-3817-4848-a528-5737cde44232	23	2022-12-04
+217	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	6	2022-10-26
+218	9a140897-20b2-4f22-a19c-1f25ea024fc8	12	2022-10-01
+219	d86ab11e-6d8c-494c-9817-c4131489b2e4	13	2022-05-29
+220	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	6	2023-01-26
+221	9a140897-20b2-4f22-a19c-1f25ea024fc8	14	2022-05-02
+222	d86ab11e-6d8c-494c-9817-c4131489b2e4	1	2023-01-21
+223	9a140897-20b2-4f22-a19c-1f25ea024fc8	3	2023-02-25
+224	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	7	2022-10-23
+225	f69a29db-3817-4848-a528-5737cde44232	18	2022-05-16
+226	d86ab11e-6d8c-494c-9817-c4131489b2e4	6	2022-07-02
+227	9a140897-20b2-4f22-a19c-1f25ea024fc8	22	2023-02-19
+228	f69a29db-3817-4848-a528-5737cde44232	17	2022-11-14
+229	d86ab11e-6d8c-494c-9817-c4131489b2e4	12	2022-07-22
+230	9a140897-20b2-4f22-a19c-1f25ea024fc8	9	2023-03-28
+231	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	18	2022-10-25
+232	d86ab11e-6d8c-494c-9817-c4131489b2e4	1	2022-07-26
+233	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	9	2022-08-08
+234	3c1752c0-5fb3-4c97-9b54-4b62476e754d	24	2023-02-10
+235	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	17	2022-07-15
+236	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	15	2022-08-20
+237	d86ab11e-6d8c-494c-9817-c4131489b2e4	15	2022-08-03
+238	9a140897-20b2-4f22-a19c-1f25ea024fc8	3	2022-10-23
+239	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	18	2023-01-24
+240	f69a29db-3817-4848-a528-5737cde44232	18	2022-12-12
+241	9a140897-20b2-4f22-a19c-1f25ea024fc8	11	2022-09-11
+242	f69a29db-3817-4848-a528-5737cde44232	22	2023-03-22
+243	f69a29db-3817-4848-a528-5737cde44232	9	2022-09-27
+244	d86ab11e-6d8c-494c-9817-c4131489b2e4	2	2022-08-18
+245	9a140897-20b2-4f22-a19c-1f25ea024fc8	7	2023-03-22
+246	d86ab11e-6d8c-494c-9817-c4131489b2e4	7	2022-09-09
+247	9a140897-20b2-4f22-a19c-1f25ea024fc8	9	2022-06-11
+248	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	21	2022-09-24
+249	3c1752c0-5fb3-4c97-9b54-4b62476e754d	16	2023-04-02
+250	9a140897-20b2-4f22-a19c-1f25ea024fc8	7	2022-11-26
+251	d86ab11e-6d8c-494c-9817-c4131489b2e4	7	2022-11-16
+252	9a140897-20b2-4f22-a19c-1f25ea024fc8	17	2022-11-05
+253	9a140897-20b2-4f22-a19c-1f25ea024fc8	8	2022-11-17
+254	d86ab11e-6d8c-494c-9817-c4131489b2e4	22	2022-07-24
+255	9a140897-20b2-4f22-a19c-1f25ea024fc8	1	2022-06-21
+256	3c1752c0-5fb3-4c97-9b54-4b62476e754d	18	2023-02-11
+257	f69a29db-3817-4848-a528-5737cde44232	16	2023-04-20
+258	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	23	2022-11-27
+259	3c1752c0-5fb3-4c97-9b54-4b62476e754d	11	2022-07-02
+260	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	23	2023-03-11
+261	d86ab11e-6d8c-494c-9817-c4131489b2e4	8	2023-03-06
+262	3c1752c0-5fb3-4c97-9b54-4b62476e754d	16	2022-05-02
+263	f69a29db-3817-4848-a528-5737cde44232	5	2022-12-19
+264	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	13	2022-09-17
+265	9a140897-20b2-4f22-a19c-1f25ea024fc8	9	2022-05-11
+266	3c1752c0-5fb3-4c97-9b54-4b62476e754d	3	2023-04-18
+267	d86ab11e-6d8c-494c-9817-c4131489b2e4	10	2022-11-21
+268	9a140897-20b2-4f22-a19c-1f25ea024fc8	22	2022-06-03
+269	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	23	2022-04-29
+270	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	22	2022-11-09
+271	f69a29db-3817-4848-a528-5737cde44232	15	2022-12-09
+272	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	6	2023-04-11
+273	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	3	2022-10-02
+274	d86ab11e-6d8c-494c-9817-c4131489b2e4	24	2023-04-04
+275	d86ab11e-6d8c-494c-9817-c4131489b2e4	21	2023-03-01
+276	d86ab11e-6d8c-494c-9817-c4131489b2e4	23	2023-04-16
+277	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	11	2022-09-29
+278	f69a29db-3817-4848-a528-5737cde44232	23	2022-06-03
+279	3c1752c0-5fb3-4c97-9b54-4b62476e754d	6	2022-08-20
+280	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	5	2022-05-03
+281	d86ab11e-6d8c-494c-9817-c4131489b2e4	16	2023-01-16
+282	d86ab11e-6d8c-494c-9817-c4131489b2e4	12	2022-08-15
+283	f69a29db-3817-4848-a528-5737cde44232	19	2023-02-17
+284	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	4	2022-06-13
+285	9a140897-20b2-4f22-a19c-1f25ea024fc8	14	2022-09-14
+286	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	12	2023-03-29
+287	d86ab11e-6d8c-494c-9817-c4131489b2e4	12	2022-05-24
+288	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	10	2022-06-26
+289	9a140897-20b2-4f22-a19c-1f25ea024fc8	24	2022-04-30
+290	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	4	2023-03-15
+291	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	15	2023-01-03
+292	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	15	2022-11-20
+293	d86ab11e-6d8c-494c-9817-c4131489b2e4	18	2022-04-23
+294	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	14	2022-10-13
+295	d86ab11e-6d8c-494c-9817-c4131489b2e4	13	2022-05-12
+296	9a140897-20b2-4f22-a19c-1f25ea024fc8	3	2022-06-24
+297	f69a29db-3817-4848-a528-5737cde44232	24	2022-11-23
+298	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	8	2023-02-06
+299	f69a29db-3817-4848-a528-5737cde44232	6	2022-07-08
+300	d86ab11e-6d8c-494c-9817-c4131489b2e4	21	2022-08-18
+301	3c1752c0-5fb3-4c97-9b54-4b62476e754d	3	2022-04-28
+302	3c1752c0-5fb3-4c97-9b54-4b62476e754d	9	2022-10-03
+303	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	21	2022-11-30
+304	d86ab11e-6d8c-494c-9817-c4131489b2e4	12	2022-09-23
+305	f69a29db-3817-4848-a528-5737cde44232	24	2022-09-16
+306	f69a29db-3817-4848-a528-5737cde44232	9	2022-11-10
+307	9a140897-20b2-4f22-a19c-1f25ea024fc8	4	2022-08-07
+308	3c1752c0-5fb3-4c97-9b54-4b62476e754d	8	2022-12-15
+309	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	16	2023-04-08
+310	9a140897-20b2-4f22-a19c-1f25ea024fc8	16	2022-06-26
+311	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	17	2023-01-17
+312	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	15	2023-02-21
+313	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	10	2022-06-20
+314	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	8	2022-09-09
+315	d86ab11e-6d8c-494c-9817-c4131489b2e4	19	2022-08-18
+316	f69a29db-3817-4848-a528-5737cde44232	9	2022-07-24
+317	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	18	2022-05-04
+318	d86ab11e-6d8c-494c-9817-c4131489b2e4	10	2022-08-06
+319	f69a29db-3817-4848-a528-5737cde44232	13	2023-03-08
+320	f69a29db-3817-4848-a528-5737cde44232	6	2023-02-23
+321	3c1752c0-5fb3-4c97-9b54-4b62476e754d	4	2022-12-21
+322	d86ab11e-6d8c-494c-9817-c4131489b2e4	12	2022-07-20
+323	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	6	2022-12-25
+324	3c1752c0-5fb3-4c97-9b54-4b62476e754d	14	2023-01-17
+325	d86ab11e-6d8c-494c-9817-c4131489b2e4	21	2022-05-06
+326	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	1	2022-10-30
+327	d86ab11e-6d8c-494c-9817-c4131489b2e4	19	2023-01-25
+328	3c1752c0-5fb3-4c97-9b54-4b62476e754d	9	2022-12-22
+329	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	24	2022-12-11
+330	3c1752c0-5fb3-4c97-9b54-4b62476e754d	3	2023-02-28
+331	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	4	2022-09-15
+332	3c1752c0-5fb3-4c97-9b54-4b62476e754d	7	2023-03-19
+333	f69a29db-3817-4848-a528-5737cde44232	3	2023-03-12
+334	3c1752c0-5fb3-4c97-9b54-4b62476e754d	22	2022-08-07
+335	d86ab11e-6d8c-494c-9817-c4131489b2e4	20	2022-12-27
+336	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	20	2022-09-08
+337	f69a29db-3817-4848-a528-5737cde44232	4	2022-10-26
+338	f69a29db-3817-4848-a528-5737cde44232	21	2022-08-22
+339	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	11	2023-01-18
+340	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	7	2023-02-05
+341	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	7	2022-08-07
+342	3c1752c0-5fb3-4c97-9b54-4b62476e754d	16	2023-02-20
+343	9a140897-20b2-4f22-a19c-1f25ea024fc8	14	2022-08-29
+344	9a140897-20b2-4f22-a19c-1f25ea024fc8	5	2022-06-23
+345	9a140897-20b2-4f22-a19c-1f25ea024fc8	17	2022-10-31
+346	3c1752c0-5fb3-4c97-9b54-4b62476e754d	13	2023-01-01
+347	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	1	2022-09-21
+348	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	3	2022-09-21
+349	d86ab11e-6d8c-494c-9817-c4131489b2e4	8	2022-06-24
+350	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	11	2022-07-13
+351	d86ab11e-6d8c-494c-9817-c4131489b2e4	18	2022-08-05
+352	f69a29db-3817-4848-a528-5737cde44232	17	2022-09-03
+353	f69a29db-3817-4848-a528-5737cde44232	11	2022-07-10
+354	f69a29db-3817-4848-a528-5737cde44232	6	2022-11-03
+355	9a140897-20b2-4f22-a19c-1f25ea024fc8	5	2023-02-13
+356	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	22	2022-12-04
+357	d86ab11e-6d8c-494c-9817-c4131489b2e4	12	2023-01-12
+358	9a140897-20b2-4f22-a19c-1f25ea024fc8	15	2022-12-21
+359	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	20	2023-01-08
+360	3c1752c0-5fb3-4c97-9b54-4b62476e754d	12	2022-07-31
+361	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	17	2023-02-09
+362	3c1752c0-5fb3-4c97-9b54-4b62476e754d	7	2022-10-24
+363	3c1752c0-5fb3-4c97-9b54-4b62476e754d	23	2023-04-08
+364	9a140897-20b2-4f22-a19c-1f25ea024fc8	24	2023-03-04
+365	f69a29db-3817-4848-a528-5737cde44232	14	2022-10-03
+366	3c1752c0-5fb3-4c97-9b54-4b62476e754d	11	2022-10-30
+367	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	2	2023-03-13
+368	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	10	2022-08-16
+369	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	1	2022-12-20
+370	d86ab11e-6d8c-494c-9817-c4131489b2e4	2	2023-03-11
+371	3c1752c0-5fb3-4c97-9b54-4b62476e754d	11	2022-07-19
+372	d86ab11e-6d8c-494c-9817-c4131489b2e4	22	2022-07-29
+373	9a140897-20b2-4f22-a19c-1f25ea024fc8	3	2022-07-30
+374	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	24	2023-03-04
+375	f69a29db-3817-4848-a528-5737cde44232	15	2022-09-01
+376	3c1752c0-5fb3-4c97-9b54-4b62476e754d	18	2022-11-08
+377	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	13	2022-06-16
+378	3c1752c0-5fb3-4c97-9b54-4b62476e754d	5	2022-12-21
+379	9a140897-20b2-4f22-a19c-1f25ea024fc8	22	2022-05-24
+380	f69a29db-3817-4848-a528-5737cde44232	5	2022-05-21
+381	3c1752c0-5fb3-4c97-9b54-4b62476e754d	10	2022-05-24
+382	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	24	2023-02-14
+383	9a140897-20b2-4f22-a19c-1f25ea024fc8	15	2022-10-31
+384	f69a29db-3817-4848-a528-5737cde44232	17	2022-10-18
+385	d86ab11e-6d8c-494c-9817-c4131489b2e4	10	2022-05-30
+386	d86ab11e-6d8c-494c-9817-c4131489b2e4	19	2022-05-30
+387	f69a29db-3817-4848-a528-5737cde44232	12	2023-01-26
+388	f69a29db-3817-4848-a528-5737cde44232	8	2022-08-12
+389	d86ab11e-6d8c-494c-9817-c4131489b2e4	11	2023-02-09
+390	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	13	2022-05-07
+391	d86ab11e-6d8c-494c-9817-c4131489b2e4	2	2022-08-22
+392	f69a29db-3817-4848-a528-5737cde44232	20	2023-03-12
+393	9a140897-20b2-4f22-a19c-1f25ea024fc8	13	2022-10-25
+394	3c1752c0-5fb3-4c97-9b54-4b62476e754d	6	2023-03-12
+395	3c1752c0-5fb3-4c97-9b54-4b62476e754d	21	2022-12-18
+396	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	22	2023-03-13
+397	9a140897-20b2-4f22-a19c-1f25ea024fc8	23	2022-08-03
+398	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	11	2023-01-17
+399	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	10	2022-10-18
+400	9a140897-20b2-4f22-a19c-1f25ea024fc8	12	2023-02-21
+401	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	7	2023-03-21
+402	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	4	2022-05-23
+403	d86ab11e-6d8c-494c-9817-c4131489b2e4	8	2023-01-05
+404	9a140897-20b2-4f22-a19c-1f25ea024fc8	20	2022-06-25
+405	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	18	2022-07-29
+406	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	17	2022-05-10
+407	f69a29db-3817-4848-a528-5737cde44232	24	2022-09-29
+408	3c1752c0-5fb3-4c97-9b54-4b62476e754d	6	2022-10-16
+409	d86ab11e-6d8c-494c-9817-c4131489b2e4	18	2022-07-02
+410	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	2	2022-11-22
+411	d86ab11e-6d8c-494c-9817-c4131489b2e4	1	2023-02-11
+412	9a140897-20b2-4f22-a19c-1f25ea024fc8	21	2023-01-25
+413	f69a29db-3817-4848-a528-5737cde44232	7	2022-11-06
+414	3c1752c0-5fb3-4c97-9b54-4b62476e754d	5	2022-11-03
+415	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	12	2023-02-07
+416	9a140897-20b2-4f22-a19c-1f25ea024fc8	10	2023-01-10
+417	9a140897-20b2-4f22-a19c-1f25ea024fc8	14	2023-03-10
+418	9a140897-20b2-4f22-a19c-1f25ea024fc8	6	2022-06-20
+419	d86ab11e-6d8c-494c-9817-c4131489b2e4	1	2022-12-08
+420	f69a29db-3817-4848-a528-5737cde44232	22	2022-04-26
+421	3c1752c0-5fb3-4c97-9b54-4b62476e754d	6	2022-06-11
+422	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	10	2022-12-25
+423	d86ab11e-6d8c-494c-9817-c4131489b2e4	6	2023-01-24
+424	3c1752c0-5fb3-4c97-9b54-4b62476e754d	14	2022-11-01
+425	9a140897-20b2-4f22-a19c-1f25ea024fc8	23	2023-03-28
+426	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	7	2022-09-21
+427	d86ab11e-6d8c-494c-9817-c4131489b2e4	13	2023-03-18
+428	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	8	2022-09-26
+429	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	6	2022-05-02
+430	f69a29db-3817-4848-a528-5737cde44232	23	2022-12-10
+431	d86ab11e-6d8c-494c-9817-c4131489b2e4	12	2022-11-07
+432	9a140897-20b2-4f22-a19c-1f25ea024fc8	15	2023-02-23
+433	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	8	2023-03-13
+434	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	9	2022-07-08
+435	9a140897-20b2-4f22-a19c-1f25ea024fc8	17	2023-02-04
+436	d86ab11e-6d8c-494c-9817-c4131489b2e4	10	2023-04-14
+437	3c1752c0-5fb3-4c97-9b54-4b62476e754d	1	2022-07-30
+438	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	7	2022-12-06
+439	3c1752c0-5fb3-4c97-9b54-4b62476e754d	8	2022-10-02
+440	3c1752c0-5fb3-4c97-9b54-4b62476e754d	13	2023-03-27
+441	f69a29db-3817-4848-a528-5737cde44232	5	2023-01-19
+442	d86ab11e-6d8c-494c-9817-c4131489b2e4	24	2022-09-05
+443	d86ab11e-6d8c-494c-9817-c4131489b2e4	5	2022-12-20
+444	9a140897-20b2-4f22-a19c-1f25ea024fc8	2	2022-07-18
+445	3c1752c0-5fb3-4c97-9b54-4b62476e754d	23	2022-11-02
+446	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	12	2022-05-01
+447	3c1752c0-5fb3-4c97-9b54-4b62476e754d	1	2022-09-02
+448	9a140897-20b2-4f22-a19c-1f25ea024fc8	12	2022-11-27
+449	f69a29db-3817-4848-a528-5737cde44232	17	2022-07-16
+450	d86ab11e-6d8c-494c-9817-c4131489b2e4	15	2022-05-27
+451	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	2	2022-11-09
+452	3c1752c0-5fb3-4c97-9b54-4b62476e754d	7	2022-12-10
+453	d86ab11e-6d8c-494c-9817-c4131489b2e4	1	2022-09-06
+454	d86ab11e-6d8c-494c-9817-c4131489b2e4	4	2022-07-09
+455	d86ab11e-6d8c-494c-9817-c4131489b2e4	4	2022-08-19
+456	d86ab11e-6d8c-494c-9817-c4131489b2e4	3	2023-03-05
+457	f69a29db-3817-4848-a528-5737cde44232	19	2022-07-09
+458	9a140897-20b2-4f22-a19c-1f25ea024fc8	15	2023-02-07
+459	d86ab11e-6d8c-494c-9817-c4131489b2e4	21	2022-11-28
+460	3c1752c0-5fb3-4c97-9b54-4b62476e754d	4	2022-11-15
+461	f69a29db-3817-4848-a528-5737cde44232	8	2022-06-09
+462	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	23	2022-07-28
+463	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	20	2022-11-30
+464	f69a29db-3817-4848-a528-5737cde44232	9	2022-11-02
+465	d86ab11e-6d8c-494c-9817-c4131489b2e4	11	2023-01-18
+466	f69a29db-3817-4848-a528-5737cde44232	7	2023-03-08
+467	9a140897-20b2-4f22-a19c-1f25ea024fc8	24	2022-09-16
+468	9a140897-20b2-4f22-a19c-1f25ea024fc8	10	2023-04-09
+469	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	4	2022-10-23
+470	3c1752c0-5fb3-4c97-9b54-4b62476e754d	20	2022-06-19
+471	f69a29db-3817-4848-a528-5737cde44232	21	2023-01-15
+472	d86ab11e-6d8c-494c-9817-c4131489b2e4	8	2023-03-27
+473	3c1752c0-5fb3-4c97-9b54-4b62476e754d	13	2022-10-09
+474	f69a29db-3817-4848-a528-5737cde44232	21	2023-02-15
+475	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	14	2022-07-14
+476	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	17	2022-06-16
+477	9a140897-20b2-4f22-a19c-1f25ea024fc8	21	2022-08-13
+478	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	20	2023-01-10
+479	f69a29db-3817-4848-a528-5737cde44232	16	2023-03-23
+480	d86ab11e-6d8c-494c-9817-c4131489b2e4	7	2022-12-20
+481	9a140897-20b2-4f22-a19c-1f25ea024fc8	7	2023-04-13
+482	9a140897-20b2-4f22-a19c-1f25ea024fc8	10	2023-04-12
+483	f69a29db-3817-4848-a528-5737cde44232	14	2023-02-18
+484	9a140897-20b2-4f22-a19c-1f25ea024fc8	2	2022-10-31
+485	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	23	2022-11-21
+486	3c1752c0-5fb3-4c97-9b54-4b62476e754d	6	2023-03-18
+487	9a140897-20b2-4f22-a19c-1f25ea024fc8	3	2023-02-02
+488	d86ab11e-6d8c-494c-9817-c4131489b2e4	3	2022-12-07
+489	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	17	2022-09-27
+490	d86ab11e-6d8c-494c-9817-c4131489b2e4	20	2022-07-07
+491	f69a29db-3817-4848-a528-5737cde44232	15	2023-03-01
+492	affe4ab7-2c2d-4a9e-a4ce-b618419528e7	6	2022-05-09
+493	f69a29db-3817-4848-a528-5737cde44232	9	2022-09-28
+494	3c1752c0-5fb3-4c97-9b54-4b62476e754d	3	2022-09-11
+495	1d5b786f-1e37-4d04-ac63-3fb1a20a087c	14	2022-07-15
+496	9a140897-20b2-4f22-a19c-1f25ea024fc8	18	2022-07-07
+497	9a140897-20b2-4f22-a19c-1f25ea024fc8	10	2023-04-02
+498	9a140897-20b2-4f22-a19c-1f25ea024fc8	2	2022-07-17
+499	3c1752c0-5fb3-4c97-9b54-4b62476e754d	1	2023-04-04
+500	3c1752c0-5fb3-4c97-9b54-4b62476e754d	7	2023-04-06
+501	74402add-254f-4b77-abe8-fba50f7a1a8a	12	2023-04-23
+502	74402add-254f-4b77-abe8-fba50f7a1a8a	5	2023-04-23
+503	74402add-254f-4b77-abe8-fba50f7a1a8a	6	2023-04-23
+504	74402add-254f-4b77-abe8-fba50f7a1a8a	5	2023-04-23
+505	74402add-254f-4b77-abe8-fba50f7a1a8a	4	2023-04-23
+506	74402add-254f-4b77-abe8-fba50f7a1a8a	10	2023-04-23
+\.
+
+
+--
+-- Name: EMAIL_NOTIFICATION_email_notification_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public."EMAIL_NOTIFICATION_email_notification_id_seq"', 1, false);
+
+
+--
+-- Name: LOW_STOCK_ALERTS_alert_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public."LOW_STOCK_ALERTS_alert_id_seq"', 1, true);
+
+
+--
+-- Name: ORDER_ITEMS_order_item_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public."ORDER_ITEMS_order_item_id_seq"', 15, true);
+
+
+--
+-- Name: ORDER_order_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public."ORDER_order_id_seq"', 11, true);
+
+
+--
+-- Name: PACKAGE_LOCATION_HISTORY_package_location_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public."PACKAGE_LOCATION_HISTORY_package_location_id_seq"', 120, true);
+
+
+--
+-- Name: PRODUCT_INVENTORY_product_inventory_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public."PRODUCT_INVENTORY_product_inventory_id_seq"', 14, true);
+
+
+--
+-- Name: WORKS_FOR_works_for_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public."WORKS_FOR_works_for_id_seq"', 19, true);
+
+
+--
+-- Name: WORK_LOG_work_log_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public."WORK_LOG_work_log_id_seq"', 506, true);
+
+
+--
+-- Name: CLERK CLERK_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CLERK"
+    ADD CONSTRAINT "CLERK_pkey" PRIMARY KEY (employee_id);
+
+
+--
+-- Name: CUSTOMER CUSTOMER_PK; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CUSTOMER"
+    ADD CONSTRAINT "CUSTOMER_PK" PRIMARY KEY (customer_id);
+
+
+--
+-- Name: CUSTOMER CUSTOMER_email_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CUSTOMER"
+    ADD CONSTRAINT "CUSTOMER_email_key" UNIQUE (email);
+
+
+--
+-- Name: DEPENDANT DEPENDANT_PK; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."DEPENDANT"
+    ADD CONSTRAINT "DEPENDANT_PK" PRIMARY KEY (dependant_id);
+
+
+--
+-- Name: DRIVER DRIVER_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."DRIVER"
+    ADD CONSTRAINT "DRIVER_pkey" PRIMARY KEY (employee_id);
+
+
+--
+-- Name: EMAIL_NOTIFICATION EMAIL_NOTIFICATION_PK; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."EMAIL_NOTIFICATION"
+    ADD CONSTRAINT "EMAIL_NOTIFICATION_PK" PRIMARY KEY (email_notification_id);
+
+
+--
+-- Name: EMPLOYEE EMPLOYEE_PK; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."EMPLOYEE"
+    ADD CONSTRAINT "EMPLOYEE_PK" PRIMARY KEY (employee_id);
+
+
+--
+-- Name: EMPLOYEE EMPLOYEE_email_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."EMPLOYEE"
+    ADD CONSTRAINT "EMPLOYEE_email_key" UNIQUE (email);
+
+
+--
+-- Name: LOW_STOCK_ALERTS LOW_STOCK_ALERTS_PK; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."LOW_STOCK_ALERTS"
+    ADD CONSTRAINT "LOW_STOCK_ALERTS_PK" PRIMARY KEY (alert_id);
+
+
+--
+-- Name: ORDER ORDER_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ORDER"
+    ADD CONSTRAINT "ORDER_pkey" PRIMARY KEY (order_id);
+
+
+--
+-- Name: PACKAGE PACKAGE_PK; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."PACKAGE"
+    ADD CONSTRAINT "PACKAGE_PK" PRIMARY KEY (package_id);
+
+
+--
+-- Name: POSTOFFICE_LOCATION POSTOFFICE_LOCATION_PK; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."POSTOFFICE_LOCATION"
+    ADD CONSTRAINT "POSTOFFICE_LOCATION_PK" PRIMARY KEY (postoffice_location_id);
+
+
+--
+-- Name: PRODUCT_INVENTORY PRODUCT_INVENTORY_PK; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."PRODUCT_INVENTORY"
+    ADD CONSTRAINT "PRODUCT_INVENTORY_PK" PRIMARY KEY (product_inventory_id);
+
+
+--
+-- Name: PRODUCT PRODUCT_PK; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."PRODUCT"
+    ADD CONSTRAINT "PRODUCT_PK" PRIMARY KEY (product_id);
+
+
+--
+-- Name: ORDER_ITEMS PRODUCT_TRANSACTION_PK; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ORDER_ITEMS"
+    ADD CONSTRAINT "PRODUCT_TRANSACTION_PK" PRIMARY KEY (order_item_id);
+
+
+--
+-- Name: SESSION SESSION_PK; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SESSION"
+    ADD CONSTRAINT "SESSION_PK" PRIMARY KEY (session_id);
+
+
+--
+-- Name: TRUCK TRUCK_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."TRUCK"
+    ADD CONSTRAINT "TRUCK_pkey" PRIMARY KEY (truck_id);
+
+
+--
+-- Name: USER USER_PK; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."USER"
+    ADD CONSTRAINT "USER_PK" PRIMARY KEY (user_id);
+
+
+--
+-- Name: WORKS_FOR WORKS_FOR_PK; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."WORKS_FOR"
+    ADD CONSTRAINT "WORKS_FOR_PK" PRIMARY KEY (works_for_id);
+
+
+--
+-- Name: WORKS_FOR WORKS_FOR_employee_id_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."WORKS_FOR"
+    ADD CONSTRAINT "WORKS_FOR_employee_id_key" UNIQUE (employee_id);
+
+
+--
+-- Name: WORK_LOG WORK_LOG_PK; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."WORK_LOG"
+    ADD CONSTRAINT "WORK_LOG_PK" PRIMARY KEY (work_log_id);
+
+
+--
+-- Name: PACKAGE_LOCATION_HISTORY package_location_id; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."PACKAGE_LOCATION_HISTORY"
+    ADD CONSTRAINT package_location_id PRIMARY KEY (package_location_id);
+
+
+--
+-- Name: SESSION_INDEX_KEY; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "SESSION_INDEX_KEY" ON public."SESSION" USING btree (token);
+
+
+--
+-- Name: USER_EMAIL_INDEX; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE UNIQUE INDEX "USER_EMAIL_INDEX" ON public."USER" USING btree (email);
+
+
+--
+-- Name: PACKAGE_LOCATION_HISTORY after_package_location_history_insert; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER after_package_location_history_insert AFTER INSERT ON public."PACKAGE_LOCATION_HISTORY" FOR EACH ROW WHEN ((new.status = 'accepted'::text)) EXECUTE FUNCTION public.simulate_delivery_system_accepted();
+
+
+--
+-- Name: PACKAGE_LOCATION_HISTORY after_package_location_history_insert_out; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER after_package_location_history_insert_out AFTER INSERT ON public."PACKAGE_LOCATION_HISTORY" FOR EACH ROW WHEN ((new.status = 'out-for-delivery'::text)) EXECUTE FUNCTION public.simulate_delivery_system_out();
+
+
+--
+-- Name: PACKAGE_LOCATION_HISTORY after_package_location_history_insert_transit; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER after_package_location_history_insert_transit AFTER INSERT ON public."PACKAGE_LOCATION_HISTORY" FOR EACH ROW WHEN ((new.status = 'transit'::text)) EXECUTE FUNCTION public.simulate_delivery_system_transit();
+
+
+--
+-- Name: EMPLOYEE create_employee_role_data_trigger; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER create_employee_role_data_trigger AFTER INSERT OR UPDATE ON public."EMPLOYEE" FOR EACH ROW EXECUTE FUNCTION public.create_employee_role_data();
+
+
+--
+-- Name: PACKAGE_LOCATION_HISTORY email_after_update_trigger; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER email_after_update_trigger AFTER UPDATE ON public."PACKAGE_LOCATION_HISTORY" FOR EACH ROW EXECUTE FUNCTION public.email_after_update();
+
+
+--
+-- Name: CUSTOMER insert_employee_trigger; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER insert_employee_trigger AFTER INSERT ON public."CUSTOMER" FOR EACH ROW EXECUTE FUNCTION public.insert_customer();
+
+
+--
+-- Name: EMPLOYEE insert_employee_trigger; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER insert_employee_trigger AFTER INSERT ON public."EMPLOYEE" FOR EACH ROW EXECUTE FUNCTION public.insert_employee();
+
+
+--
+-- Name: USER insert_user_trigger; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER insert_user_trigger BEFORE INSERT ON public."USER" FOR EACH ROW EXECUTE FUNCTION public.insert_user();
+
+
+--
+-- Name: PRODUCT_INVENTORY low_stock_trigger; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER low_stock_trigger AFTER INSERT OR UPDATE ON public."PRODUCT_INVENTORY" FOR EACH ROW EXECUTE FUNCTION public.check_low_stock();
+
+
+--
+-- Name: PRODUCT_INVENTORY resolve_low_stock_alerts_trigger; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER resolve_low_stock_alerts_trigger AFTER UPDATE ON public."PRODUCT_INVENTORY" FOR EACH ROW EXECUTE FUNCTION public.resolve_low_stock_alerts();
+
+
+--
+-- Name: USER update_user_role_trigger; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER update_user_role_trigger AFTER INSERT ON public."USER" FOR EACH ROW EXECUTE FUNCTION public.update_user_role();
+
+
+--
+-- Name: CLERK CLERK_employee_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."CLERK"
+    ADD CONSTRAINT "CLERK_employee_id_fkey" FOREIGN KEY (employee_id) REFERENCES public."EMPLOYEE"(employee_id);
+
+
+--
+-- Name: DEPENDANT DEPENDANT_employee_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."DEPENDANT"
+    ADD CONSTRAINT "DEPENDANT_employee_id_fkey" FOREIGN KEY (employee_id) REFERENCES public."EMPLOYEE"(employee_id);
+
+
+--
+-- Name: DRIVER DRIVER_employee_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."DRIVER"
+    ADD CONSTRAINT "DRIVER_employee_id_fkey" FOREIGN KEY (employee_id) REFERENCES public."EMPLOYEE"(employee_id);
+
+
+--
+-- Name: LOW_STOCK_ALERTS LOW_STOCK_ALERTS_LOCATION_FK; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."LOW_STOCK_ALERTS"
+    ADD CONSTRAINT "LOW_STOCK_ALERTS_LOCATION_FK" FOREIGN KEY (postoffice_location_id) REFERENCES public."POSTOFFICE_LOCATION"(postoffice_location_id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: LOW_STOCK_ALERTS LOW_STOCK_ALERTS_PRODUCT_INVENTORY_FK; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."LOW_STOCK_ALERTS"
+    ADD CONSTRAINT "LOW_STOCK_ALERTS_PRODUCT_INVENTORY_FK" FOREIGN KEY (product_inventory_id) REFERENCES public."PRODUCT_INVENTORY"(product_inventory_id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: ORDER ORDER_customer_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ORDER"
+    ADD CONSTRAINT "ORDER_customer_id_fkey" FOREIGN KEY (customer_id) REFERENCES public."CUSTOMER"(customer_id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: PACKAGE_LOCATION_HISTORY PACKAGE_FK; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."PACKAGE_LOCATION_HISTORY"
+    ADD CONSTRAINT "PACKAGE_FK" FOREIGN KEY (package_id) REFERENCES public."PACKAGE"(package_id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: PACKAGE PACKAGE_RECEIVER_FK; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."PACKAGE"
+    ADD CONSTRAINT "PACKAGE_RECEIVER_FK" FOREIGN KEY (receiver_id) REFERENCES public."CUSTOMER"(customer_id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: PACKAGE PACKAGE_SENDER_FK; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."PACKAGE"
+    ADD CONSTRAINT "PACKAGE_SENDER_FK" FOREIGN KEY (sender_id) REFERENCES public."CUSTOMER"(customer_id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: POSTOFFICE_LOCATION POSTOFFICE_LOCATION_MANAGER_FK; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."POSTOFFICE_LOCATION"
+    ADD CONSTRAINT "POSTOFFICE_LOCATION_MANAGER_FK" FOREIGN KEY (postoffice_location_manager) REFERENCES public."EMPLOYEE"(employee_id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: PRODUCT_INVENTORY PRODUCT_INVENTORY_LOCATION_FK; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."PRODUCT_INVENTORY"
+    ADD CONSTRAINT "PRODUCT_INVENTORY_LOCATION_FK" FOREIGN KEY (postoffice_location_id) REFERENCES public."POSTOFFICE_LOCATION"(postoffice_location_id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: PRODUCT_INVENTORY PRODUCT_INVENTORY_PRODUCT_FK; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."PRODUCT_INVENTORY"
+    ADD CONSTRAINT "PRODUCT_INVENTORY_PRODUCT_FK" FOREIGN KEY (product_id) REFERENCES public."PRODUCT"(product_id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: ORDER_ITEMS PRODUCT_ITEM_FK; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ORDER_ITEMS"
+    ADD CONSTRAINT "PRODUCT_ITEM_FK" FOREIGN KEY (product_id) REFERENCES public."PRODUCT"(product_id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: ORDER PRODUCT_TRANSACTION_LOCATION_FK; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ORDER"
+    ADD CONSTRAINT "PRODUCT_TRANSACTION_LOCATION_FK" FOREIGN KEY (postoffice_location_id) REFERENCES public."POSTOFFICE_LOCATION"(postoffice_location_id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: ORDER_ITEMS PRODUCT_TRANSACTION_PRODUCT_FK; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."ORDER_ITEMS"
+    ADD CONSTRAINT "PRODUCT_TRANSACTION_PRODUCT_FK" FOREIGN KEY (order_id) REFERENCES public."ORDER"(order_id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: SESSION SESSION_USER_ID_FK; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."SESSION"
+    ADD CONSTRAINT "SESSION_USER_ID_FK" FOREIGN KEY (user_id) REFERENCES public."USER"(user_id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- Name: TRUCK TRUCK_postoffice_location_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public."TRUCK"
+    ADD CONSTRAINT "TRUCK_postoffice_location_id_fkey" FOREIGN KEY (postoffice_location_id) REFERENCES public."POSTOFFICE_LOCATION"(postoffice_location_id);
+
+
+--
+-- Name: SCHEMA public; Type: ACL; Schema: -; Owner: postgres
+--
+
+REVOKE USAGE ON SCHEMA public FROM PUBLIC;
+
+
+--
+-- PostgreSQL database dump complete
+--
+

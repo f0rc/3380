@@ -1,6 +1,8 @@
 
 # link: https://3380.vercel.app
-# link to dump file: TODO
+# link to dump file: 
+
+
 
 # PostOffice Database application TEAM 4 Tu/Th
 - We built the postoffice webapp to include 4 main roles which are 
@@ -8,15 +10,24 @@
     - customer (no account)
     - customer (account) 
       - example login info:
-   
+        - email: Beatrice80@hotmail.com
+        - pass: Beatrice80@hotmail.com
   - Employee
     - clerk
+      - login info:
+        - email: Iva.Prosacco98@gmail.com
+        - pass: Iva.Prosacco98@gmail.com
     - driver
+      - email: Deven_Collier8@hotmail.com
+      - pass: Deven_Collier8@hotmail.com
     - manager
+      - email: Audreanne_Mills85@yahoo.com
+      - pass: Audreanne_Mills85@yahoo.com
   - Admin
     - CEO
       - login info:
-
+        - email: admin@admin.com
+        - pass: admin@admin.com
 - customer with no account is able to track a package by inputing the tracking ID of their package into the home page (the tracking package page) and also look at the store if they want to purchase anything then they need to sign up or log in.
 
 - Employee
