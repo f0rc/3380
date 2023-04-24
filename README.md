@@ -59,8 +59,42 @@ Customers without an account can track a package by entering the tracking ID on 
 
 # TRIGGERS:
   - lowstock trigger which displays a notification to the manager which is only resolved when the manager updates the stock to greater than 10
-  - We implemented a second trigger to update the package status to "in transit." The system checks for multiple transits (<=4) and identifies the processing locations for each package. The customer sees the updated status and is informed if a package has a less than 10% chance of being delivered.
+    - code: 
+    - ```
+        CREATE TRIGGER low_stock_trigger
+        AFTER INSERT OR UPDATE ON "PRODUCT_INVENTORY"
+        FOR EACH ROW
+        EXECUTE FUNCTION check_low_stock();
+      ```
+      ```
+      CREATE TRIGGER resolve_low_stock_alerts_trigger
+AFTER UPDATE ON "PRODUCT_INVENTORY"
+FOR EACH ROW
+EXECUTE FUNCTION resolve_low_stock_alerts();
 
+```
+
+  - We implemented a second trigger to update the package status to "in transit." The system checks for multiple transits (<=4) and identifies the processing locations for each package. The customer sees the updated status and is informed if a package has a less than 10% chance of being delivered.
+    - code: 
+      - ```
+CREATE TRIGGER after_package_location_history_insert
+AFTER INSERT ON "PACKAGE_LOCATION_HISTORY"
+FOR EACH ROW
+WHEN (NEW.status = 'accepted')
+EXECUTE FUNCTION simulate_delivery_system_accepted();
+        ```
+        - ```CREATE TRIGGER after_package_location_history_insert_transit
+AFTER INSERT ON "PACKAGE_LOCATION_HISTORY"
+FOR EACH ROW
+WHEN (NEW.status = 'transit')
+EXECUTE FUNCTION simulate_delivery_system_transit();
+```
+  - ```CREATE TRIGGER after_package_location_history_insert_out
+AFTER INSERT ON "PACKAGE_LOCATION_HISTORY"
+FOR EACH ROW
+WHEN (NEW.status = 'out-for-delivery')
+EXECUTE FUNCTION simulate_delivery_system_out();
+```
 # Reports
 
 As mentioned earlier, the available reports are:
