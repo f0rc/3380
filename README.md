@@ -76,7 +76,7 @@ As mentioned earlier, the available reports are:
 3. Image uploading will not work, as it requires sensitive data.
 4. Create a .env file in `./client/` and `./server/`, then copy and paste the values from `.env.example` located in `./client` and `./server`.
 5. Ensure you have Docker Compose installed and run `docker-compose up -d` in the root folder to start the PostgreSQL database with test variables.
-6. Run `npm run db` in `./server/` to load the default app data, including admin information, into the database.
+6. install tsx (globally) and then Run `npm run db` in `./server/` to load the default app data, including admin information, into the database.
 7. (Optional) To populate fake data, install tsx (globally) and run `tsx ./database/faker.ts` in `./server/`.
 8. To run the application, ensure you are in the root directory and run `npm run dev` for local development. The application will be available at `http://localhost:3000`.
 
